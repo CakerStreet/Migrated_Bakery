@@ -1,0 +1,503 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Caker Street - Manage Product Documents";
+
+    var productId = (long)ViewBag.ProductId;
+    var productType = (int)ViewBag.ProductType;
+    var product = ViewBag.Product as CakerStreet.Business.Services.ProductDocProductDetail;
+    var productImageUrl = ViewBag.ProductImageUrl as string;
+    var productLink = ViewBag.ProductLink as string;
+    var productDisplayName = ViewBag.ProductDisplayName as string;
+    var headerText = ViewBag.HeaderText as string;
+    var showTypewiseFilter = (bool)ViewBag.ShowTypewiseFilter;
+    var showAddToOrder = (bool)ViewBag.ShowAddToOrder;
+    var productDocumentRowsHtml = ViewBag.ProductDocumentRowsHtml as string;
+    var backUrl = ViewBag.BackUrl as string;
+    var editUrl = ViewBag.EditUrl as string;
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+@section Head {
+    <link href='@(cdnBase)bakery_content/css/sellcss.css?ver=1.14' rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal {
+            font-weight: normal;
+        }
+
+        .prdheader {
+            background-color: #ddd;
+            line-height: 34px;
+            margin-bottom: 10px;
+        }
+
+        .prdheader label {
+            text-align: center;
+            width: 100%;
+        }
+
+        .div_productfile {
+            margin-bottom: 10px;
+        }
+
+        .col-sm-4.caln > input[type="file"] {
+            display: inline-block;
+        }
+
+        #dropzoneForm {
+            width: 50%;
+            margin: 0 auto;
+        }
+
+        .div_typewisefilter {
+            display: table;
+            z-index: 3;
+            font-size: 12px;
+        }
+
+        .div_typewisefilter.notop {
+            top: 0;
+        }
+
+        .div_typewisefilter .liupdateglobaldisplayorder > a {
+            background-color: #ccc;
+            float: left;
+            margin-left: 5px;
+            opacity: 1;
+            padding: 5px;
+        }
+
+        .liupdateglobaldisplayorder a img {
+            max-width: 18px;
+        }
+
+        .div_typewisefilter li {
+            display: table;
+            opacity: 0.9;
+            margin: 5px;
+            width: 50px;
+        }
+
+        .div_typewisefilter li.liheight {
+            height: 20px;
+        }
+
+        .div_typewisefilter li.liheight select {
+            left: 5px;
+            position: absolute;
+            top: 5px;
+        }
+
+        .div_typewisefilter a {
+            background-color: #fff;
+            display: inline;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        .div_typewisefilter a > img {
+            max-width: 22px;
+            max-height: 22px;
+        }
+
+        .div_typewisefilter a:hover, .div_typewisefilter a.stt {
+            opacity: 1;
+        }
+
+        .div_typewisefilter a.stt {
+            border-color: Green;
+        }
+
+        .div_typewisefilter .divinputprdtext_outer {
+            left: 0;
+            opacity: 0;
+            position: absolute;
+            top: -28px;
+            width: 250px;
+        }
+
+        .div_typewisefilter .divinputprdtext_outer:focus, .div_typewisefilter .divinputprdtext_outer:hover {
+            opacity: 1;
+        }
+
+        .div_typewisefilter a.ggl {
+            padding: 7px 12px;
+            background-color: #000;
+            color: #fff;
+            position: absolute;
+            top: 5px;
+        }
+
+        .div_PrdFileSize {
+            margin-bottom: 10px;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse3" aria-expanded="true"><span class="glyphicon glyphicon-minus"></span></a>
+                </div>
+                <div class="col-md-11">
+                    <h2>Manage @headerText</h2>
+                </div>
+            </div>
+            <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+
+                <input type="hidden" id="hfProductId" value="@productId" />
+                <input type="hidden" id="hfProductType" value="@productType" />
+
+                <div class="col-md-12 top-margin caln">
+                    <a href="@productLink" target="_blank"><img src="@productImageUrl" style="max-width: 150px; max-height: 150px;" /></a>
+                    <br />
+                    <strong>@productDisplayName</strong>
+                </div>
+
+                @if (showTypewiseFilter)
+                {
+                    <div class="form-group col-md-12 caln div_typewisefilter" id="div_typewisefilter">
+                        <a href="@editUrl" target="_blank"><span class="glyphicon glyphicon-pencil"></span></a>
+                    </div>
+                }
+
+                <div class="clearfix"></div>
+                <div class="col-md-12 top-margin">
+
+                    <div class="col-md-12 row-height prdheader">
+                        <div class="form-group">
+                            <div class="col-sm-2 caln">
+                                <label>Created On*</label>
+                            </div>
+                            <div class="col-sm-3 unbold labelleft">
+                                <label>Document Title*</label>
+                            </div>
+                            <div id="dvAddToHeader" class="col-sm-3 caln" style="@(showAddToOrder ? "" : "display:none;")">
+                                <label>Add to Order</label>
+                            </div>
+                            <div class="col-sm-2 caln">
+                                <label>Select File*</label>
+                            </div>
+                            <div class="col-sm-2 caln">
+                                <label>Action</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <br clear="all" />
+
+                    <div id="dvProductDocOuter">
+                        @Html.Raw(productDocumentRowsHtml)
+                    </div>
+
+                    <div class="clearfix"></div>
+                    <div class="col-lg-12 col-md-12 col-sm-12">
+                        <a id="ancPrdDocRow" class="btn btn-black btn-xs">+ Add More</a>
+                    </div>
+
+                </div>
+
+                <div class="clearfix"></div>
+                <div class="col-lg-12 col-sm-12 top-margin">
+                    <a class="saveshippingtemplate btn btn-danger" style="float:none" id="saveproductdocuments">Save Documents</a>
+                    <a href="@backUrl" class="backbtn1">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Upload modal *@
+<div class="modal fade" id="dvPicModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="prdTitle"></h4>
+            </div>
+            <div class="modal-body" style="width: 100%">
+                <div role="form" class="form-horizontal box-body">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <div class="dropzone" id="dropzoneForm">
+                                <div class="fallback">
+                                    <input name="file" type="file" />
+                                    <input type="submit" value="Upload" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-3 col-sm-4">
+                            <input id="btnUpload" class="btn btn-danger btn-block btn-flat btn-sign-in" onclick="UploadFiles();"
+                                   type="button" value="Upload" />
+                            <input id="hdPrdID" type="hidden" />
+                            <input id="hdApiType" type="hidden" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        $('#dvProductDocOuter').on('click', '#ancEditFile', function () {
+            var id = $(this).attr('data-tid');
+            ResetFileUpload(id);
+        });
+
+        $('#dvProductDocOuter').on('click', '#ancRemoveFile', function () {
+            if (!confirm('Are you sure to delete this item?')) {
+                var id = $(this).attr('data-tid');
+                ResetFileUpload(id);
+            }
+        });
+
+        $('#dvProductDocOuter').on('click', '#ancUploadFile', function () {
+            var id = $(this).attr('data-tid');
+            var fu = $('#dvPrdFile_' + id).find('input#fuPrdFile');
+            var filename = getNameFromPath(fu.val());
+
+            if (fu.val() == '') {
+                alert('Please browse file');
+            }
+            else if (checkFileExtension(filename)) {
+                $('#imgLoader_' + id).show();
+                var formdata = new FormData();
+                var fileUpload = $(fu).get(0);
+                var files = fileUpload.files;
+                for (var i = 0; i < files.length; i++) {
+                    formdata.append(files[i].name, files[i]);
+                }
+                formdata.append("prdid", $('#hfProductId').val());
+                $.ajax({
+                    url: "/productdocupload.ashx",
+                    type: 'POST',
+                    data: formdata,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        $('#dvPrdFile_' + id).find('#hfProductFileName').val(data.name);
+                        $('#dvPrdFile_' + id).find('#ancEditFile').show();
+                        $('#dvPrdFile_' + id).find('#ancRemoveFile').show();
+                        $('#dvPrdFile_' + id).find('#ancViewFile').show();
+                        $('#dvPrdFile_' + id).find('#ancUploadFile').hide();
+                        $('#dvPrdFile_' + id).find('#ancViewFile').attr("href", "/bakeryfiles/download?file=upload/sku/" + $('#hfProductId').val() + "/files/" + data.name);
+                        $(fu).val('');
+                        $(fu).hide();
+                        $('#imgLoader_' + id).hide();
+                    },
+                    error: function () {
+                        alert("Error while uploading file");
+                        $('#imgLoader_' + id).hide();
+                    }
+                });
+            }
+            else {
+                alert('Only Images, zip and psd file are allowed.');
+            }
+        });
+
+        $('body').on('keypress', 'input.redcolored', function () {
+            $(this).removeClass("redcolored");
+        });
+
+        $('body').on('click', '#saveproductdocuments', function () {
+
+            if (parseInt($('div.div_productfile:visible').length) == 0) {
+                alert('Please add atleast 1 product document!');
+            }
+            else {
+                var alerttext = "";
+                $(".div_productfile").each(function () {
+                    if ($(this).is(':visible')) {
+                        if ($(this).find('input#txtProductFileTitle').val() == '') {
+                            alerttext += "Please Enter Document Title.\n\r";
+                            $(this).find('input#txtProductFileTitle').addClass("redcolored");
+                        }
+                        if ($(this).find('input#hfProductFileName').val() == '') {
+                            alerttext += "Please Upload Document.\n\r";
+                            $(this).find('input#fuPrdFile').addClass("redcolored");
+                        }
+                    }
+                });
+
+                if (alerttext != "") {
+                    alert(alerttext);
+                }
+                else {
+                    showpop_modalpop();
+
+                    var intcountertiming = 0;
+                    var lstPM = new Array();
+
+                    $(".div_productfile").each(function () {
+                        var var_prddoc = {};
+                        var_prddoc.RecNo = 1;
+                        var_prddoc.ProductFileID = $(this).find('#hfProductFileID').val();
+                        var_prddoc.ProductId = $('#hfProductId').val();
+                        var_prddoc.ProductFileTitle = $(this).find('#txtProductFileTitle').val();
+                        var_prddoc.IsAddtoOrder = $(this).find('#chkIsAddtoOrder').is(':checked');
+                        var_prddoc.IsDeleted = $(this).find('#hfPrfFileDeleted').val();
+                        var_prddoc.ProductFile = $(this).find('#hfProductFileName').val();
+
+                        var dvFileSize = $(this).find("div.div_PrdFileSize");
+                        var lstSizes = new Array();
+                        var intcountersize = 0;
+
+                        $(dvFileSize).find('input[type=checkbox]').each(function () {
+                            var var_FileSize = {};
+                            var_FileSize.SizeID = parseInt($(this).attr("value"));
+                            var_FileSize.IsAdded = $(this).is(':checked');
+                            lstSizes[intcountersize] = var_FileSize;
+                            intcountersize += 1;
+                        });
+
+                        var_prddoc.lstProductFileSize = lstSizes;
+                        lstPM[intcountertiming] = var_prddoc;
+                        intcountertiming += 1;
+                    });
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/manageproductdoc/SaveProductDocument",
+                        data: JSON.stringify({ lstPM: lstPM }),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        async: false,
+                        cache: true,
+                        success: function (msg) {
+                            var city = msg.d;
+                            hidepop_modalpop();
+                            if (city.data_ID == 1) {
+                                alert('Product document(s) have been uploaded successfully!');
+                                location.href = location.href;
+                            }
+                            else {
+                                alert(city.data_optionalstr);
+                            }
+                        },
+                        error: function (x, e) {
+                        }
+                    });
+                }
+            }
+        });
+
+        $('body').on('click', '#ancDeletePrfFile', function () {
+            if (confirm('Are you sure to delete this item?')) {
+                var id = $(this).attr('data-tid');
+                $('#dvPrdFile_' + id).find('input#hfPrfFileDeleted').val('1');
+                $('#dvPrdFile_' + id).fadeOut('slow');
+            }
+        });
+
+        $('body').on('click', '#ancSortOrder', function () {
+            var id = $(this).attr('data-tid');
+            var e = $("#dvPrdFile_" + id);
+            if (e.prev().length) {
+                e.prev().insertAfter(e);
+            }
+        });
+
+        $('body').on('click', '#ancPrdDocRow', function () {
+            var numItems = parseInt($('div.div_productfile').length) + 1;
+            var pm = {};
+            pm.RecNo = numItems;
+            pm.ProductFileID = 0;
+            pm.ProductId = $('#hfProductId').val();
+            pm.ProductFileTitle = '';
+            pm.ProductFile = '';
+            pm.IsDeleted = 0;
+
+            $.ajax({
+                type: "POST",
+                url: "/manageproductdoc/GetProductFileRow",
+                data: JSON.stringify({ pm: pm, prdid: parseInt($('#hfProductId').val()), prdType: parseInt($('#hfProductType').val()) }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                cache: true,
+                success: function (msg) {
+                    var city = msg.d;
+                    $('#dvProductDocOuter').append(msg.d);
+                },
+                error: function (x, e) {
+                }
+            });
+        });
+
+    });
+
+    function ResetFileUpload(id) {
+        $('#dvPrdFile_' + id).find('#hfProductFileName').val('');
+        $('#dvPrdFile_' + id).find('#ancEditFile').hide();
+        $('#dvPrdFile_' + id).find('#ancRemoveFile').hide();
+        $('#dvPrdFile_' + id).find('#ancViewFile').hide();
+        $('#dvPrdFile_' + id).find('#ancViewFile').removeAttr("href");
+        $('#dvPrdFile_' + id).find('#ancUploadFile').show();
+        $('#dvPrdFile_' + id).find('input#fuPrdFile').show();
+    }
+
+    function checkFileExtension(file) {
+        var flag = true;
+        var extension = file.substr((file.lastIndexOf('.') + 1));
+        switch (extension.toLowerCase()) {
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+            case 'rar':
+            case 'zip':
+            case 'cdr':
+            case 'ai':
+            case 'studio3':
+            case 'psd':
+            case 'pdf':
+            case 'svg':
+            case 'doc':
+            case 'docx':
+            case 'xls':
+            case 'xlsb':
+            case 'xlsm':
+            case 'xlsx':
+            case 'dcd':
+            case 'otf':
+            case 'ttf':
+            case 'fnt':
+            case 'stl':
+            case 'obj':
+                flag = true;
+                break;
+            default:
+                flag = false;
+        }
+        return flag;
+    }
+
+    function getNameFromPath(strFilepath) {
+        var objRE = new RegExp(/([^\/\\]+)$/);
+        var strName = objRE.exec(strFilepath);
+        if (strName == null) {
+            return null;
+        }
+        else {
+            return strName[0];
+        }
+    }
+
+    function UploadPicture(pid, pname) {
+        $("#prdTitle").text(pname);
+        $("#hdPrdID").val(pid);
+        $("#hdApiType").val("0");
+        $("#dvPicModal").modal('show');
+    }
+</script>
+}

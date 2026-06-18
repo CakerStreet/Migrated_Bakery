@@ -1,0 +1,225 @@
+@{
+    ViewData["Title"] = "Manage Ingredient Tags (DIY Sandwich Bar)";
+    var categories = ViewBag.Categories as List<CakerStreet.Business.Controllers.IngredientTagController.CategoryItem>
+        ?? new List<CakerStreet.Business.Controllers.IngredientTagController.CategoryItem>();
+    var gnSizes = ViewBag.GnSizes as List<CakerStreet.Business.Controllers.IngredientTagController.GnSizeItem>
+        ?? new List<CakerStreet.Business.Controllers.IngredientTagController.GnSizeItem>();
+    var ingredients = ViewBag.Ingredients as List<CakerStreet.Business.Controllers.IngredientTagController.IngredientTagItem>
+        ?? new List<CakerStreet.Business.Controllers.IngredientTagController.IngredientTagItem>();
+    var selectedCatId = (int)(ViewBag.SelectedCatId ?? 0);
+    var selectedGnId = (int)(ViewBag.SelectedGnId ?? 0);
+    var search = ViewBag.Search as string ?? "";
+    var activeStatus = (int)(ViewBag.ActiveStatus ?? 0);
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .filter-bar { margin-bottom: 15px; }
+        .filter-bar .form-control { display: inline-block; width: auto; margin-right: 8px; }
+        .filter-bar .btn { margin-right: 5px; }
+        .tag-table input.form-control { width: 100%; }
+        .tag-table select.form-control { width: 100%; }
+        .tag-table td { vertical-align: middle; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Ingredient Tags (DIY Sandwich Bar)</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Filter Bar ─────────────────────────────────────────────────── *@
+                <div class="col-md-12 filter-bar">
+                    <select id="drpCategory" class="form-control input-sm">
+                        <option value="0">--All Categories--</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.Id" @(cat.Id == selectedCatId ? "selected" : "")>@cat.Name</option>
+                        }
+                    </select>
+
+                    <select id="drpGnSize" class="form-control input-sm">
+                        <option value="0">--All GN Sizes--</option>
+                        @foreach (var gn in gnSizes)
+                        {
+                            <option value="@gn.Id" @(gn.Id == selectedGnId ? "selected" : "")>@gn.Name</option>
+                        }
+                    </select>
+
+                    <select id="drpActiveStatus" class="form-control input-sm">
+                        <option value="0" @(activeStatus == 0 ? "selected" : "")>All</option>
+                        <option value="1" @(activeStatus == 1 ? "selected" : "")>Active</option>
+                        <option value="2" @(activeStatus == 2 ? "selected" : "")>Inactive</option>
+                    </select>
+
+                    <input type="text" id="txtSearch" class="form-control input-sm" placeholder="Search ingredient name" value="@search" />
+
+                    <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doFilter();">Go</a>
+                    <a href="/manageIngredientastag" class="btn btn-default btn-sm">Reset</a>
+
+                    <span class="pull-right text-muted" style="line-height: 30px;">@ingredients.Count record(s) found</span>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Ingredient Tag Table ───────────────────────────────────────── *@
+                @if (ingredients.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped tag-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:5%;">#</th>
+                                    <th style="width:22%;">Ingredient Name</th>
+                                    <th style="width:15%;">Marking</th>
+                                    <th style="width:18%;">Category</th>
+                                    <th style="width:15%;">GN Size</th>
+                                    <th style="width:10%;">Active</th>
+                                    <th style="width:15%;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int rowNum = 0; }
+                                @foreach (var item in ingredients)
+                                {
+                                    rowNum++;
+                                    <tr data-id="@item.Id">
+                                        <td>@rowNum</td>
+                                        <td>
+                                            <input type="text" class="form-control input-sm txt-ingredient" value="@item.Ingredient" />
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control input-sm txt-marking" value="@item.Marking" />
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-sm drp-cat">
+                                                @foreach (var cat in categories)
+                                                {
+                                                    <option value="@cat.Id" @(cat.Id == item.CatId ? "selected" : "")>@cat.Name</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-sm drp-gn">
+                                                <option value="0">--None--</option>
+                                                @foreach (var gn in gnSizes)
+                                                {
+                                                    <option value="@gn.Id" @(gn.Id == item.GnId ? "selected" : "")>@gn.Name</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-sm drp-active">
+                                                <option value="true" @(item.Active ? "selected" : "")>Yes</option>
+                                                <option value="false" @(!item.Active ? "selected" : "")>No</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <a href="javascript:void(0);" class="btn btn-primary btn-xs" onclick="saveRow(@item.Id);">Save</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">No ingredient tags found matching the current filters.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Filter / Search ────────────────────────────────────────────────────────
+
+    function doFilter() {
+        var catid = $('#drpCategory').val();
+        var gnid = $('#drpGnSize').val();
+        var activestatus = $('#drpActiveStatus').val();
+        var search = $.trim($('#txtSearch').val());
+
+        var url = '/manageIngredientastag';
+        var parts = [];
+
+        if (catid !== '0') parts.push('catid=' + catid);
+        if (gnid !== '0') parts.push('gnid=' + gnid);
+        if (activestatus !== '0') parts.push('activestatus=' + activestatus);
+        if (search !== '') parts.push('search=' + encodeURIComponent(search));
+
+        if (parts.length > 0) url += '?' + parts.join('&');
+        window.location.href = url;
+    }
+
+    // Allow Enter key in search box
+    $(document).ready(function () {
+        $('#txtSearch').on('keypress', function (e) {
+            if (e.which === 13) {
+                doFilter();
+                return false;
+            }
+        });
+    });
+
+    // ─── Individual Row Save ────────────────────────────────────────────────────
+
+    function saveRow(id) {
+        var $row = $('tr[data-id="' + id + '"]');
+        var ingredient = $.trim($row.find('.txt-ingredient').val());
+        var marking = $.trim($row.find('.txt-marking').val());
+        var catId = $row.find('.drp-cat').val();
+        var gnId = $row.find('.drp-gn').val();
+        var active = $row.find('.drp-active').val() === 'true';
+
+        if (ingredient === '') {
+            alert('Ingredient name cannot be empty.');
+            return;
+        }
+
+        $.post('/manageIngredientastag/save', {
+            id: id,
+            ingredient: ingredient,
+            marking: marking,
+            catId: catId,
+            gnId: gnId,
+            active: active
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+</script>
+}

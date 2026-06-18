@@ -1,0 +1,470 @@
+@{
+    ViewData["Title"] = "Manage Supplier";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.SupplierItem> ?? new List<CakerStreet.Business.Services.SupplierItem>();
+    var totalPages = (int)(ViewBag.TotalPages ?? 0);
+    var totalCount = (int)(ViewBag.TotalCount ?? 0);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var search = ViewBag.Search as string ?? "";
+    var userType = ViewBag.UserType as string ?? "";
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .modalPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.5); }
+        .modalPopup .modal { display: block; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Supplier</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        @if (items.Count == 0 && string.IsNullOrEmpty(search))
+        {
+            <div class="alert alert-danger">No Suppliers Found</div>
+        }
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                <div class="col-md-12">
+                    @if (items.Count > 0 || !string.IsNullOrEmpty(search))
+                    {
+                        <div class="col-md-3">
+                            <div class="btn-group">
+                                <button class="btn btn-danger bg-red" type="button">Action on
+                                    <span id="spnfilterselected">0</span> selected</button>
+                                <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul role="menu" class="dropdown-menu">
+                                    <li><a href="javascript:void(0);" onclick="bulkSetActive();">Set as Active</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkSetInactive();">Set as Inactive</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkDelete();">Remove</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <input type="text" id="txtsearch" class="form-contro input-sm" placeholder="Search keyword" value="@search" />
+                            <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doSearch();">Go</a>
+                            <a href="/managesupplier" class="btn btn-danger btn-sm">X</a>
+                        </div>
+                    }
+
+                    <div class="col-md-2">
+                        <a href="javascript:void(0);" class="btn btn-success btn-sm" onclick="openAddModal();"><span class="glyphicon glyphicon-plus"></span> Add New</a>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @if (items.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="chk headertext">
+                                        <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                    </th>
+                                    <th class="type">Supplier Name</th>
+                                    <th class="status">Status</th>
+                                    <th class="type">For Accessory, Packaging or Supplies</th>
+                                    <th class="Email">For Topper</th>
+                                    <th class="Pwd">Address Detail</th>
+                                    <th class="Pwd">Remarks</th>
+                                    <th class="action">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in items)
+                                {
+                                    <tr class="rowtext">
+                                        <td class="chk">
+                                            <input type="checkbox" class="chkrow" data-id="@item.SupplierId" onchange="chkuncheckHeadernRowbyrow();" />
+                                        </td>
+                                        <td class="type">@item.SupplierName</td>
+                                        <td class="status">@(item.Supplier_IsActive ? "Active" : "Inactive")</td>
+                                        <td class="status">@(item.Supplier_IsAccessory ? "Yes" : "No")</td>
+                                        <td class="Email">@(item.Supplier_IsTopper ? "Yes" : "No")</td>
+                                        <td class="Pwd">@item.Supplier_AddressDetail</td>
+                                        <td class="Pwd">@item.Supplier_Remarks</td>
+                                        <td class="action">
+                                            <a href="javascript:void(0);" class="text-danger" onclick="openEditModal(@item.SupplierId);">Edit</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @* ─── Pagination ─────────────────────────────────────────────────── *@
+                    @if (totalPages > 1)
+                    {
+                        <div class="pagination pagination-right">
+                            <div class="paging_outer">
+                                <ul class="left">
+                                    <li><a href="@GetPageUrl(1)">First</a></li>
+                                    <li class="@(currentPage <= 1 ? "disabled" : "")">
+                                        @if (currentPage > 1)
+                                        {
+                                            <a href="@GetPageUrl(currentPage - 1)"><img src="/img/prev-arrow.png" alt="Previous" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/prev-arrow.png" alt="Previous" /></span>
+                                        }
+                                    </li>
+                                </ul>
+                                <ul class="numbering">
+                                    @{
+                                        int pageButtonCount = 3;
+                                        int min = currentPage - pageButtonCount;
+                                        int max = currentPage + pageButtonCount;
+                                        if (max > totalPages) min -= (max - totalPages);
+                                        if (min < 1) max += (1 - min);
+                                        bool needDiv = false;
+
+                                        for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            if (i <= 2 || i > totalPages - 2 || (min <= i && i <= max))
+                                            {
+                                                <li class="@(i == currentPage ? "active" : "")">
+                                                    <a href="@GetPageUrl(i)">@i</a>
+                                                </li>
+                                                needDiv = true;
+                                            }
+                                            else if (needDiv)
+                                            {
+                                                <li class="disabled"><span>...</span></li>
+                                                needDiv = false;
+                                            }
+                                        }
+                                    }
+                                </ul>
+                                <ul class="right">
+                                    <li class="@(currentPage >= totalPages ? "disabled" : "")">
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <a href="@GetPageUrl(currentPage + 1)"><img src="/img/nxt-arrow.png" alt="Next" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/nxt-arrow.png" alt="Next" /></span>
+                                        }
+                                    </li>
+                                    <li><a href="@GetPageUrl(totalPages)">Last</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                }
+                else if (!string.IsNullOrEmpty(search))
+                {
+                    <div class="alert alert-danger">No Suppliers Found</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ─── Add/Edit Modal ─────────────────────────────────────────────────────────── *@
+<div id="supplierModal" class="modalPopup">
+    <div class="modal" aria-hidden="true" aria-labelledby="myModalLabel" role="dialog" tabindex="-1" style="display: block">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"><span id="modalTitle">Add New</span> Supplier</h4>
+                    <input type="hidden" id="hfEditID" value="0" />
+                </div>
+                <div class="modal-body">
+                    <div class="form-horizontal" role="form">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Supplier Name: <span class="text-danger">*</span></label>
+                            <div class="col-sm-4">
+                                <input type="text" id="txtSupplierName" maxlength="200" placeholder="Supplier Name" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Remarks</label>
+                            <div class="col-sm-8">
+                                <textarea id="txtRemarks" class="form-control" placeholder="Enter Remarks"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Address Detail</label>
+                            <div class="col-sm-8">
+                                <textarea id="txtAddressDetail" class="form-control" placeholder="Address Detail"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-8">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="chkTopper" /> Supplies Topper
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-8">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="chkAccessory" /> Supplies Accessory, Packaging or Supplies
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <button type="button" class="btn btn-primary" onclick="saveSupplier();">Save</button>
+                                <button type="button" class="btn btn-danger" onclick="closeModal();">Close</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <p class="text-danger" id="lblModalMsg"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber)
+    {
+        var searchVal = ViewBag.Search as string ?? "";
+        var url = "/managesupplier";
+        var queryParts = new List<string>();
+
+        if (!string.IsNullOrEmpty(searchVal))
+        {
+            queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+        }
+        if (pageNumber != 1)
+        {
+            queryParts.Add("pageno=" + pageNumber);
+        }
+
+        if (queryParts.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParts);
+        }
+        return url;
+    }
+}
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+        updateSelectedCount();
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        $('#spnfilterselected').text($('.rowtext .chkrow:checked').length);
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            ids.push($(this).data('id'));
+        });
+        return ids;
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+
+    function doSearch() {
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword === '') {
+            alert('Please enter search keyword');
+            return;
+        }
+        var url = '/managesupplier?search=' + encodeURIComponent(keyword);
+        window.location.href = url;
+    }
+
+    // Allow Enter key in search box
+    $(document).ready(function () {
+        $('#txtsearch').on('keypress', function (e) {
+            if (e.which === 13) {
+                doSearch();
+                return false;
+            }
+        });
+    });
+
+    // ─── Modal Operations ───────────────────────────────────────────────────────
+
+    function openAddModal() {
+        $('#hfEditID').val('0');
+        $('#txtSupplierName').val('');
+        $('#txtRemarks').val('');
+        $('#txtAddressDetail').val('');
+        $('#chkTopper').prop('checked', false);
+        $('#chkAccessory').prop('checked', false);
+        $('#lblModalMsg').text('');
+        $('#modalTitle').text('Add New');
+        $('#supplierModal').show();
+        $('#txtSupplierName').focus();
+    }
+
+    function openEditModal(id) {
+        $('#lblModalMsg').text('');
+        $.post('/managesupplier/getbyid', { id: id }, function (r) {
+            if (r.success) {
+                $('#hfEditID').val(r.data.supplierId);
+                $('#txtSupplierName').val(r.data.supplierName);
+                $('#txtRemarks').val(r.data.supplier_Remarks || '');
+                $('#txtAddressDetail').val(r.data.supplier_AddressDetail || '');
+                $('#chkTopper').prop('checked', r.data.supplier_IsTopper);
+                $('#chkAccessory').prop('checked', r.data.supplier_IsAccessory);
+                $('#modalTitle').text('Edit');
+                $('#supplierModal').show();
+                $('#txtSupplierName').focus();
+            } else {
+                showMessage(r.message || 'Failed to load supplier.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while loading supplier.', false);
+        });
+    }
+
+    function closeModal() {
+        $('#supplierModal').hide();
+    }
+
+    function saveSupplier() {
+        var name = $.trim($('#txtSupplierName').val());
+        if (name === '') {
+            $('#lblModalMsg').text('Supplier Name is required.');
+            return;
+        }
+
+        var data = {
+            id: $('#hfEditID').val(),
+            supplierName: name,
+            addressDetail: $('#txtAddressDetail').val(),
+            remarks: $('#txtRemarks').val(),
+            isAccessory: $('#chkAccessory').is(':checked'),
+            isTopper: $('#chkTopper').is(':checked')
+        };
+
+        $.post('/managesupplier/save', data, function (r) {
+            if (r.success) {
+                closeModal();
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                $('#lblModalMsg').text(r.message || 'Failed to save.');
+            }
+        }).fail(function () {
+            $('#lblModalMsg').text('An error occurred while saving.');
+        });
+    }
+
+    // ─── Bulk Actions ───────────────────────────────────────────────────────────
+
+    function bulkSetActive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+        $.post('/managesupplier/bulkactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    function bulkSetInactive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+        $.post('/managesupplier/bulkinactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    function bulkDelete() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+        if (!confirm('Are you sure to remove selected ' + ids.length + ' item(s)?')) {
+            return;
+        }
+        $.post('/managesupplier/bulkdelete', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+</script>
+}

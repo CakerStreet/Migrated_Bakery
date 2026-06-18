@@ -1,0 +1,212 @@
+@model CakerStreet.Business.Services.DeliveryRouteDetailViewModel
+@{
+    Layout = null;
+    var routeTitle = Model.RouteTitle;
+    var routeDate = Model.RouteDate.ToString("dd MMMM yyyy");
+    var orders = Model.Orders ?? new List<CakerStreet.Business.Services.RouteOrderItem>();
+}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@routeTitle - @routeDate</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .control-label.laln {
+            padding-left: 0;
+            text-align: left !important;
+        }
+        .container.mainmiddle {
+            margin: 20px auto;
+        }
+        .rowtext {
+            background-color: #faa !important;
+        }
+        .caln {
+            text-align: center;
+        }
+        .table-striped > tbody > tr:nth-of-type(2n+1) {
+            background-color: #fee;
+        }
+        .headertext {
+            font-size: 16px;
+            color: #b70000;
+            margin: 7px 0;
+        }
+        .laln {
+            text-align: left !important;
+        }
+        .highlighttext {
+            color: #b70000;
+            font-weight: bold;
+            line-height: 24px;
+            font-size: 16px;
+        }
+        .spnxs {
+            display: none;
+        }
+        @@media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                font-size: 12px;
+            }
+            .container {
+                width: 100%;
+            }
+        }
+        @@media screen and (max-width: 650px) {
+            .table-striped > tbody > tr:first-child {
+                border-top-width: 0px;
+            }
+            .table-striped > tbody > tr {
+                border-top: 1px solid #ccc;
+            }
+            .tableOrderlist td {
+                float: left;
+                width: 100%;
+                white-space: normal !important;
+                border-width: 0 !important;
+            }
+            .tableOrderlist thead {
+                display: none;
+            }
+            .spnxs {
+                color: #b70000;
+                display: block;
+                line-height: 24px;
+            }
+            .tableOrderlist td.t3 {
+                width: 33.333%;
+            }
+            .tableOrderlist td.t2 {
+                width: 50%;
+            }
+            table.tableOrderlist, table.tableOrderlist > tbody, .table-striped > tbody > tr {
+                width: 100%;
+                display: table;
+                float: left;
+            }
+            .caln {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" style="padding: 0">
+        <div class="container mainmiddle">
+            <div class="row">
+                <div class="col-sm-12 col-md-12 main" id="main-container">
+                    <div class="form-horizontal" role="form">
+
+                        @* Route Title *@
+                        <div class="row headertext">
+                            <div class="col-sm-12 col-md-12 col-xs-12 caln highlighttext" style="line-height: 34px; padding: 0;">
+                                @routeTitle - @routeDate
+                            </div>
+                        </div>
+
+                        @* Remarks *@
+                        @if (!string.IsNullOrEmpty(Model.Remarks))
+                        {
+                            <div class="row">
+                                <div class="col-sm-4 col-md-4 col-xs-5 control-label">Remarks:</div>
+                                <div class="col-sm-8 col-md-8 col-xs-7 control-label laln">@Model.Remarks</div>
+                            </div>
+                        }
+
+                        @* Distance & Duration *@
+                        <div class="row">
+                            <div class="col-sm-2 col-md-2 col-xs-5 control-label">Total Distance:</div>
+                            <div class="col-sm-4 col-md-4 col-xs-7 control-label highlighttext laln">@(Model.Distance ?? "N/A")</div>
+                            <div class="col-sm-2 col-md-2 col-xs-5 control-label">Total Duration:</div>
+                            <div class="col-sm-4 col-md-4 col-xs-7 control-label highlighttext laln">@(Model.Duration ?? "N/A")</div>
+                        </div>
+
+                        @* Driver *@
+                        <div class="row">
+                            <div class="col-sm-2 col-md-2 col-xs-5 control-label">Driver:</div>
+                            <div class="col-sm-4 col-md-4 col-xs-7 control-label laln @(!string.IsNullOrEmpty(Model.DriverName) ? "highlighttext" : "")">
+                                @(Model.DriverName ?? "Not assigned")
+                            </div>
+                        </div>
+
+                        @* Route Link *@
+                        @if (!string.IsNullOrEmpty(Model.RouteMapUrl))
+                        {
+                            <div class="row">
+                                <div class="col-sm-2 col-md-2 col-xs-5 control-label">Route Link:</div>
+                                <div class="col-sm-4 col-md-4 col-xs-7 control-label laln">
+                                    <u><a href="@Model.RouteMapUrl" target="_blank">Show Route at Map</a></u>
+                                </div>
+                            </div>
+                        }
+
+                        @* Order Count Header *@
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 headertext" style="margin-top:20px;">
+                                Route Order List (@Model.OrderCount)
+                            </div>
+                        </div>
+
+                        @* Order Table *@
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped tableOrderlist">
+                                <thead>
+                                    <tr>
+                                        <th style="width:60px;">Sr. No</th>
+                                        <th style="width:80px;">Order ID</th>
+                                        <th style="width:90px;">Status</th>
+                                        <th>Delivery Address</th>
+                                        <th style="width:130px;">Delivery Mode</th>
+                                        <th style="width:160px;">Delivery Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in orders)
+                                    {
+                                        <tr>
+                                            <td class="t3">
+                                                <span class="spnxs">Sr. No: </span>@order.SerialNo
+                                            </td>
+                                            <td class="t3">
+                                                <span class="spnxs">Order ID: </span>
+                                                <a href="/printdeliveryreceipt/@order.OrderId" target="_blank">@order.OrderId</a>
+                                            </td>
+                                            <td class="t3">
+                                                <span class="spnxs">Status: </span>
+                                                @if (order.ReadyStatus == "Ready")
+                                                {
+                                                    <span class="label label-success">Ready</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="label label-danger">Not Ready</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="spnxs">Delivery Address: </span>@order.DeliveryAddress
+                                            </td>
+                                            <td class="t2">
+                                                <span class="spnxs">Delivery Mode: </span>@order.DeliveryMode
+                                            </td>
+                                            <td class="t2">
+                                                <span class="spnxs">Delivery Date: </span>@order.DeliveryTimeWindow
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

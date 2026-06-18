@@ -1,0 +1,182 @@
+@{
+    ViewData["Title"] = "Manage Template Baking Cost";
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Controllers.TemplateBakerFeeController.TemplateItem>
+        ?? new List<CakerStreet.Business.Controllers.TemplateBakerFeeController.TemplateItem>();
+    var cakeFor = (int)(ViewBag.CakeFor ?? -1);
+    var selectedTemplateId = (long)(ViewBag.SelectedTemplateId ?? 0L);
+    var feeRows = ViewBag.FeeRows as List<CakerStreet.Business.Controllers.TemplateBakerFeeController.BakingFeeRow>
+        ?? new List<CakerStreet.Business.Controllers.TemplateBakerFeeController.BakingFeeRow>();
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .max250 { max-width: 250px; display: inline-block; }
+        .fee-table th { text-align: center; }
+        .fee-table td { text-align: center; vertical-align: middle; }
+        .fee-table input { width: 80px; text-align: center; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Template Baking Cost</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Template For + Template Selector ────────────────────────────── *@
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label style="font-weight:bold;">Template For</label>
+                        <select id="ddlTemplateFor" class="form-control max250" style="display:inline-block;">
+                            <option value="-1" @(cakeFor == -1 ? "selected" : "")>--Select--</option>
+                            <option value="0" @(cakeFor == 0 ? "selected" : "")>Cakes</option>
+                            <option value="1" @(cakeFor == 1 ? "selected" : "")>Cupcakes</option>
+                        </select>
+                    </div>
+
+                    @if (cakeFor >= 0)
+                    {
+                        <div class="form-group">
+                            <label style="font-weight:bold;">Select Template</label>
+                            <select id="drpTemplate" class="form-control max250" style="display:inline-block;">
+                                <option value="0">--Select from saved Templates--</option>
+                                @foreach (var t in templates)
+                                {
+                                    <option value="@t.Id" @(t.Id == selectedTemplateId ? "selected" : "")>@t.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Baking Fee Table ────────────────────────────────────────────── *@
+                @if (selectedTemplateId > 0 && feeRows.Count > 0)
+                {
+                    <div class="col-md-10" style="margin-top:15px;">
+                        <h4>Baking Time per Size (minutes)</h4>
+                        <table class="table table-bordered table-striped fee-table">
+                            <thead>
+                                <tr>
+                                    <th>Size</th>
+                                    <th>Cake Price (£)</th>
+                                    <th>Filling (min)</th>
+                                    <th>Icing (min)</th>
+                                    <th>Decoration (min)</th>
+                                    <th>Total (min)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in feeRows)
+                                {
+                                    var total = row.Filling + row.Icing + row.Decoration;
+                                    <tr data-sid="@row.SizeId">
+                                        <td><strong>@row.SizeTitle</strong></td>
+                                        <td>£@row.CakePrice.ToString("0.00")</td>
+                                        <td><input type="text" class="form-control input-sm txt-filling" value="@row.Filling.ToString("0.##")" /></td>
+                                        <td><input type="text" class="form-control input-sm txt-icing" value="@row.Icing.ToString("0.##")" /></td>
+                                        <td><input type="text" class="form-control input-sm txt-decoration" value="@row.Decoration.ToString("0.##")" /></td>
+                                        <td class="td-total">@total.ToString("0.##")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="form-group" style="margin-top:10px;">
+                            <button type="button" class="btn btn-danger" onclick="saveFees();">Save Baking Cost</button>
+                        </div>
+                    </div>
+                }
+                else if (selectedTemplateId > 0)
+                {
+                    <div class="col-md-8" style="margin-top:15px;">
+                        <div class="alert alert-info">No size/price records found for this template. Set up sizes and prices in the Template Formula page first.</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    $('#ddlTemplateFor').on('change', function () {
+        var val = $(this).val();
+        if (val === '-1') {
+            window.location.href = '/managetemplatebakerfee';
+        } else {
+            window.location.href = '/managetemplatebakerfee?cakefor=' + val;
+        }
+    });
+
+    $(document).on('change', '#drpTemplate', function () {
+        var val = $(this).val();
+        if (val !== '0') {
+            window.location.href = '/managetemplatebakerfee?templateID=' + val;
+        } else {
+            window.location.href = '/managetemplatebakerfee?cakefor=@cakeFor';
+        }
+    });
+
+    // Recalculate total on input change
+    $('.fee-table').on('input', 'input', function () {
+        var $row = $(this).closest('tr');
+        var filling = parseFloat($row.find('.txt-filling').val()) || 0;
+        var icing = parseFloat($row.find('.txt-icing').val()) || 0;
+        var decoration = parseFloat($row.find('.txt-decoration').val()) || 0;
+        $row.find('.td-total').text((filling + icing + decoration).toFixed(0));
+    });
+
+    function saveFees() {
+        var rows = [];
+        $('.fee-table tbody tr').each(function () {
+            var sid = $(this).data('sid');
+            var filling = $(this).find('.txt-filling').val() || '0';
+            var icing = $(this).find('.txt-icing').val() || '0';
+            var decoration = $(this).find('.txt-decoration').val() || '0';
+            rows.push(sid + ':' + filling + ':' + icing + ':' + decoration);
+        });
+
+        if (rows.length === 0) {
+            showMessage('No rows to save.', false);
+            return;
+        }
+
+        $.post('/managetemplatebakerfee/save', {
+            templateId: @selectedTemplateId,
+            rows: rows.join('|')
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+</script>
+}

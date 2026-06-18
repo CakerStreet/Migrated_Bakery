@@ -1,0 +1,222 @@
+@using CakerStreet.Business.Services
+@{
+    ViewBag.Title = "Manage Course";
+    var course = (CourseModel)ViewBag.Course;
+    var modules = (List<CourseModuleModel>)ViewBag.Modules;
+    var mode = (string)ViewBag.Mode;
+
+    var currentModule = (CourseModuleModel)ViewBag.CurrentModule;
+    var currentChapter = (ChapterModel)ViewBag.CurrentChapter;
+    var chapters = (List<ChapterModel>)ViewBag.Chapters;
+}
+
+@section FooterScripts {
+    <!-- Custom styling inside Head section -->
+}
+
+<style type="text/css">
+    .div_moduleNavigaionMain {
+        display: table;
+        margin: 0px auto 20px;
+    }
+    .div_moduleNavigaionMain.div_content {
+        width: 100%;
+    }
+    .div_moduleNavigaionMain > ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    .div_moduleNavigaionMain li {
+        line-height: 30px;
+    }
+    .div_moduleNavigaionMain li.headertext {
+        line-height: 30px;
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    .div_moduleNavigaionMain.div_content li.headertext {
+        background-color: #ddd;
+        line-height: 20px;
+        font-size: 18px;
+        padding: 7px;
+        font-weight: bold;
+    }
+    .div_moduleNavigaionMain.div_content li {
+        line-height: 24px;
+        font-size: 14px;
+        padding: 7px;
+    }
+    .moudlebuttons_outer {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    .div_moduleNavigaionMain.div_content li.contenttext img {
+        max-width: 100%;
+        height: auto;
+    }
+    .normallink, .normallink:hover, .normallink:focus {
+        text-decoration: underline;
+        color: #fff;
+    }
+    .rpad10 {
+        padding-right: 10px;
+    }
+    .inventoryWrapper .innerhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #b51a1a;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .inventoryWrapper h2 {
+        margin: 0;
+        color: #b51a1a;
+        font-weight: bold;
+    }
+    .innerhead-actions a {
+        margin-left: 10px;
+        color: #b51a1a;
+        font-weight: bold;
+    }
+    .innerhead-actions a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper container">
+    <div class="innerhead">
+        <h2>
+            @if (mode == "Navigation")
+            {
+                @course.CourseName
+            }
+            else if (mode == "Module")
+            {
+                @($"{course.CourseName} - Module {currentModule.DisplayOrder}: {currentModule.ModuleName}")
+            }
+            else if (mode == "Chapter")
+            {
+                @($"{course.CourseName} - {currentChapter.ChapterName}")
+            }
+        </h2>
+        <div class="innerhead-actions">
+            @if (mode != "Navigation")
+            {
+                <a href="~/course/@course.CourseSeoUrl" class="btn btn-default btn-xs">Back to Navigation</a>
+            }
+            else
+            {
+                <a href="~/food-standards" class="btn btn-default btn-xs">Back to Food Standards</a>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            
+            @if (mode == "Navigation")
+            {
+                <div class="div_moduleNavigaionMain">
+                    <ul>
+                        <li class="headertext">Courses Navigation</li>
+                        @for (int i = 0; i < modules.Count; i++)
+                        {
+                            var m = modules[i];
+                            <li style="margin-top: 10px; font-weight: bold;">
+                                Module @(i + 1): <a href="~/course/@(course.CourseSeoUrl)/@(m.ModuleSeoUrl)" style="color: #b51a1a; text-decoration: underline;">@m.ModuleName</a>
+                            </li>
+
+                            // Normally chapters are loaded on demand or nested. We can query chapters per module.
+                            // In navigation mode, we list chapters. Let's write a DB helper or use view injection.
+                            // Wait, StaffTrainingService can load all chapters, or we can resolve them.
+                            // Let's invoke the service to load chapters for each module using Microsoft.AspNetCore.Mvc.Rendering
+                            var trainingService = (StaffTrainingService)Context.RequestServices.GetService(typeof(StaffTrainingService));
+                            var moduleChapters = trainingService.GetChaptersByModuleIdAsync(m.ModuleId).GetAwaiter().GetResult();
+                            
+                            <ul style="padding-left: 20px; list-style-type: circle;">
+                                @foreach (var chap in moduleChapters)
+                                {
+                                    <li>
+                                        <a href="~/course/@(course.CourseSeoUrl)/@(m.ModuleSeoUrl)/@(chap.ChapterSeoUrl)">@chap.ChapterName</a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        <li style="margin-top: 15px;">
+                            <a style="color:red; text-decoration: underline; font-weight: bold;" href="~/course/assessment/@course.CourseSeoUrl">@course.CourseName: Assessment</a>
+                        </li>
+                        <li>
+                            <a style="color:red; text-decoration: underline; font-weight: bold;" href="~/course/result/@course.CourseSeoUrl">@course.CourseName: Result</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="moudlebuttons_outer">
+                    <div></div>
+                    @if (modules.Any())
+                    {
+                        <a href="~/course/@(course.CourseSeoUrl)/@(modules.First().ModuleSeoUrl)" class="btn btn-danger">Start Course >></a>
+                    }
+                </div>
+            }
+            else if (mode == "Module")
+            {
+                <div class="div_moduleNavigaionMain div_content">
+                    <ul>
+                        <li class="headertext">Module @currentModule.DisplayOrder: @currentModule.ModuleName</li>
+                        <li class="contenttext">
+                            <p>Select a chapter below to begin studying this module:</p>
+                            <ul style="padding-left: 20px; list-style-type: square;">
+                                @foreach (var chap in chapters)
+                                {
+                                    <li>
+                                        <a href="~/course/@(course.CourseSeoUrl)/@(currentModule.ModuleSeoUrl)/@(chap.ChapterSeoUrl)" style="color: #b51a1a; font-weight: bold; text-decoration: underline;">@chap.ChapterName</a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="moudlebuttons_outer">
+                    <a href="@ViewBag.PrevUrl" class="btn btn-danger">&lt;&lt; Prev</a>
+                    <a href="@ViewBag.NextUrl" class="btn btn-danger">Next &gt;&gt;</a>
+                </div>
+            }
+            else if (mode == "Chapter")
+            {
+                <div class="div_moduleNavigaionMain div_content">
+                    <ul>
+                        <li class="headertext">@currentChapter.ChapterName</li>
+                        <li class="contenttext">
+                            @Html.Raw(currentChapter.Description)
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="moudlebuttons_outer">
+                    @if (ViewBag.PrevUrl != null)
+                    {
+                        <a href="@ViewBag.PrevUrl" class="btn btn-danger">&lt;&lt; Prev</a>
+                    }
+                    else
+                    {
+                        <div></div>
+                    }
+
+                    <a href="@ViewBag.NextUrl" class="btn btn-danger">@(ViewBag.NextText ?? "Next &gt;&gt;")</a>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>

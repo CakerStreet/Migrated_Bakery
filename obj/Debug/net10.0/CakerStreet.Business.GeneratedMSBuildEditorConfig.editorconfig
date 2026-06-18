@@ -1,0 +1,484 @@
+is_global = true
+build_property.TargetFramework = net10.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v10.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EntryPointFilePath = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = CakerStreet.Business
+build_property.RootNamespace = CakerStreet.Business
+build_property.ProjectDir = G:\AI-Projects\Dev\antigravity-cakerstreet-migration\migrated\CakerStreet.Business\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 10.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = G:\AI-Projects\Dev\antigravity-cakerstreet-migration\migrated\CakerStreet.Business
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 10.0
+build_property.EnableCodeStyleSeverity = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/AccountBalance/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudEJhbGFuY2VcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/AddNewCake/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRkTmV3Q2FrZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/AllergenMatrix/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWxsZXJnZW5NYXRyaXhcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Apc/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBjXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakerWorkTime/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJXb3JrVGltZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakeryAvailability/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJ5QXZhaWxhYmlsaXR5XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakeryFiles/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJ5RmlsZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakeryIngredient/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJ5SW5ncmVkaWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakeryInventory/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJ5SW52ZW50b3J5XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakeryQuotation/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJ5UXVvdGF0aW9uXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BakeryUser/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFrZXJ5VXNlclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BusinessLogin/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnVzaW5lc3NMb2dpblxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BusinessOrderDetail/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnVzaW5lc3NPcmRlckRldGFpbFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BusinessOrders/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnVzaW5lc3NPcmRlcnNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/BusinessOrders/_AssignedTasks.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQnVzaW5lc3NPcmRlcnNcX0Fzc2lnbmVkVGFza3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/CakeTemplate/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FrZVRlbXBsYXRlXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/CreateImageFromByte/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ3JlYXRlSW1hZ2VGcm9tQnl0ZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/AddUpdateChecklist.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcQWRkVXBkYXRlQ2hlY2tsaXN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/AddUpdateCleaning.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcQWRkVXBkYXRlQ2xlYW5pbmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/AddUpdateDairy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcQWRkVXBkYXRlRGFpcnkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/CleaningList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcQ2xlYW5pbmdMaXN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/Haccp.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcSGFjY3AuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/OpeningClosingList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcT3BlbmluZ0Nsb3NpbmdMaXN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DailyChecklist/UploadChecks.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFpbHlDaGVja2xpc3RcVXBsb2FkQ2hlY2tzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DeliveryRouteCharges/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVsaXZlcnlSb3V0ZUNoYXJnZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DeliveryRouteDetail/Detail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVsaXZlcnlSb3V0ZURldGFpbFxEZXRhaWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DeliveryRoutePayments/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVsaXZlcnlSb3V0ZVBheW1lbnRzXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DeliveryRoutes/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVsaXZlcnlSb3V0ZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/DeliveryRoutes/_RouteOrders.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGVsaXZlcnlSb3V0ZXNcX1JvdXRlT3JkZXJzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/EditBusinessInfo/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRWRpdEJ1c2luZXNzSW5mb1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Error404/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXJyb3I0MDRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/FoodStandards/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRm9vZFN0YW5kYXJkc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/FranchiseLinking/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRnJhbmNoaXNlTGlua2luZ1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/FranchiseLinking/Notes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRnJhbmNoaXNlTGlua2luZ1xOb3Rlcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/FranchiseProduct/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRnJhbmNoaXNlUHJvZHVjdFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/IngredientTag/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5ncmVkaWVudFRhZ1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/KitchenPrint/ManageRecipePrint.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcS2l0Y2hlblByaW50XE1hbmFnZVJlY2lwZVByaW50LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/KitchenPrint/PrintCutters.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcS2l0Y2hlblByaW50XFByaW50Q3V0dGVycy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/LinkBakers/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGlua0Jha2Vyc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/LinkKeywordGroup/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGlua0tleXdvcmRHcm91cFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/LinkPackageProduct/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGlua1BhY2thZ2VQcm9kdWN0XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/MailCheck/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFpbENoZWNrXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/MailMessage/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFpbE1lc3NhZ2VcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageAssorted/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlQXNzb3J0ZWRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageIngredient/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlSW5ncmVkaWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageIngredient/_Paging.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlSW5ncmVkaWVudFxfUGFnaW5nLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageLocation/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlTG9jYXRpb25cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageProductDoc/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlUHJvZHVjdERvY1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageProductTags/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlUHJvZHVjdFRhZ3NcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageSupervisor/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlU3VwZXJ2aXNvclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageSupplier/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlU3VwcGxpZXJcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ManageThemes/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlVGhlbWVzXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/MapCustomizedCake/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFwQ3VzdG9taXplZENha2VcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/MapOrderLocation/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFwT3JkZXJMb2NhdGlvblxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ModuleAssignment/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTW9kdWxlQXNzaWdubWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/OrderImage/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JkZXJJbWFnZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/OrderManifest/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JkZXJNYW5pZmVzdFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/OrderSponge/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JkZXJTcG9uZ2VcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/OrderSponge/OrderHistory.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3JkZXJTcG9uZ2VcT3JkZXJIaXN0b3J5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PackagingType/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFja2FnaW5nVHlwZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PaymentSettings/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5bWVudFNldHRpbmdzXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PersonalisedCake/CreateImageFromByte.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyc29uYWxpc2VkQ2FrZVxDcmVhdGVJbWFnZUZyb21CeXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PersonalisedCake/CreateSvg.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyc29uYWxpc2VkQ2FrZVxDcmVhdGVTdmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintBakerOrder/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRCYWtlck9yZGVyXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintBakerOrder/Multiple.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRCYWtlck9yZGVyXE11bHRpcGxlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintCreditNote/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRDcmVkaXROb3RlXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintCutters/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRDdXR0ZXJzXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintDeliveryReceipt/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnREZWxpdmVyeVJlY2VpcHRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintDocument/CreditNote.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnREb2N1bWVudFxDcmVkaXROb3RlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintDocument/FranchiseChecklist.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnREb2N1bWVudFxGcmFuY2hpc2VDaGVja2xpc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintDocument/PurchaseOrder.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnREb2N1bWVudFxQdXJjaGFzZU9yZGVyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintDocument/PurchaseOrderItemReceived.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnREb2N1bWVudFxQdXJjaGFzZU9yZGVySXRlbVJlY2VpdmVkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintFranchiseChecklist/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRGcmFuY2hpc2VDaGVja2xpc3RcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintOrderSpongeList/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRPcmRlclNwb25nZUxpc3RcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintOrder/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRPcmRlclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintPurchaseOrderItemRecd/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRQdXJjaGFzZU9yZGVySXRlbVJlY2RcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PrintPurchaseOrder/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJpbnRQdXJjaGFzZU9yZGVyXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PurchaseOrderItemReceived/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHVyY2hhc2VPcmRlckl0ZW1SZWNlaXZlZFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PurchaseOrder/Add.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHVyY2hhc2VPcmRlclxBZGQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/PurchaseOrder/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHVyY2hhc2VPcmRlclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/RecipeMatrix/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjaXBlTWF0cml4XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/RecipeReplace/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjaXBlUmVwbGFjZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Recipe/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjaXBlXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Recipe/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVjaXBlXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ResetPassword/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXRQYXNzd29yZFxFcnJvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ResetPassword/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXRQYXNzd29yZFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ResetPassword/Success.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVzZXRQYXNzd29yZFxTdWNjZXNzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Service/AddNewService.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmljZVxBZGROZXdTZXJ2aWNlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Service/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmljZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Shared/_PrintLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9QcmludExheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/SocialLinks/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU29jaWFsTGlua3NcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StaffCertificates/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZDZXJ0aWZpY2F0ZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StaffDashboard/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZEYXNoYm9hcmRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StaffRequests/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZSZXF1ZXN0c1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StaffRota/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZSb3RhXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StaffTraining/CourseAssessment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZUcmFpbmluZ1xDb3Vyc2VBc3Nlc3NtZW50LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StaffTraining/CourseDetail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZUcmFpbmluZ1xDb3Vyc2VEZXRhaWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/StockRequest/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RvY2tSZXF1ZXN0XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/SupplierUser/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3VwcGxpZXJVc2VyXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/SupplyOrderItemReceived/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3VwcGx5T3JkZXJJdGVtUmVjZWl2ZWRcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/SupplyOrder/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3VwcGx5T3JkZXJcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/TemplateBakerFee/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVtcGxhdGVCYWtlckZlZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/TemplatePrice/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVtcGxhdGVQcmljZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/TemplateSpec/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGVtcGxhdGVTcGVjXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Topper/LinkTopper.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVG9wcGVyXExpbmtUb3BwZXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Topper/ManageTopper.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVG9wcGVyXE1hbmFnZVRvcHBlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Topper/OrderTopper.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVG9wcGVyXE9yZGVyVG9wcGVyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/TradeAccount/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhZGVBY2NvdW50XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/Video/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlkZW9cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/ViewSpongeOrderList/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlld1Nwb25nZU9yZGVyTGlzdFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/WebstoreCategory/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcV2Vic3RvcmVDYXRlZ29yeVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[G:/AI-Projects/Dev/antigravity-cakerstreet-migration/migrated/CakerStreet.Business/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 

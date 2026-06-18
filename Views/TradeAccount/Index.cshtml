@@ -1,0 +1,156 @@
+@{
+    ViewData["Title"] = "My Trade Account";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.TradeAccountDayItem> ?? new List<CakerStreet.Business.Services.TradeAccountDayItem>();
+    var startDate = ViewBag.StartDate as string ?? DateTime.Today.AddMonths(-1).ToString("yyyy-MM-dd");
+    var endDate = ViewBag.EndDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+@section Head {
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .trade-filter { margin-bottom: 15px; }
+        .trade-filter label { margin-right: 5px; }
+        .trade-filter input[type="date"] { margin-right: 10px; }
+        .detail-row { display: none; }
+        .detail-row td { padding: 0 !important; }
+        .detail-table { margin: 10px 20px; background: #f9f9f9; }
+        .detail-table th { font-size: 12px; }
+        .detail-table td { font-size: 12px; }
+        .expand-btn { cursor: pointer; color: #d9534f; text-decoration: underline; }
+        .badge-paid { background-color: #5cb85c; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+        .badge-unpaid { background-color: #d9534f; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">My Trade Account</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        @* ─── Date Range Filter ──────────────────────────────────────────────── *@
+        <div class="trade-filter">
+            <form method="get" action="/mytradeaccount" style="display: inline;">
+                <label for="startdate">Start Date:</label>
+                <input type="date" id="startdate" name="startdate" value="@startDate" />
+                <label for="enddate">End Date:</label>
+                <input type="date" id="enddate" name="enddate" value="@endDate" />
+                <button type="submit" class="btn btn-danger btn-sm">Go</button>
+            </form>
+        </div>
+
+        <div class="clearfix"></div>
+
+        @if (items.Count == 0)
+        {
+            <div class="alert alert-info">No trade account records found for the selected date range.</div>
+        }
+        else
+        {
+            <div class="table prdlstouter">
+                <table class="table table-bordred table-striped" id="tblTradeAccount">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Date From</th>
+                            <th>Date To</th>
+                            <th>Work Hours</th>
+                            <th>Total Work Cost</th>
+                            <th>Baker Cost Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            var rowDate = item.BakerWorkCostDate?.ToString("yyyy-MM-dd") ?? "";
+                            var hasDetail = item.BakerWorkCostDate.HasValue;
+                            var hours = item.TotalTimeMinutes / 60;
+                            var minutes = item.TotalTimeMinutes % 60;
+                            var workHoursFormatted = $"{hours:D2}:{minutes:D2}";
+
+                            <tr>
+                                <td>
+                                    @if (hasDetail)
+                                    {
+                                        <a href="javascript:void(0);" class="expand-btn" data-date="@rowDate" onclick="toggleDetail(this);">+</a>
+                                    }
+                                </td>
+                                <td>@item.TimelineFrom.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@item.TimelineTo.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@workHoursFormatted</td>
+                                <td>@item.TotalWorkCost.ToString("0.00")</td>
+                                <td>@item.BakerWorkCostAmount.ToString("0.00")</td>
+                            </tr>
+                            <tr class="detail-row" data-detail-date="@rowDate">
+                                <td colspan="6">
+                                    <div class="detail-container"></div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function toggleDetail(el) {
+        var $btn = $(el);
+        var date = $btn.data('date');
+        var $detailRow = $('tr.detail-row[data-detail-date="' + date + '"]');
+
+        if ($detailRow.is(':visible')) {
+            $detailRow.hide();
+            $btn.text('+');
+            return;
+        }
+
+        var $container = $detailRow.find('.detail-container');
+
+        // Load detail via AJAX if not already loaded
+        if ($container.data('loaded')) {
+            $detailRow.show();
+            $btn.text('-');
+            return;
+        }
+
+        $.get('/mytradeaccount/detail?date=' + encodeURIComponent(date), function (r) {
+            if (r.success && r.data && r.data.length > 0) {
+                var html = '<table class="table table-condensed detail-table">';
+                html += '<thead><tr><th>Order ID</th><th>Amount</th><th>Req Type</th><th>Time Taken (min)</th><th>Is Paid</th></tr></thead>';
+                html += '<tbody>';
+                for (var i = 0; i < r.data.length; i++) {
+                    var d = r.data[i];
+                    var paidBadge = d.isPaid
+                        ? '<span class="badge-paid">Yes</span>'
+                        : '<span class="badge-unpaid">No</span>';
+                    html += '<tr>';
+                    html += '<td><a href="/printorder/' + d.orderId + '" target="_blank">' + d.orderId + '</a></td>';
+                    html += '<td>' + parseFloat(d.amount).toFixed(2) + '</td>';
+                    html += '<td>' + (d.reqTypeName || '-') + '</td>';
+                    html += '<td>' + d.timeTaken + '</td>';
+                    html += '<td>' + paidBadge + '</td>';
+                    html += '</tr>';
+                }
+                html += '</tbody></table>';
+                $container.html(html);
+                $container.data('loaded', true);
+            } else {
+                $container.html('<p class="text-muted" style="padding:10px;">No detail records found.</p>');
+                $container.data('loaded', true);
+            }
+            $detailRow.show();
+            $btn.text('-');
+        }).fail(function () {
+            $container.html('<p class="text-danger" style="padding:10px;">Failed to load details.</p>');
+            $detailRow.show();
+            $btn.text('-');
+        });
+    }
+</script>
+}

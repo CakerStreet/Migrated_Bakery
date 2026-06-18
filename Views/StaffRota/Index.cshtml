@@ -1,0 +1,377 @@
+@model CakerStreet.Business.Services.StaffRotaViewModel
+@{
+    ViewData["Title"] = "Staff Rota";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+@section Head {
+    <link href="@(cdnBase)bakery_content/bakery_content/css/bakeryorder.css?ver=1.34" rel="stylesheet" />
+    <style type="text/css">
+        .ajax__calendar {
+            line-height: 16px;
+        }
+
+        .panel-heading.day {
+            display: table;
+            width: 100%;
+            padding: 0;
+            border-right: 1px solid #ddd;
+        }
+
+            .panel-heading.day > ul {
+                display: table-row;
+            }
+
+                .panel-heading.day > ul > li {
+                    display: table-cell;
+                    float: none;
+                    border-left: 1px solid #ddd;
+                    border-bottom: 1px solid #ddd;
+                    text-align: center;
+                }
+
+                    .panel-heading.day > ul > li.liName {
+                        text-align: right;
+                        padding: 5px;
+                        line-height: 20px;
+                    }
+
+                    .panel-heading.day > ul > li.lifulltime {
+                        background-color: #ececec;
+                    }
+
+                    .panel-heading.day > ul > li.myli {
+                        background-color: #666;
+                        color: #fff;
+                    }
+
+                    .panel-heading.day > ul > li.lidaystatus {
+                        font-size: 14px;
+                    }
+
+        .bgclose {
+            background-color: #ff7676;
+        }
+
+        .bgcanAvail {
+            background-color: #6cacd3;
+        }
+
+        .bgAvail {
+            background-color: #16ca16;
+        }
+
+        .bgLeave {
+            background-color: #fcffaa;
+        }
+
+        .panel-heading.day > ul > li.lidaystatus.bgclose {
+            color: #f9ff3b;
+        }
+
+        .panel .panel-heading {
+            background-color: transparent;
+        }
+
+        .cssselectable {
+            border: 1px solid #ccc;
+        }
+
+        .panel-heading a.btn-xs {
+            font-size: 12px;
+            display: inline;
+            color: #fff;
+        }
+
+        .div_req {
+            display: block;
+            margin: 7px 0;
+        }
+
+        @@media screen and (max-width:1199px) {
+            .panel-heading.day > ul > li:nth-child(6),
+            .panel-heading.day > ul > li:nth-child(7),
+            .panel-heading.day > ul > li:nth-child(8) {
+                display: none;
+            }
+        }
+
+        @@media screen and (max-width:991px) {
+            .panel-heading.day > ul > li:nth-child(5),
+            .panel-heading.day > ul > li:nth-child(6),
+            .panel-heading.day > ul > li:nth-child(7),
+            .panel-heading.day > ul > li:nth-child(8) {
+                display: none;
+            }
+
+            .tdcolor.cssdaystyle.cssselectable {
+                float: left;
+                clear: left;
+                margin-right: 10px;
+            }
+
+            .tdcolor1 {
+                float: left;
+                margin-bottom: 10px;
+            }
+        }
+
+        @@media screen and (max-width:767px) {
+            .panel-heading.day > ul > li:nth-child(3),
+            .panel-heading.day > ul > li:nth-child(4),
+            .panel-heading.day > ul > li:nth-child(5),
+            .panel-heading.day > ul > li:nth-child(6),
+            .panel-heading.day > ul > li:nth-child(7),
+            .panel-heading.day > ul > li:nth-child(8) {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="orderWrappernew">
+    <div class="innerhead">
+        <div class="col-md-12">
+            <h2 style="display: inline-block;">Staff Rota</h2>
+            <img src="@(cdnBase)bakery_content/images/icons/reload-icon-white.png"
+                 style="width: 16px; margin-left: 10px; cursor: pointer;"
+                 onclick="location.href=location.href;" alt="Reload" />
+            <a href="/businessorders" target="_blank" style="float:right; color:#fff;"><u>Orders Dashboard</u></a>
+            <font style="float:right; margin:0 7px;">|</font>
+            <a href="/managestafftimingrequest" style="float:right; color:#fff;"><u>Staff Requests</u></a>
+            <font style="float:right; margin:0 7px;">|</font>
+            <a href="/dashboard" style="float: right; color: #fff;"><u>Staff Dashboard</u></a>
+        </div>
+    </div>
+    <div class="col-md-12 col-sm-12 panel-collapse collapse in flush" id="collapse4" aria-expanded="true">
+        <div class="row top-margin">
+            <div class="col-lg-12 col-md-12">
+                <input type="date" id="txtStartDate" class="order-to" placeholder="Start Date"
+                       value="@Model.StartDate.ToString("yyyy-MM-dd")"
+                       style="background-color: #379cb6; color: #fff;" />
+                @if (Model.IsAuthUser)
+                {
+                    @if (!Model.IsEditMode)
+                    {
+                        <a class="pull-right btn-sm btn black-btn" style="margin-right:10px;"
+                           href="/staffrota?edit=1&startDate=@Model.StartDate.ToString("dd/MM/yyyy")">Manage Rota</a>
+                    }
+                    else
+                    {
+                        <a class="pull-right btn-sm btn black-btn" style="margin-right:10px;"
+                           href="/staffrota?startDate=@Model.StartDate.ToString("dd/MM/yyyy")">Reset</a>
+                    }
+                }
+            </div>
+            <div class="col-lg-12 col-md-12" style="margin-top: 14px;">
+                <div class="panel panel-default">
+                    <div class="table table-bordred table-striped panel-heading day">
+                        @* Header row: empty cell + 7 day names with cake counts *@
+                        <ul>
+                            <li></li>
+                            @foreach (var header in Model.DayHeaders)
+                            {
+                                var isPast = header.Date < DateTime.Today;
+                                var linkClass = isPast ? "faded" : "norm";
+                                <li class="lifulltime">
+                                    <a href="/businessorders?ordertype=12&dayID=@header.DayID" target="_blank"
+                                       class="@linkClass" style="text-decoration:none; color:inherit;">
+                                        <span><b>@header.DayName (@header.CakeCount)</b></span><br />
+                                        <font>(@header.Date.ToString("dd/MM/yyyy"))</font>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                        @* Staff rows *@
+                        @foreach (var staff in Model.StaffRows)
+                        {
+                            var nameClass = "liName" + (!staff.IsTemporary ? " lifulltime" : "") + (staff.IsCurrentUser ? " myli" : "");
+                            <ul>
+                                <li class="@nameClass">@staff.StaffName</li>
+                                @foreach (var cell in staff.Days)
+                                {
+                                    var cellClass = "lidaystatus" + (!string.IsNullOrEmpty(cell.CssClass) ? " " + cell.CssClass : "");
+                                    <li class="@cellClass">
+                                        @cell.DisplayText
+                                        @if (Model.IsEditMode && Model.IsAuthUser && cell.IsFound != 1)
+                                        {
+                                            <div class="div_req">
+                                                <a class="btn black-btn btn-xs btn-request"
+                                                   href="javascript:void(0);"
+                                                   data-staffid="@staff.StaffId"
+                                                   data-staffname="@staff.StaffName"
+                                                   data-staffphone="@staff.StaffPhone"
+                                                   data-date="@cell.DayDate.ToString("dd/MM/yyyy")"
+                                                   data-from="@cell.FromHour"
+                                                   data-to="@cell.ToHour">Request</a>
+                                            </div>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        @* Legend *@
+        <div class="col-sm-12">
+            <table border="0" cellpadding="0" cellspacing="0" style="margin: 20px auto">
+                <tr>
+                    <td class="tdcolor cssdaystyle cssselectable bgAvail" style="width: 20px; height: 20px; padding: 0px !important;"><a>&nbsp;</a></td>
+                    <td class="tdcolor1" style="height: 20px; padding: 0 20px 0 1px !important;border-width: 0;">Available</td>
+                    <td class="tdcolor cssdaystyle cssselectable bgcanAvail" style="width: 20px; height: 20px; padding: 0px !important;"><a>&nbsp;</a></td>
+                    <td class="tdcolor1" style="height: 20px; padding: 0 20px 0 1px !important;border-width: 0;">Can Available, (if Needed)</td>
+                    <td class="tdcolor cssdaystyle cssselectable bgLeave" style="width: 20px; height: 20px; padding: 0 !important;"><a>&nbsp;</a></td>
+                    <td class="tdcolor1" style="height: 20px; padding: 0 20px 0 1px !important;border-width: 0;">Leave Request</td>
+                    <td class="tdcolor cssdaystyle cssselectable bgclose" style="width: 20px; height: 20px; padding: 0 !important;"><a>&nbsp;</a></td>
+                    <td class="tdcolor1" style="height: 20px; padding: 0 20px 0 1px !important;border-width: 0;">Not Available</td>
+                    <td class="tdcolor cssdaystyle cssselectable" style="width: 20px; height: 20px; padding: 0 !important;"><a>&nbsp;</a></td>
+                    <td class="tdcolor1" style="height: 20px; padding: 0 !important;border-width: 0;">Undefined</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+@* ─── Request Staff Availability Modal ─── *@
+@if (Model.IsEditMode && Model.IsAuthUser)
+{
+    <div class="modal fade" id="requestModal" tabindex="-1" role="dialog" aria-labelledby="requestModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="requestModalLabel">Request Staff Availability</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="frmRequest" class="form-horizontal" role="form">
+                        <input type="hidden" id="reqStaffId" name="staffId" />
+                        <input type="hidden" id="reqStaffPhone" />
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Date:</label>
+                            <div class="col-sm-9 control-label" style="text-align: left;">
+                                <span id="reqDate"></span>
+                                <input type="hidden" id="reqDateVal" name="requestDate" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Staff Name:</label>
+                            <div class="col-sm-9 control-label" style="text-align: left;">
+                                <span id="reqStaffName"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Availability:</label>
+                            <div class="col-sm-9 control-label" style="text-align: left;">
+                                <select id="drpAvailability" name="availability" class="form-control">
+                                    <option value="2">Can Available, (if Needed)</option>
+                                    <option value="3">Leave Request</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" id="divFromTo">
+                            <label class="col-sm-3 control-label">From - To:</label>
+                            <div class="col-sm-3 control-label" style="text-align: left;">
+                                <select id="drpFromTime" name="fromTime" class="form-control">
+                                    <option value="-1">Flexible</option>
+                                    @for (int i = 0; i <= 24; i++)
+                                    {
+                                        <option value="@i">@i.ToString("00"):00</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-sm-1 control-label" style="text-align: left;">-</div>
+                            <div class="col-sm-3 control-label" style="text-align: left;">
+                                <select id="drpToTime" name="toTime" class="form-control">
+                                    <option value="-1">Flexible</option>
+                                    @for (int i = 0; i <= 24; i++)
+                                    {
+                                        <option value="@i">@i.ToString("00"):00</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Your Remarks: <span class="text-danger">*</span></label>
+                            <div class="col-sm-9">
+                                <textarea id="txtRemarks" name="remarks" class="form-control" placeholder="Remarks" required></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section FooterScripts {
+    <script>
+        // Date picker navigation: navigate to new week when date changed
+        document.getElementById('txtStartDate').addEventListener('change', function () {
+            var val = this.value; // yyyy-MM-dd format
+            if (val) {
+                var parts = val.split('-');
+                var formatted = parts[2] + '/' + parts[1] + '/' + parts[0]; // dd/MM/yyyy
+                var editParam = '@(Model.IsEditMode ? "&edit=1" : "")';
+                location.href = '/staffrota?startDate=' + encodeURIComponent(formatted) + editParam;
+            }
+        });
+
+        @if (Model.IsEditMode && Model.IsAuthUser)
+        {
+            <text>
+        // Request button click → open modal
+        document.querySelectorAll('.btn-request').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('reqStaffId').value = this.dataset.staffid;
+                document.getElementById('reqStaffName').textContent = this.dataset.staffname;
+                document.getElementById('reqStaffPhone').value = this.dataset.staffphone || '';
+                document.getElementById('reqDate').textContent = this.dataset.date;
+                document.getElementById('reqDateVal').value = this.dataset.date;
+                document.getElementById('drpFromTime').value = this.dataset.from;
+                document.getElementById('drpToTime').value = this.dataset.to;
+                document.getElementById('drpAvailability').value = '2';
+                document.getElementById('txtRemarks').value = '';
+                document.getElementById('divFromTo').style.display = '';
+                $('#requestModal').modal('show');
+            });
+        });
+
+        // Availability dropdown change: hide From-To for "Not Available" or "Leave Request"
+        document.getElementById('drpAvailability').addEventListener('change', function () {
+            var val = this.value;
+            document.getElementById('divFromTo').style.display = (val === '1' || val === '3') ? 'none' : '';
+        });
+
+        // Form submit via AJAX
+        document.getElementById('frmRequest').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var remarks = document.getElementById('txtRemarks').value.trim();
+            if (!remarks) { alert('Please enter remarks.'); return; }
+            var formData = new FormData(this);
+            fetch('/staffrota/submitrequest', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    $('#requestModal').modal('hide');
+                    location.href = '/staffrota?edit=1&startDate=' + encodeURIComponent(document.getElementById('reqDateVal').value);
+                } else {
+                    alert(data.message || 'Failed to submit request.');
+                }
+            })
+            .catch(function() { alert('Error submitting request.'); });
+        });
+            </text>
+        }
+    </script>
+}

@@ -1,0 +1,869 @@
+﻿body {
+    font-family: "Nunito";
+    color: #000;
+    font-size: 16px;
+    line-height: 22px;
+}
+.input-group {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+}
+.input-group-text {
+    display: flex;
+    align-items: center;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: .25rem 0 0 .25rem;
+    height: 34px;
+    padding: 1rem 1rem;
+    font-size: 1.5rem;
+    line-height: 1.5;
+}
+.input-group > .custom-select:not(:first-child), .input-group > .form-control:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.input-group > .form-control, .roughUsed .input-group > .form-select {
+    position: relative;
+    width: 1%;
+    min-width: 0;
+    border-left-width: 0px;
+    padding-left: 5px;
+}
+.prd-img-main {
+    display: table;
+    width: 100%;
+}
+ol,ul{list-style-type:none;padding:0;margin:0;}
+.prd-imgBox {
+    width: 75%;
+height: auto;
+float: left;
+
+}
+.bakery-prd.catmain {
+    float: left;
+    margin: 1%;
+    width: 23%;
+}
+.div_imgBox.prdbox {
+    margin-top: 26px;
+}
+
+.div_imgBox {
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: auto 100%;
+    display: table;
+    height: 200px;
+    width: 100%;
+}
+.divDiscriptiontext p, .divDiscriptiontext {
+    font-size: 14px;
+    margin-bottom: 0;
+    text-align: justify;
+}
+.prd-imgBox.width100per {
+    width: 100%;
+}
+.div_imgBox.bg 
+{
+    background-size: 100% auto;
+}
+.div_imgBox.prdbox
+{
+    margin-top: 26px;
+}
+.div_imgBox.prdbox.gglprd
+{
+    height:235px;
+}
+.div_crfContent {
+    display: table;
+    width: 100%;
+}
+
+.div_suggestionouter {
+    border: 1px solid #ccc;
+    padding: 5px !important;display: table;width:100%;
+}
+.div_suggestionboxouter {
+    padding: 5px !important;margin-bottom: 5px;
+}
+.div_suggestionbox {
+    border: 1px solid #ccc;
+}
+
+.div_suggestionbox .divimgouter {
+    text-align: center;
+   padding: 5px;min-height: 160px;
+}
+.div_suggestionbox .divimgouter img {
+    max-height: 150px;
+}
+.div_suggestionbox .divpricebox {
+    display: block;
+    width: 100%;    
+    padding: 5px;height: 150px;
+overflow-y: auto;
+
+}
+.bakery-prd .divbtnbox {
+    display: block;
+    padding: 5px;
+    position: relative;
+    text-align: center;
+    z-index: 3;
+}
+.div_suggestionbox .divpricebox p{color:#000;text-align:justify;font-style:italic;font-size:13px;line-height:18px;}
+.div_suggestionbox .divbtnbox {
+    display: table;
+    padding: 5px;
+    text-align: center;
+    width: 100%;height: 66px;
+}
+.div_suggestionbox.bgred {
+    background-color: #ffeeee;
+}
+.div_suggestionbox.bggreen {
+    background-color: #c6ffc6;
+}
+.thumbnail.prdbox {
+    padding: 0;
+}
+.thumbnail {
+    margin-bottom: 0;
+    overflow: hidden;
+    position: relative;
+}
+.productName_productbox {
+    background: rgba(238, 238, 238, 0.8) none repeat scroll 0 0;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-family: sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    height: auto;
+    left: 0;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 5px;
+    position: absolute;    top: 0;
+    text-align: justify;
+    width: 100%;
+}
+.deliverybox_productbox {
+    background: rgba(238, 238, 238, 0.8) none repeat scroll 0 0;
+    border-top: 1px solid #eee;
+    display: block;
+    height: 35px;
+    padding: 0 5px 5px;
+    position: relative;
+    width: 100%;
+}
+.price-inner {
+    color: #333;
+    display: block;
+    font-family: sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 34px;
+    margin: 0 auto;
+    padding-left: 0;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+}
+.deliverybox_productbox .price-inner {
+    font-size: 18px;
+    line-height: 26px;
+    position: absolute;
+    right: 7px;
+    top: 5px;
+}
+.price-inner font.scrike_font {
+    color: #ff2222;
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 24px;
+    text-decoration: line-through;
+}
+
+.div_suggestionbox .drpsizelist{width:100%;}
+.div_suggestionbox .drpsizelist.halfwidth{width:55%;}
+.div_suggestionbox .txtsizelist.halfwidth{width:40%;}
+.div_suggestionbox .divpricebox ul {
+    display: table;
+    width: 100%;
+    margin-bottom: 10px;
+}
+.div_suggestionbox .divpricebox ul:last-child {
+    margin: 0;
+}
+.div_suggestionbox .divbtnbox .btn {
+    margin: 3px 0;
+}
+
+.prdImgbox_outer {
+    display: table;
+    float: left;
+    height: 75px;
+    margin: 0 1% 0 0;
+    overflow: hidden;
+   width: 100%;
+}
+.boxouter .soldout {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 58px;
+    height: 58px;
+    background: transparent url("../img/Sold_image.png") no-repeat 0 0;
+}
+.boxouter .soldout.expired {
+    background-image: url("../img/expired.png");
+}
+
+.boxouter .soldout.rejected {
+    background-image: url("../img/rejected.png");
+}
+.boxouter .soldout.denied {
+    background-image: url("../img/denied.png");
+}
+.boxouter .soldout.offer {
+    background-image: url("../img/offer.png");
+}
+.boxouter .DivSMS {
+    position: absolute;
+    width: 36px;
+    top: 10px;
+    left: 10px;
+    height: 38px;
+    background: rgba(0,0,0,0) url('../img/message-icon2.png') no-repeat center center;
+    opacity: .7;z-index: 2;
+}
+.boxouter .DivSMS.sent
+{
+     background: rgba(0,0,0,0) url('../img/message-icon3.png') no-repeat center center;
+}
+.boxouter .DivSMS.DivEMAIL {
+    background-image: url('../img/mail-icon.png');
+    top: 50px;
+}
+.boxouter .DivSMS.DivEMAIL.sent {
+    background-image: url('../img/mail-icon2.png');
+}
+
+    .boxouter .DivSMS:hover {
+        opacity: 1;
+    }
+.prd-imgBox .prdImgbox_outer{width:100%;height:250px;display:table;margin:0 auto;float:none;}
+.chkouterboxinner .col-sm-12 {
+    text-align: left;
+    padding: 5px !important;
+    margin: 0;
+}
+
+.prdImgbox_outer .prdImgbox {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: table;
+    height: 250px;
+    width: 100%;
+    position: relative;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+.thumbs{display: table;
+margin: 0 auto;
+float: left;
+width: 24%;
+margin-left: 1%;
+
+}
+.thumbs .prdImgbox_outer .prdImgbox{width: 100%;height: 75px;}
+.prdImgbox_outer .prdImgbox .addPrdImg {
+    background: rgba(0, 0, 0, 0) url("../bakery_content/images/camerabig.png") no-repeat scroll center center;
+    border-bottom: 2px solid #aaa;
+    border-radius: 5px;
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+.thumbs .prdImgbox_outer .prdImgbox .addPrdImg { height: 75px;}
+.prdImgbox_outer .prdImgbox .addPrdImg > span {
+    color: #aaa;
+    font-size: 50px;
+    line-height: 50px;
+    top: 25%;
+}
+.prdImgbox_outer .prdImgbox .addPrdImg > input {
+    border: 0 none;
+    cursor: pointer;
+    height: 100%;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+.thumbs li {
+    float: left;
+margin: 5px 5px 5px 0;
+width: 100%;
+
+}
+
+.loading.displaynone {
+    background-color: #fff;
+    left: 0;
+    opacity: 0.8;
+    padding: 97px;
+    position: absolute;
+    top: 0;
+}
+.thumbs .loading.displaynone {
+    padding: 24px;
+}
+
+.PrdImg {
+    height: 250px;
+    width: 100%;
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.thumbs .PrdImg {
+    height: 75px;}
+.edit.displaynone {
+    background: #eee url("../images/icons/pencil-icon.png") no-repeat scroll center center / 18px auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    height: 30px;
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    width: 30px;
+    z-index: 2;
+}
+.remove.displaynone {
+    background: #eee url("../images/icons/cross-small-icon.png") no-repeat scroll center center / 18px auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    height: 30px;
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 30px;
+    z-index: 2;
+}
+.headertext {
+    border-bottom: 1px solid #ccc;
+}
+
+.colorred {
+    color: #aa041c;
+}
+.headertext label {
+    font-size: 16px;
+}
+.form-control {
+    padding: 4px 6px;
+}
+select.form-control,input.form-control{display:inline-block;  height: 38px;
+  font-size: 16px;}
+.nopadding{padding-left:0;padding-right:0;}
+.nopaddright{padding-right:0;}
+.nopaddleft{padding-left:0;}
+.div_attribute_Outer {
+    display: table;
+    padding: 7px 0;
+    width: 100%;
+}
+.flushtop {
+    padding-top: 0;
+}
+.flushmargin {
+    margin: 0 !important;
+}
+.attributes_list {
+    display: block;
+}
+.attributes_list.singleselect {
+    border: 1px solid #d1d1d1;
+    border-radius: 3px;
+    display: block;
+    height: 44px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+.attributes_list ul {
+    display: table;
+    width: 100%;
+}
+.attributes_list.singleselect ul {
+    left: 0;
+    position: absolute;
+    top: 0;
+}
+.singleselect .selectdrop {
+    border-radius: 3px;
+    cursor: pointer;
+    height: 44px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+.selectdrop b.caret {
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 7px solid #999;
+    position: absolute;
+    right: 12px;
+    top: 16px;
+}
+.selectdrop.active b.caret {
+    border-bottom: 8px solid;
+    border-top-color: transparent;
+    top: 8px;
+}
+.attributes_list ul li.active, .attributes_list ul li:hover {
+    background-color: #fff;
+    cursor: pointer;
+}
+.attributes_list ul li span.selectLi > div.tickuntick {
+    background: rgba(0, 0, 0, 0) url("../img/tikicon.png") no-repeat scroll center center / 12px auto;
+    border-radius: 13px;
+    height: 22px;
+    left: 0;
+    margin: 0;
+    opacity: 0.15;
+    position: absolute;
+    top: 0;
+    width: 22px;
+}
+.attributes_list ul li.active span.selectLi > div.tickuntick {
+    background: rgba(0, 0, 0, 0) url("../img/tikicon.png") no-repeat scroll center center;
+    opacity: 1;
+}
+.attributes_list ul li span.selectLi {
+    left: 3px;
+    position: absolute;
+    text-align: center;
+    top: 9px;
+    width: 35px;
+}
+
+.attributes_list.singleselect ul li span.selectLi {
+    display: none;
+}
+.attributes_list.singleselect ul li.active span.selectLi {
+    display: block;
+}
+.attributes_list.singleselect ul.active {
+    border: 1px solid #555;
+    left: 0;
+    top: 0 !important;
+    z-index: 2;
+    max-height: 400px;
+    overflow: auto;
+    display: block;
+}
+.attributes_list.singleselect.active {
+    height: 44px;
+    overflow: visible;
+}
+
+.attributes_list ul li {
+    background-color: #f1f1f1;
+    border-radius: 3px;
+    display: block;
+    float: left;
+    margin: 10px;
+    padding: 5px;
+    position: relative;
+    width: 100px;
+}
+.attributes_list.singleselect ul li {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0px;
+    display: table;
+    float: none;
+    margin: 0;
+    padding: 5px;
+    position: relative;
+    width: 100%;
+}
+.attributes_list.singleselect ul li.normli_slecttext {
+    background: rgba(0, 0, 0, 0) url("../img/listicon.PNG") no-repeat scroll 6px center;
+}
+.attributes_list ul li span {
+    display: table;
+    font-size: 1em;
+    line-height: 14px;
+    padding: 0 5px;
+    text-align: center;
+    width: 100%;
+}
+.attributes_list ul li span.title {
+    padding: 0;
+}
+.attributes_list.singleselect ul li span.title {
+    color: #372f2b;
+    display: table-cell;
+    font-size: 15px;
+    height: 32px;
+    line-height: 32px;
+    padding-left: 25px;
+    text-align: left;
+    vertical-align: middle;
+    text-indent: 0;
+    width: auto;
+}
+.attributes_list.singleselect ul li.normli_slecttext span.title {
+    font-size: 16px;
+    text-align: left;
+}
+.messageBox_outer, .UploadImageBox_outer {
+    display: block;margin-bottom: 14px;
+}
+.messageBox_outer .message_text, .UploadImageBox_outer .UploadImage_text {
+   border-radius: 5px;
+display: table;
+font-size: 13px;
+line-height: 18px;
+margin: 0;
+opacity: 0.7;
+padding: 2px 5px;
+text-align: justify;
+font-style: italic;
+
+}
+.messageBox_outer .div_message_input_outer, .UploadImageBox_outer .div_uploadImage_input_outer {
+    display: table;
+    margin: 0 auto;
+    width: 100%;
+}
+.div_message_input_outer ul li, .div_uploadImage_input_outer ul li {
+    background-color: #fff;
+    border-width: 0;
+    margin: 0;
+    width: auto;
+    position: relative;
+}
+
+.messageBox_outer .message_text .red {
+    color: #b51a1a;
+}
+.div_message_input_outer ul li.cssText, .div_uploadImage_input_outer ul li.cssText {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 5px 0;
+    padding: 0;
+}
+.div_message_input_outer li.cssInput {
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: 100%;
+}
+.div_message_input_outer ul li.cssInput > input {
+    border: 1px solid #ddd;
+    color: #b51a1a;
+    margin: 0;
+    padding: 5px;
+    width: 100%;
+    line-height: 32px;
+    font-size: 18px;
+}
+.div_message_input_outer span.msgCounter {
+    bottom: -24px;
+    color: #b51a1a;
+    font-size: 14px;
+    font-style: italic;
+    position: absolute;
+    right: 0;
+    width: auto;
+}
+.attributes_list ul li.cssbtn .btn {
+    height: 30px;
+    line-height: 30px;
+    margin: 0 10px 0 0;
+    padding: 0 15px;
+}
+.div_rightboxattr{float:right;clear:right;}
+.submitbtn,.submitbtn:visited {
+    background: #b51a1a none repeat scroll 0 0;
+    border-radius: 5px;
+    color: #fff;
+    display: block;
+    font-size: 1.4em;
+    height: 42px;
+    line-height: 42px;
+    margin: 0 auto;
+    text-align: center;
+    text-decoration: none;
+    width: 289px;
+}
+.submitbtn:hover {
+    text-decoration: none;
+    color: #fff;
+    background: #B51A1A none repeat scroll 0 0;
+}
+.chkbox input {
+    margin: 0 5px;
+}
+.redcolored {
+    border-color: #b51a1a;
+    background-color: #fff5f5;
+}
+.custans {
+    display: block;
+    width: 100%;
+   
+    padding: 5px;
+    
+    margin-top: -5px;
+    font-size: 14px;
+    /*color: #b51a1a; border: 1px solid #b51a1a;background-color: #ffeeee;*/
+    margin-bottom: 7px;
+}
+
+
+.quotelist [class^="col-sm"], .quotelist [class^="col-xs"] {
+    padding: 0;
+}
+.quotelist .col-sm-pad5 {
+    padding: 0 5px;
+}
+.div_quotebox {
+    width: 100%;
+display: table;
+padding: 10px 0;
+
+}
+
+.quotelist,.quotelist p {
+    font-size: 14px;
+    line-height: 20px;
+}
+.quotelist .chkouterbox {
+    display: block;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+    position: relative;padding-top: 30px;
+}
+.chkouterboxinner{ display: block;
+    max-height: 200px;
+    overflow: auto;
+    
+    }
+.divchkbusenessheader {
+    background-color: #ccc;
+    line-height: 30px;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    top: 0;font-size: 15px;
+}
+.divchkbusenessfooter {
+    display: table;
+    padding: 7px 0;
+    background-color: #f5f5f5;
+    width: 100%;
+}
+
+.quotelist .chkouterbox .chkbusenesslink {
+    width: 100%;
+    text-align: left;
+}
+.quotelist .chkouterbox .chkbusenesslink input {
+    margin: 5px;
+}
+
+
+.redcolor {
+    color: #b51a1a;
+}
+.quotelist .deliveroption::before {
+    content: " ✔ ";
+    color: #b51a1a;
+}
+.OptionAttr_outer .parentli {
+    color: #b51a1a;
+}
+.OptionAttr_outer .Flavour_outer ul {
+    margin-bottom: 7px;
+}
+.quotelist .col-sm-12.imgouter {
+    display: block;
+    width: 100%;
+    min-height: 180px;margin:0;
+}
+.divomgbox {
+    position: relative;
+    display: block;
+   height: 80px;width:80px;margin:5px;
+    background-position: center center;
+    background-size: auto 98%;
+    background-repeat: no-repeat;
+    border: 1px solid #ccc;
+    border-radius: 5px;float:left;
+}
+.divomgbox:first-child {
+    height: 180px;
+    width: 100%;margin: 0;
+}
+.btn-black,.btn-black:visited
+        {
+            background-color: #282828;opacity:.8;
+            color: #fff;
+        }
+        .btn-black:hover{color:#fff;opacity:1;}
+.col-sm-6.centerouter {
+    padding:0 10px;
+}
+.OptionAttr_outer ul {
+    margin: 3px 0;
+}
+.OptionAttr_outer.prc ul {
+    padding: 5px;
+}
+.OptionAttr_outer.prc ul.borderbox {
+    background-color: #ffeeee;font-weight: 600;
+}
+.OptionAttr_outer.prc ul.borderbox .prc{font-size:16px;}
+.quotelist .boxouter {
+    float: left;
+background-color: #fff;
+width: 100%;
+margin-bottom: 1%;overflow: auto;
+
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 7px;position:relative;
+}
+.street{position:relative;padding-left:15px;}
+.street::after{clear:both;display:block;content:"";}
+.street:before{position:absolute;left:0px;top:0px;content:"\f041";font-family:'FontAwesome';}
+.btnouterbox{margin-top:10px;}
+/*.ccscustans {
+    color: #b51a1a;
+    font-size: 16px;
+    font-weight: 600;
+}*/
+.ccscustans {
+    font-size: 14px;
+}
+.custans.msg {
+    margin-top: 5px;
+}
+.col-sm-12.Quotebox {
+    border: 1px solid #aaa;
+    padding: 5px;
+    margin: 10px 0;
+}
+.col-sm-12.Quotebox.bgred{background-color:#ffeeee;}
+.div_orferlistheading {
+    display: block;
+    width: 100%;
+    float: left;
+    text-align: left;
+    color: #000;
+    font-size: 22px;
+    line-height: 30px;
+    background-color: #ccc;
+    margin-top: 10px;
+    padding: 7px;
+}
+
+.Quotebox .centerbox{padding:0 10px;}
+.Quotebox .imgbox img {
+    max-height: 150px;
+}
+.black-btn,.black-btn:hover,.black-btn:focus {
+    background: none repeat scroll 0 0 #404040;border-color: #333;color:#fff;
+}
+@media screen and (max-width:991px)
+{
+    .quotelist .col-sm-pad5 {
+    padding: 0;
+}
+ .nopaddright{padding-left:0;}
+ .bakery-prd.catmain {
+    width: 31.333%;
+}
+   
+    .prd_box_outer {
+    margin: 2%;
+    width: 96%;
+}
+    .prd_outer .img_outer {
+    height: 240px;
+}
+}
+@media screen and (max-width:767px)
+{
+.col-sm-6.centerouter,.Quotebox .centerbox {
+    padding:10px 0;
+}
+.box-body .form-group {
+    margin-bottom: 10px;
+}
+.nopaddingxs{padding:0;}
+}
+@media screen and (max-width:650px)
+{ 
+    .btnouterbox .btn {
+    margin-bottom: 5px;
+}
+
+ .div_suggestionboxouter {
+    margin: 5px auto;
+    width: 285px;
+    float: none;
+}
+   .div_suggestionbox .divpricebox {
+    height: auto;
+   }
+
+}
+@media screen and (max-width:650px)
+{ 
+    .bakery-prd.catmain {
+    margin: 2%;
+    width: 46%;
+}
+.div_imgBox {
+    height: 170px;
+ }
+}
+@media screen and (max-width:359px) {
+    .prd-imgBox {
+        width: 100%;
+    }
+    .thumbs {
+    width: 100%;
+    margin: 1% 0;
+}
+    .thumbs li {
+    float: left;
+    margin: 0 5px;
+    width: 80px;
+}
+
+}

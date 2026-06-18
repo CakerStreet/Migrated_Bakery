@@ -1,0 +1,164 @@
+@model List<CakerStreet.Business.Services.OrderDetailResult>
+@{
+    Layout = "_PrintLayout";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+<style>
+    body, body * {
+        font-family: Arial, sans-serif;
+        font-weight: normal;
+        background-color: #ffffff;
+    }
+    b, strong { font-weight: bold; }
+    .container { max-width: 900px; margin: 0 auto; padding: 10px; }
+    .print-actions { text-align: center; margin-bottom: 15px; }
+    .btn-print { background-color: #b51a1a; color: #fff; border: 1px solid #b51a1a; padding: 8px 20px; font-size: 14px; cursor: pointer; border-radius: 3px; }
+    .btn-print:hover { background-color: #8e1414; }
+    .order-block { page-break-after: always; margin-bottom: 30px; border-bottom: 2px dashed #ccc; padding-bottom: 20px; }
+    .order-block:last-child { page-break-after: auto; border-bottom: none; }
+    .print-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+    .print-header h2 { margin: 0; font-size: 20px; }
+    .print-header .order-id { font-size: 16px; color: #555; }
+    .info-panels { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .info-panel { flex: 1; min-width: 200px; border: 1px solid #ccc; padding: 8px; border-radius: 3px; }
+    .info-panel h4 { margin: 0 0 5px 0; font-size: 13px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .info-panel p { margin: 2px 0; font-size: 12px; line-height: 1.4; }
+    .product-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
+    .product-table th { background-color: #f5f5f5; border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-weight: bold; }
+    .product-table td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; }
+    .product-table .img-cell img { max-width: 60px; max-height: 60px; }
+    .product-table .attr-list { margin: 3px 0 0 0; padding: 0 0 0 12px; font-size: 11px; color: #555; }
+    .totals-section { text-align: right; margin-bottom: 15px; font-size: 13px; }
+    .totals-section table { margin-left: auto; border-collapse: collapse; }
+    .totals-section td { padding: 3px 10px; }
+    .totals-section .total-row { font-weight: bold; font-size: 14px; border-top: 1px solid #333; }
+    .files-list a { font-size: 11px; color: #337ab7; display: block; }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .container { max-width: 100%; }
+        body { margin: 5mm; padding: 0; }
+        @@page { margin: 5mm; size: A4; }
+    }
+</style>
+
+<div class="container">
+    <div class="print-actions no-print">
+        <input type="hidden" id="hfOrderID" value="@string.Join(",", Model.Select(o => o.OrderId))" />
+        <button id="btnPrint" class="btn-print" onclick="updateorderprintlog(3);">
+            <span>&#128424;</span> Print All (@Model.Count orders)
+        </button>
+        <span id="spntxtwait" style="display:none;" class="text-muted">Please wait...</span>
+    </div>
+
+    @foreach (var order in Model)
+    {
+        <div class="order-block">
+            <div class="print-header">
+                <h2>Baker's Order Copy</h2>
+                <div class="order-id">Order #@order.OrderId</div>
+                <div>Date: @order.OrderDate.ToString("dd/MM/yyyy HH:mm") &nbsp;|&nbsp; @order.StatusText</div>
+            </div>
+
+            <div class="info-panels">
+                <div class="info-panel">
+                    <h4>Delivery / Collection</h4>
+                    @if (order.DeliveryMode == 0)
+                    {
+                        <p><b>Collection:</b> @order.CollectionDate.ToString("dd/MM/yyyy hh:mm tt")</p>
+                        @if (!string.IsNullOrEmpty(order.Occasion))
+                        {
+                            <p><b>Occasion:</b> @order.Occasion</p>
+                        }
+                    }
+                    else
+                    {
+                        <p><b>Delivery:</b> @order.CollectionDate.ToString("dd/MM/yyyy hh:mm tt")</p>
+                    }
+                </div>
+                <div class="info-panel">
+                    <h4>Dispatch To</h4>
+                    <p><b>@order.ShippingFullName</b></p>
+                    <p>@order.ShippingAddress</p>
+                    <p>@order.ShippingCity, @order.ShippingZip</p>
+                    <p>Phone: @order.ShippingPhone</p>
+                </div>
+                <div class="info-panel">
+                    <h4>Customer</h4>
+                    <p><b>@order.BillingFullName</b></p>
+                    <p>Email: @order.CustomerEmail</p>
+                    <p>Phone: @order.BillingPhone</p>
+                </div>
+            </div>
+
+            <table class="product-table">
+                <thead>
+                    <tr>
+                        <th style="width:70px;">Image</th>
+                        <th>Product</th>
+                        <th style="width:50px;">Qty</th>
+                        <th style="width:80px;">Unit Price</th>
+                        <th style="width:80px;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in order.LineItems)
+                    {
+                        var displayUnitPrice = item.GetDisplayUnitPrice(order.SaleType, order.CSMargin, order.ShopMargin);
+                        var displayTotalPrice = item.GetDisplayTotalPrice(order.SaleType, order.CSMargin, order.ShopMargin);
+                        var imgSrc = !string.IsNullOrEmpty(item.ProductImage)
+                            ? $"{cdnBase}upload/product_images/resized_300_300/{item.ProductImage}"
+                            : $"{cdnBase}images/blankImages/img75.jpg";
+                        <tr>
+                            <td class="img-cell"><img src="@imgSrc" alt="@item.ProductName" /></td>
+                            <td>
+                                <b>@item.ProductName</b>
+                                @if (item.Attributes.Any())
+                                {
+                                    <ul class="attr-list">
+                                        @foreach (var attr in item.Attributes)
+                                        {
+                                            <li><b>@attr.Title:</b> @attr.Value</li>
+                                        }
+                                    </ul>
+                                }
+                            </td>
+                            <td>@item.Quantity</td>
+                            <td>£@displayUnitPrice.ToString("N2")</td>
+                            <td>£@displayTotalPrice.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="totals-section">
+                @{
+                    var subtotal = order.LineItems.Sum(i => i.GetDisplayTotalPrice(order.SaleType, order.CSMargin, order.ShopMargin));
+                }
+                <table>
+                    <tr><td>Subtotal:</td><td>£@subtotal.ToString("N2")</td></tr>
+                    @if (order.ShippingCost > 0)
+                    {
+                        <tr><td>Delivery:</td><td>£@order.ShippingCost.ToString("N2")</td></tr>
+                    }
+                    <tr class="total-row"><td>Total:</td><td>£@((subtotal + order.ShippingCost).ToString("N2"))</td></tr>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<script type="text/javascript">
+    function updateorderprintlog(typeID) {
+        document.getElementById('spntxtwait').style.display = 'inline';
+        document.getElementById('btnPrint').style.display = 'none';
+        fetch('/printorderbakers/logprint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderIDs: document.getElementById('hfOrderID').value, typeId: typeID })
+        })
+        .then(function() { window.print(); })
+        .catch(function() { window.print(); }); // Print even if log fails
+    }
+</script>

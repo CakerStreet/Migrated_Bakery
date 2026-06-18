@@ -1,0 +1,61 @@
+@model List<CakerStreet.Business.Services.RouteOrderItem>
+@{
+    var orders = Model ?? new List<CakerStreet.Business.Services.RouteOrderItem>();
+}
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h4 style="display:inline-block; margin:0;">Route Orders (@orders.Count)</h4>
+        <button type="button" class="btn btn-danger btn-xs pull-right" onclick="document.getElementById('routeOrdersContainer').style.display='none';">
+            <span class="glyphicon glyphicon-remove"></span> Close
+        </button>
+        <div class="clearfix"></div>
+    </div>
+    <div class="panel-body">
+        @if (orders.Count == 0)
+        {
+            <p class="text-muted">No orders assigned to this route.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">Sr. No</th>
+                            <th style="width:80px;">Order ID</th>
+                            <th style="width:90px;">Status</th>
+                            <th>Delivery Address</th>
+                            <th style="width:130px;">Delivery Mode</th>
+                            <th style="width:160px;">Delivery Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in orders)
+                        {
+                            <tr>
+                                <td>@order.SerialNo</td>
+                                <td>
+                                    <a href="/printdeliveryreceipt/@order.OrderId" target="_blank">@order.OrderId</a>
+                                </td>
+                                <td>
+                                    @if (order.ReadyStatus == "Ready")
+                                    {
+                                        <span class="label label-success">Ready</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="label label-danger">Not Ready</span>
+                                    }
+                                </td>
+                                <td>@order.DeliveryAddress</td>
+                                <td>@order.DeliveryMode</td>
+                                <td>@order.DeliveryTimeWindow</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

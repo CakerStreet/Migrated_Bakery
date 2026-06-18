@@ -1,0 +1,825 @@
+@model CakerStreet.Business.Services.OrderDetailResult
+@{
+    ViewData["Title"] = "Order Detail - #" + Model.OrderId;
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var legacyUrl = ViewBag.HdCRMGlobalUrl as string ?? "http://localhost:27201";
+    var custUrl = ViewBag.HdCustGlobalUrl as string ?? "http://localhost:5000";
+    var globalUrl = ViewBag.HdGlobalUrl as string ?? "http://localhost:5202";
+    var isFranchise = Model.IsFranchise;
+    var printUrl = $"{custUrl}/printorder/{Model.OrderId}";
+    var printRecUrl = $"{custUrl}/printdeliveryreceipt/{Model.OrderId}";
+    var printBakerUrl = $"/printorderbakers/{Model.OrderId}";
+}
+
+@section Head {
+    <link href="@(cdnBase)bakery_content/css/orddet.css?version=1.0" rel="stylesheet" type="text/css" />
+    <script type="text/javascript">
+        function PrintDiv() {
+            window.open('@Html.Raw(printUrl)', '', 'height=800,width=800');
+        }
+        function PrintReceipt() {
+            window.open('@Html.Raw(printRecUrl)', '', 'height=800,width=800');
+        }
+        function Printbakercopy() {
+            window.open('@Html.Raw(printBakerUrl)', '', 'height=800,width=800');
+        }
+
+        // ─── STATUS CHANGE AJAX FUNCTIONS ─────────────────────────────────────
+        function confirmOrder() {
+            if (!confirm('Are you sure you want to confirm this order?')) return;
+            postStatusAction('/businessorderdetail/confirm-order', { orderId: @Model.OrderId });
+        }
+
+        function showCancelModal() {
+            $('#dvCancelOrder').modal('show');
+        }
+
+        function submitCancelOrder() {
+            var reason = $('#ddlCancelReason').val();
+            var remarks = $('#txtCancelComments').val();
+            var notify = $('#chkNotifyCustomer').is(':checked');
+            if (!reason || reason === '0') { alert('Please select a cancel reason.'); return; }
+            if (!remarks.trim()) { alert('Please enter a description.'); return; }
+            $.ajax({
+                url: '/businessorderdetail/cancel-order',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ orderId: @Model.OrderId, cancelReason: reason, cancelRemarks: remarks, notifyCustomer: notify }),
+                success: function (data) {
+                    if (data.success) { location.reload(); }
+                    else { alert('Error: ' + (data.message || 'Failed to cancel order')); }
+                },
+                error: function () { alert('Server error cancelling order.'); }
+            });
+        }
+
+        function updateOrderStatus(newStatus, label) {
+            if (!confirm('Are you sure you want to set this order to "' + label + '"?')) return;
+            postStatusAction('/businessorderdetail/update-status', { orderId: @Model.OrderId, newStatus: newStatus });
+        }
+
+        function removeOrder() {
+            if (!confirm('Are you sure to remove this order?')) return;
+            $.ajax({
+                url: '/businessorderdetail/remove-order',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ orderId: @Model.OrderId }),
+                success: function (data) {
+                    if (data.success) { window.location.href = '/businessorders'; }
+                    else { alert('Error: ' + (data.message || 'Failed to remove order')); }
+                },
+                error: function () { alert('Server error removing order.'); }
+            });
+        }
+
+        function forwardOrder() {
+            if (!confirm('Are you sure you want to forward this order?')) return;
+            $.ajax({
+                url: '/businessorderdetail/forward-order',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ orderId: @Model.OrderId }),
+                success: function (data) {
+                    if (data.success) {
+                        alert('Order forwarded successfully. New Order ID: #' + data.newOrderId);
+                        window.location.href = '/businessorderdetail?ordid=' + data.newOrderId;
+                    } else { alert('Error: ' + (data.message || 'Failed to forward order')); }
+                },
+                error: function () { alert('Server error forwarding order.'); }
+            });
+        }
+
+        function postStatusAction(url, payload) {
+            $.ajax({
+                url: url,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (data) {
+                    if (data.success) { location.reload(); }
+                    else { alert('Error: ' + (data.message || 'Operation failed')); }
+                },
+                error: function () { alert('Server error. Please try again.'); }
+            });
+        }
+
+        function saveBakingCost() {
+            var items = [];
+            $('.baking-cost-row').each(function () {
+                var cost = parseFloat($(this).find('.txt-baking-cost').val());
+                if (isNaN(cost) || cost <= 0) {
+                    alert('Baking cost must be greater than 0');
+                    return false;
+                }
+                items.push({
+                    orderId: parseInt($(this).data('orderid')),
+                    productId: parseInt($(this).data('productid')),
+                    sizeId: parseInt($(this).data('sizeid')),
+                    quantity: parseInt($(this).data('qty')),
+                    bakingCost: cost
+                });
+            });
+            if (items.length === 0) return;
+            $.ajax({
+                url: '/businessorderdetail/save-baking-cost',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ items: items }),
+                success: function (data) {
+                    if (data.success) { location.reload(); }
+                    else { alert('Error: ' + (data.message || 'Failed to save baking cost')); }
+                },
+                error: function () { alert('Server error saving baking cost.'); }
+            });
+        }
+    </script>
+}
+
+<div class="row">
+    <div class="search-field">
+        @* === STATUS HEADER WITH BUTTONS === *@
+        <div class="topheader">
+            <div class="btnOuter">
+                Status:
+                @if (Model.Status == 0)
+                {
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-danger">Pending</button>
+                        <button type="button" class="btn btn-sm btn-danger dropdown-toggle" data-toggle="dropdown">
+                            <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#" onclick="confirmOrder(); return false;">Confirm Order</a></li>
+                            <li class="divider"></li>
+                            <li><a href="#" onclick="showCancelModal(); return false;">Cancel Order</a></li>
+                        </ul>
+                    </div>
+                }
+                else if (Model.Status == 1 || Model.Status == 2 || Model.Status == 3 || Model.Status == 5)
+                {
+                    var inProgressLabel = Model.Status switch { 1 => "Confirmed", 2 => "Processed", 5 => "Job Assigned", _ => "Under Delivery" };
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-success">@inProgressLabel</button>
+                        <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown">
+                            <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            @if (Model.Status <= 1)
+                            {
+                                <li><a href="#" onclick="updateOrderStatus(5, 'Job Assigned'); return false;">Job Assigned</a></li>
+                            }
+                            @if (Model.Status <= 1 || Model.Status == 5)
+                            {
+                                <li><a href="#" onclick="updateOrderStatus(2, 'Order Processed'); return false;">Order Processed</a></li>
+                            }
+                            @if (Model.Status <= 2 || Model.Status == 5)
+                            {
+                                <li><a href="#" onclick="updateOrderStatus(3, 'Under Delivery'); return false;">Order Under Delivery</a></li>
+                            }
+                            @if (Model.Status <= 3 || Model.Status == 5)
+                            {
+                                <li><a href="#" onclick="updateOrderStatus(4, 'Completed'); return false;">Order Completed</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+                else if (Model.Status == 4)
+                {
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-info">Completed</button>
+                        <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown">
+                            <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#" onclick="removeOrder(); return false;">Remove Order</a></li>
+                        </ul>
+                    </div>
+                }
+                else if (Model.Status == 10 || Model.Status == 11)
+                {
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-danger">Cancelled</button>
+                        <button type="button" class="btn btn-sm btn-danger dropdown-toggle" data-toggle="dropdown">
+                            <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#" onclick="removeOrder(); return false;">Remove Order</a></li>
+                        </ul>
+                    </div>
+                }
+
+                @* Print buttons (functional - open popups) *@
+                <div class="btn-group">
+                    <button type="button" onclick="PrintDiv();" class="btn btn-sm btn-danger">Print</button>
+                </div>
+                <div class="btn-group">
+                    <button type="button" onclick="PrintReceipt();" class="btn btn-sm btn-danger">Print Delivery Receipt</button>
+                </div>
+                <div class="btn-group">
+                    <button type="button" onclick="Printbakercopy();" class="btn btn-sm btn-danger">Print Baker's Copy</button>
+                </div>
+
+                @* Forward Order button *@
+                @if (Model.Status != 10 && Model.Status != 11 && Model.FollowingOrderId <= 0)
+                {
+                    <div class="btn-group">
+                        <button type="button" onclick="forwardOrder();" class="btn btn-sm btn-warning">Forward Order</button>
+                    </div>
+                }
+                @if (Model.FollowingOrderId > 0)
+                {
+                    <div class="btn-group">
+                        <a href="/businessorderdetail?ordid=@Model.FollowingOrderId" class="btn btn-sm btn-warning">
+                            Forwarded → #@Model.FollowingOrderId
+                        </a>
+                    </div>
+                }
+
+                @* Credit Note link *@
+                <div class="btn-group">
+                    <a href="@(legacyUrl)/creditnote?orderid=@Model.OrderId" target="_blank" class="btn btn-sm btn-default">Credit Note</a>
+                </div>
+            </div>
+        </div>
+
+        @* === BAKING COST TABLE (matching legacy rpBakingCost) === *@
+        @if (Model.BakingCostItems.Any())
+        {
+            <div class="col-md-12">
+                <table class="table table-condensed table-striped">
+                    <tr>
+                        <th></th>
+                        <th>Product Name</th>
+                        <th>Baking Cost</th>
+                    </tr>
+                    @foreach (var bc in Model.BakingCostItems)
+                    {
+                        var bcImgUrl = !string.IsNullOrEmpty(bc.ProductImage)
+                            ? $"{cdnBase}upload/Product_images/resized_80_80/{bc.ProductImage}"
+                            : $"{cdnBase}images/blankImages/110x135.jpg";
+                        <tr class="baking-cost-row" data-orderid="@bc.OrderId" data-productid="@bc.ProductId" data-sizeid="@bc.SizeId" data-qty="@bc.Quantity">
+                            <td>
+                                <img src="@bcImgUrl" style="max-width:50px;" alt="@bc.ProductName" />
+                            </td>
+                            <td>@bc.ProductName</td>
+                            <td>
+                                £<input type="text" class="form-control input-sm txt-baking-cost" value="@bc.BakingCost" style="max-width:100px; display:inline;" placeholder="Baking Cost" />
+                            </td>
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="3">
+                            <button type="button" onclick="saveBakingCost();" class="btn btn-sm btn-danger">Save Changes</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        }
+
+        @* === ORDER SUMMARY HEADER (Order No, Date, Total) === *@
+        <div class="topInvoicelist">
+            <ul>
+                <li>
+                    <div class="invoicelistbox">
+                        <div class="img">
+                            <img border="0" alt="IMG" src="https://www.cakerstreet.com/EmailTemplate/icon/order_icon.jpg" /></div>
+                        <div class="textheader">Order No</div>
+                        <div class="textval">@Model.OrderIdDisplay</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="invoicelistbox">
+                        <div class="img">
+                            <img border="0" alt="IMG" src="https://www.cakerstreet.com/EmailTemplate/icon/cal_icon.jpg" /></div>
+                        <div class="textheader">Order Date</div>
+                        <div class="textval">@Model.OrderDate.ToLongDateString()</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="invoicelistbox">
+                        <div class="img">&nbsp;</div>
+                        <div class="textheader">Order Total</div>
+                        <div class="textval">£@((Model.TotalPrice - Model.ShopMargin - Model.CSMargin).ToString("0.00"))</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        @* === DELIVERY & BUYER DETAIL === *@
+        <div class="toplistinvoicesentto">
+            <div class="toplistinvoicesentto_section">
+                <div class="topsentto">
+                    <div class="invoicelistbox">
+                        <div class="img">
+                            <img border="0" alt="IMG" src="https://www.cakerstreet.com/EmailTemplate/icon/dispatch_icon.jpg" /></div>
+                        <div class="textheader">Delivery Method:</div>
+                        <div class="textval">
+                            @{
+                                var deliveryMethodText = "";
+                                if (Model.DeliveryMode == 1 || Model.DeliveryMode == 3)
+                                {
+                                    if (isFranchise && Model.DeliveryMode == 1)
+                                    {
+                                        deliveryMethodText = $"Delivery By Bakery<br/>Collection Point - <b style='color:#aa041c;'>{Model.BranchName}</b>";
+                                    }
+                                    else
+                                    {
+                                        deliveryMethodText = "Collection By Buyer";
+                                    }
+                                }
+                                else if (Model.DeliveryMode == 2)
+                                {
+                                    if (isFranchise)
+                                    {
+                                        deliveryMethodText = $"Delivery By Bakery<br/>Collection Point - <b style='color:#aa041c;'>{Model.BranchName}</b>";
+                                    }
+                                    else
+                                    {
+                                        deliveryMethodText = "Hand Delivery By Bakery";
+                                    }
+                                }
+                                else if (Model.DeliveryMode == 4)
+                                {
+                                    deliveryMethodText = "Delivery By Post";
+                                }
+                                else
+                                {
+                                    deliveryMethodText = "Delivery";
+                                }
+                            }
+                            @Html.Raw(deliveryMethodText)
+                        </div>
+                    </div>
+                </div>
+                <div class="topsenttodet">
+                    @{
+                        var collectionHtml = "";
+                        if (Model.DeliveryMode == 1 || Model.DeliveryMode == 3)
+                        {
+                            // Collection
+                            var timeSlotEnd = Model.IsBaking ? 1 : 2;
+                            collectionHtml = $"<b>Collection Date & Time:</b> {Model.CollectionDate:dd/MM/yyyy} ({Model.CollectionDate:hh:mm tt} - {Model.CollectionDate.AddHours(timeSlotEnd):hh:mm tt})<br/>";
+                            collectionHtml += $"<b>Occasion:</b> {Model.Occasion}<br/>";
+                            if (!string.IsNullOrEmpty(Model.CollectionRemarks))
+                            {
+                                collectionHtml += $"Remarks: {Model.CollectionRemarks}<br/>";
+                            }
+                        }
+                        else
+                        {
+                            // Delivery
+                            if (Model.DeliveryMode == 4)
+                            {
+                                collectionHtml = $"<b>Dispatch Date & Time:</b> {Model.DispatchDate:dd-MMM-yyyy} (04:00 AM - 06:00 PM) {Model.DispatchDate:dddd}<br/>";
+                                collectionHtml += $"<b>Delivery Date & Time:</b> {Model.CollectionDate:dd-MMM-yyyy} (10:00 AM - 05:30 PM) {Model.CollectionDate:dddd}<br/>";
+                                collectionHtml += $"<b>Occasion Date:</b> {Model.OccasionDate:dd-MMM-yyyy (dddd)}";
+                            }
+                            else
+                            {
+                                collectionHtml = $"<b>Delivery Date & Time:</b> {Model.CollectionDate:dd-MMM-yyyy} ({Model.CollectionDate:hh:mm tt} - {Model.CollectionDate.AddHours(2):hh:mm tt}) {Model.CollectionDate:dddd}";
+                            }
+                            collectionHtml += $"<br/><b>Occasion:</b> {Model.Occasion}<br/>";
+                            if (!string.IsNullOrEmpty(Model.CollectionRemarks))
+                            {
+                                collectionHtml += $"Remarks: {Model.CollectionRemarks}<br/>";
+                            }
+                        }
+                    }
+                    @Html.Raw(collectionHtml)
+                </div>
+            </div>
+            <div class="toplistinvoicesentto_section">
+                <div class="topsentto">
+                    <div class="invoicelistbox">
+                        <div class="img">
+                            <img border="0" alt="IMG" src="https://www.cakerstreet.com/EmailTemplate/icon/home_icon.jpg" /></div>
+                        <div class="textheader">
+                            @(isFranchise && (Model.DeliveryMode == 1 || Model.DeliveryMode == 2) ? "Delivery Address" : (Model.SaleType == 3 ? "Delivery Address" : "Buyer Detail"))
+                        </div>
+                        <div class="textval">
+                            @{
+                                string buyerName;
+                                if (Model.SaleType == 2)
+                                {
+                                    buyerName = "Cakerstreet Internal";
+                                }
+                                else if (isFranchise && (Model.DeliveryMode == 1 || Model.DeliveryMode == 2))
+                                {
+                                    buyerName = Model.BranchName;
+                                }
+                                else
+                                {
+                                    buyerName = Model.ShippingFullName;
+                                }
+                            }
+                            @buyerName
+                        </div>
+                    </div>
+                </div>
+                <div class="topsenttodet">
+                    @if (Model.SaleType != 2)
+                    {
+                        string shippingHtml;
+                        if (isFranchise && (Model.DeliveryMode == 1 || Model.DeliveryMode == 2))
+                        {
+                            shippingHtml = $"{Model.BranchAddress}, {Model.BranchCity}";
+                            if (!string.IsNullOrEmpty(Model.BranchState)) shippingHtml += $", {Model.BranchState}";
+                            shippingHtml += $",<br/>United Kingdom {Model.BranchPostcode.ToUpper()}";
+                            @Html.Raw(shippingHtml)
+                            <br />
+                            @:Email: @Model.BranchOrderEmail<br />
+                            @:Mobile No: @Model.BranchBusinessPhone
+                        }
+                        else
+                        {
+                            shippingHtml = Model.ShippingAddress + "<br/>" + Model.ShippingCity;
+                            if (!string.IsNullOrEmpty(Model.ShippingCounty)) shippingHtml += ", " + Model.ShippingCounty;
+                            shippingHtml += "<br/>" + Model.ShippingCountry + ", " + Model.ShippingZip + Model.PostcodeDistance;
+                            @Html.Raw(shippingHtml)
+                            <br />
+                            @:Email: @Model.BillingEmail<br />
+                            @:Mobile No: @Model.BillingPhone
+                        }
+
+                        @* Show buyer detail section for franchise orders *@
+                        if (isFranchise && (Model.DeliveryMode == 1 || Model.DeliveryMode == 2))
+                        {
+                            <div class="topsentto" style="margin-top:20px">
+                                <div class="invoicelistbox">
+                                    <div class="img">
+                                        <img border="0" alt="IMG" src="https://www.cakerstreet.com/EmailTemplate/icon/dispatch_icon.jpg" /></div>
+                                    <div class="textheader">Buyer Detail:</div>
+                                    <div class="textval">
+                                        @{
+                                            var buyerDetailHtml = $"{Model.BillingFullName}<br/>{Model.BillingAddress}<br/>{Model.BillingCity}";
+                                            if (!string.IsNullOrEmpty(Model.BillingCounty)) buyerDetailHtml += ", " + Model.BillingCounty;
+                                            buyerDetailHtml += $"<br/>{Model.BillingCountry}, {Model.BillingZip}<br/>Email: {Model.BillingEmail}<br/>Mobile No: {Model.BillingPhone}";
+                                        }
+                                        @Html.Raw(buyerDetailHtml)
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* === PRODUCT DETAILS (LINE ITEMS) === *@
+        <div class="itemdet_header_outer">
+            <ul class="detailheader_outer">
+                <li class="liitem">Item</li>
+                <li>Price</li>
+                <li>Qty</li>
+                <li>Total</li>
+            </ul>
+
+            @foreach (var item in Model.LineItems)
+            {
+                var displayUnitPrice = item.GetDisplayUnitPrice(Model.SaleType, Model.CSMargin, Model.ShopMargin);
+                var displayTotalPrice = item.GetDisplayTotalPrice(Model.SaleType, Model.CSMargin, Model.ShopMargin);
+                var imgUrl = !string.IsNullOrEmpty(item.ProductImage)
+                    ? $"{cdnBase}upload/Product_images/resized_80_80/{item.ProductImage}"
+                    : $"{cdnBase}images/blankImages/110x135.jpg";
+                var fullImgUrl = !string.IsNullOrEmpty(item.ProductImage)
+                    ? $"{cdnBase}upload/Product_images/{item.ProductImage}"
+                    : $"{cdnBase}images/blankImages/204x250.jpg";
+
+                <ul class="rowouter">
+                    <li>
+                        <div class="itemDet caln">
+                            <span>@item.ProductName</span><br />
+                            <img src="@imgUrl" alt="@item.ProductName" />
+                            <a style="display: table; margin: 0 auto; text-decoration: underline;" class="text-primary"
+                               target="_blank" href="@fullImgUrl">View Image</a>
+                            @if (item.IsExpired)
+                            {
+                                <a target="_blank" style="display: table; margin: 0 auto;" class="btn btn-info btn-sm"
+                                   href="/mapcustomizedcake?id=@item.ProductId">@(item.IsCustomizedPrdMapped ? "View linked to existed Item" : "Link to already existed Item")</a>
+                            }
+                            @if (!string.IsNullOrEmpty(item.SkuPrdName))
+                            {
+                                <div class="small text-muted" style="margin-top:4px;">
+                                    <i class="fa fa-link"></i> SKU: @item.SkuCode - @item.SkuPrdName
+                                </div>
+                            }
+                        </div>
+                        @* Attributes (size, shape, type, etc.) *@
+                        <div class="attDet">
+                            @if (item.Attributes.Any())
+                            {
+                                <table class="table table-condensed" style="margin-top:5px; font-size:12px;">
+                                    @foreach (var attr in item.Attributes)
+                                    {
+                                        <tr>
+                                            <td style="padding:2px 5px;"><b>@attr.Title:</b></td>
+                                            <td style="padding:2px 5px;">@attr.Value</td>
+                                        </tr>
+                                    }
+                                </table>
+                            }
+                        </div>
+                        <br />
+                        @* Files section *@
+                        @if (item.PrdType != 3)
+                        {
+                            <div class="div_Documents">
+                                <div class="divtextheader">Files</div>
+                                @foreach (var file in item.Files)
+                                {
+                                    var fileImgUrl = $"{cdnBase}upload/sku/{file.ProductId}/files/{file.FileName}";
+                                    <div class="div_Documents">
+                                        <div class="divfiles">
+                                            <ul>
+                                                <li class="imgli" style="background-image:url('@fileImgUrl'); background-size:cover;">
+                                                    <a href="@fileImgUrl" target="_blank" class="absolute-anchor"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="divLocation">
+                                            <ul>
+                                                <li class="name">@file.FileTitle</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                                @* Add files link *@
+                                <div class="div_Documents">
+                                    <div class="divfiles">
+                                        <ul>
+                                            <li class="imgli"><span>+</span>
+                                                <a href="/businessfiles?orderID=@(Model.OrderId)&orderdetailid=@(item.OrderDetailId)#Files"
+                                                   target="_blank" class="absolute-anchor"></a>
+                                        </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                @* === Toppers === *@
+                                <div class="divtextheader">Toppers</div>
+                                @foreach (var topper in item.Toppers)
+                                {
+                                    var topImgUrl = !string.IsNullOrEmpty(topper.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/resized_80_80/{topper.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    var topFullUrl = !string.IsNullOrEmpty(topper.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/{topper.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    <div class="div_Documents">
+                                        <div class="divfiles">
+                                            <ul>
+                                                <li class="imgli" style="background-image:url('@topImgUrl');">
+                                                    <a href="@topFullUrl" target="_blank" class="absolute-anchor"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="divLocation">
+                                            <ul>
+                                                <li class="name">@topper.ProductName <font>Qty: @topper.Qty</font></li>
+                                                <li>@topper.FullLocation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                                @* Add toppers link *@
+                                <div class="div_Documents">
+                                    <div class="divfiles">
+                                        <ul>
+                                            <li class="imgli"><span>+</span>
+                                                <a href="/ordertopper?orderID=@(Model.OrderId)&orderdetailid=@(item.OrderDetailId)&typeId=4"
+                                                   target="_blank" class="absolute-anchor"></a>
+                                    </li>
+                                    </ul>
+                                    </div>
+                                </div>
+
+                                @* === Accessory === *@
+                                <div class="divtextheader">Accessory</div>
+                                @foreach (var acc in item.Accessories)
+                                {
+                                    var accImgUrl = !string.IsNullOrEmpty(acc.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/resized_80_80/{acc.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    var accFullUrl = !string.IsNullOrEmpty(acc.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/{acc.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    <div class="div_Documents">
+                                        <div class="divfiles">
+                                            <ul>
+                                                <li class="imgli" style="background-image:url('@accImgUrl');">
+                                                    <a href="@accFullUrl" target="_blank" class="absolute-anchor"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="divLocation">
+                                            <ul>
+                                                <li class="name">@acc.ProductName <font>Qty: @acc.Qty</font></li>
+                                                <li>@acc.FullLocation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                                @* Add accessory link *@
+                                <div class="div_Documents">
+                                    <div class="divfiles">
+                                        <ul>
+                                            <li class="imgli"><span>+</span>
+                                                <a href="/businessfiles?orderID=@(Model.OrderId)&orderdetailid=@(item.OrderDetailId)#Accessory"
+                                                   target="_blank" class="absolute-anchor"></a>
+                                    </li>
+                                    </ul>
+                                    </div>
+                                </div>
+
+                                @* === Cutters === *@
+                                <div class="divtextheader">Cutters</div>
+                                @foreach (var cutter in item.Cutters)
+                                {
+                                    var cutImgUrl = !string.IsNullOrEmpty(cutter.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/resized_80_80/{cutter.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    var cutFullUrl = !string.IsNullOrEmpty(cutter.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/{cutter.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    <div class="div_Documents">
+                                        <div class="divfiles">
+                                            <ul>
+                                                <li class="imgli" style="background-image:url('@cutImgUrl');">
+                                                    <a href="@cutFullUrl" target="_blank" class="absolute-anchor"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="divLocation">
+                                            <ul>
+                                                <li class="name">@cutter.ProductName</li>
+                                                <li>@cutter.FullLocation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                                @* Add cutters link *@
+                                <div class="div_Documents">
+                                    <div class="divfiles">
+                                        <ul>
+                                            <li class="imgli"><span>+</span>
+                                                <a href="/ordertopper?orderID=@(Model.OrderId)&orderdetailid=@(item.OrderDetailId)&typeId=5"
+                                                   target="_blank" class="absolute-anchor"></a>
+                                    </li>
+                                    </ul>
+                                    </div>
+                                </div>
+
+                                @* === Packaging === *@
+                                <div class="divtextheader">Packaging</div>
+                                @foreach (var pkg in item.Packaging)
+                                {
+                                    var pkgImgUrl = !string.IsNullOrEmpty(pkg.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/resized_80_80/{pkg.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    var pkgFullUrl = !string.IsNullOrEmpty(pkg.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/{pkg.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    <div class="div_Documents">
+                                        <div class="divfiles">
+                                            <ul>
+                                                <li class="imgli" style="background-image:url('@pkgImgUrl');">
+                                                    <a href="@pkgFullUrl" target="_blank" class="absolute-anchor"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="divLocation">
+                                            <ul>
+                                                <li class="name">@pkg.ProductName</li>
+                                                <li>@pkg.FullLocation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                                @* Add packaging link *@
+                                <div class="div_Documents">
+                                    <div class="divfiles">
+                                        <ul>
+                                            <li class="imgli"><span>+</span>
+                                                <a href="/ordertopper?orderID=@(Model.OrderId)&orderdetailid=@(item.OrderDetailId)&typeId=7"
+                                                   target="_blank" class="absolute-anchor"></a>
+                                    </li>
+                                    </ul>
+                                    </div>
+                                </div>
+
+                                @* === Supplies === *@
+                                <div class="divtextheader">Supplies</div>
+                                @foreach (var sup in item.Supplies)
+                                {
+                                    var supImgUrl = !string.IsNullOrEmpty(sup.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/resized_80_80/{sup.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    var supFullUrl = !string.IsNullOrEmpty(sup.ProductImage)
+                                        ? $"{cdnBase}upload/Product_images/{sup.ProductImage}"
+                                        : $"{cdnBase}images/blankImages/110x135.jpg";
+                                    <div class="div_Documents">
+                                        <div class="divfiles">
+                                            <ul>
+                                                <li class="imgli" style="background-image:url('@supImgUrl');">
+                                                    <a href="@supFullUrl" target="_blank" class="absolute-anchor"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="divLocation">
+                                            <ul>
+                                                <li class="name">@sup.ProductName</li>
+                                                <li>@sup.FullLocation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                                @* Add supplies link *@
+                                <div class="div_Documents">
+                                    <div class="divfiles">
+                                        <ul>
+                                            <li class="imgli"><span>+</span>
+                                                <a href="/ordertopper?orderID=@(Model.OrderId)&orderdetailid=@(item.OrderDetailId)&typeId=8"
+                                                   target="_blank" class="absolute-anchor"></a>
+                                    </li>
+                                    </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </li>
+                    <li>£@displayUnitPrice.ToString("0.00")</li>
+                    <li>@item.Quantity</li>
+                    <li>£@displayTotalPrice.ToString("0.00")</li>
+                </ul>
+            }
+
+            @* === SUBTOTAL / DELIVERY / TOTAL FOOTER === *@
+            @if (Model.DeliveryMode != 1 && Model.DeliveryMode != 3)
+            {
+                <ul class="footer_outer">
+                    <li class="liitem"></li>
+                    <li class="liprice"></li>
+                    <li>Subtotal</li>
+                    <li>£@((Model.TotalPrice - Model.ShopMargin - Model.CSMargin - Model.ShippingCost).ToString("0.00"))</li>
+                </ul>
+                <ul class="footer_outer">
+                    <li class="liitem"></li>
+                    <li class="liprice"></li>
+                    <li>Delivery Charges</li>
+                    <li>£@Model.ShippingCost.ToString("0.00")</li>
+                </ul>
+            }
+            <ul class="footer_outer">
+                <li class="liitem"></li>
+                <li class="liprice"></li>
+                <li class="litotal">Total Charges</li>
+                <li class="litotal">£@((Model.TotalPrice - Model.ShopMargin - Model.CSMargin).ToString("0.00"))</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@* === CANCEL ORDER MODAL (matching legacy dvCancelOrder) === *@
+<div class="modal fade" id="dvCancelOrder" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#fff;">&times;</button>
+                <h4 class="modal-title" style="color: #fff;">
+                    Cancel Order - @Model.OrderId
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="control-label">
+                        Select Cancel Reason: <abbr class="text-danger">*</abbr>
+                    </label>
+                    <select id="ddlCancelReason" class="form-control" style="max-width: 400px;">
+                        <option value="0">Select Cancel Reason</option>
+                        <option value="No Inventory">No Inventory</option>
+                        <option value="Unable To Fulfill The Order By Required Delivery Date">Unable To Fulfill The Order By Required Delivery Date</option>
+                        <option value="Pricing Error">Pricing Error</option>
+                        <option value="Customer Exchange">Customer Exchange</option>
+                        <option value="Buyer Cancelled">Buyer Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">
+                        Description: <abbr class="text-danger">*</abbr>
+                    </label>
+                    <textarea id="txtCancelComments" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="chkNotifyCustomer" /> Notify Customer
+                    </label>
+                </div>
+                <div class="form-group">
+                    <button type="button" onclick="submitCancelOrder();" class="btn btn-danger updt-acnt">Cancel Order</button>
+                    <button type="button" data-dismiss="modal" class="btn btn-danger updt-acnt">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

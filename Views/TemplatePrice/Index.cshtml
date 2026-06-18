@@ -1,0 +1,242 @@
+@{
+    ViewData["Title"] = "Manage Template Formula";
+    var salary = ViewBag.Salary as CakerStreet.Business.Controllers.TemplatePriceController.BakerSalary;
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Controllers.TemplatePriceController.TemplateItem>
+        ?? new List<CakerStreet.Business.Controllers.TemplatePriceController.TemplateItem>();
+    var selectedTemplateId = (long)(ViewBag.SelectedTemplateId ?? 0L);
+    var priceRows = ViewBag.PriceRows as List<CakerStreet.Business.Controllers.TemplatePriceController.PriceFormulaRow>
+        ?? new List<CakerStreet.Business.Controllers.TemplatePriceController.PriceFormulaRow>();
+    var discount = (decimal)(ViewBag.Discount ?? 0m);
+    var linkedProducts = (int)(ViewBag.LinkedProducts ?? 0);
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .salary-form .form-group { margin-bottom: 8px; }
+        .salary-form label { font-weight: bold; min-width: 200px; display: inline-block; }
+        .salary-form input { max-width: 120px; display: inline-block; }
+        .max250 { max-width: 250px; display: inline-block; }
+        .price-table th { font-size: 11px; text-align: center; }
+        .price-table td { text-align: center; vertical-align: middle; font-size: 12px; }
+        .price-table input { width: 70px; text-align: center; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Template Formula</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Baker Salary Settings ──────────────────────────────────────── *@
+                @if (salary != null)
+                {
+                    <div class="col-md-8 salary-form">
+                        <h4>Baker Salary &amp; Cost Settings</h4>
+                        <div class="form-group">
+                            <label>Icing Cost per KG (£)</label>
+                            <input type="text" id="txtIcingCost" class="form-control" value="@salary.IcingCostPerKg.ToString("0.##")" />
+                        </div>
+                        <div class="form-group">
+                            <label>Advertising Cost (%)</label>
+                            <input type="text" id="txtAdvertCost" class="form-control" value="@salary.AdvertCostPer.ToString("0.##")" />
+                        </div>
+                        <div class="form-group">
+                            <label>Cutting &amp; Filling Salary (£/hr)</label>
+                            <input type="text" id="txtCuttingSal" class="form-control" value="@salary.CuttingSalary.ToString("0.##")" />
+                        </div>
+                        <div class="form-group">
+                            <label>Decoration Salary (£/hr)</label>
+                            <input type="text" id="txtDecoSal" class="form-control" value="@salary.DecorationSalary.ToString("0.##")" />
+                        </div>
+                        <div class="form-group">
+                            <label>Icing Salary (£/hr)</label>
+                            <input type="text" id="txtIcingSal" class="form-control" value="@salary.IcingSalary.ToString("0.##")" />
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="saveSalary();">Save Salary Settings</button>
+                        </div>
+                        <hr />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-8">
+                        <div class="alert alert-warning">Baker salary settings not configured. Please set up salary settings first.</div>
+                        <div class="salary-form">
+                            <h4>Baker Salary &amp; Cost Settings</h4>
+                            <div class="form-group">
+                                <label>Icing Cost per KG (£)</label>
+                                <input type="text" id="txtIcingCost" class="form-control" value="0" />
+                            </div>
+                            <div class="form-group">
+                                <label>Advertising Cost (%)</label>
+                                <input type="text" id="txtAdvertCost" class="form-control" value="0" />
+                            </div>
+                            <div class="form-group">
+                                <label>Cutting &amp; Filling Salary (£/hr)</label>
+                                <input type="text" id="txtCuttingSal" class="form-control" value="0" />
+                            </div>
+                            <div class="form-group">
+                                <label>Decoration Salary (£/hr)</label>
+                                <input type="text" id="txtDecoSal" class="form-control" value="0" />
+                            </div>
+                            <div class="form-group">
+                                <label>Icing Salary (£/hr)</label>
+                                <input type="text" id="txtIcingSal" class="form-control" value="0" />
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveSalary();">Save Salary Settings</button>
+                            </div>
+                            <hr />
+                        </div>
+                    </div>
+                }
+
+                <div class="clearfix"></div>
+
+                @* ─── Template Selector ──────────────────────────────────────────── *@
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label style="font-weight:bold;">Select Template</label>
+                        <select id="drpTemplate" class="form-control max250" style="display:inline-block;">
+                            <option value="0">--Select from saved Templates--</option>
+                            @foreach (var t in templates)
+                            {
+                                <option value="@t.Id" @(t.Id == selectedTemplateId ? "selected" : "")>@t.Name</option>
+                            }
+                        </select>
+                        @if (linkedProducts > 0)
+                        {
+                            <span class="text-muted" style="margin-left:10px;">(@linkedProducts linked products)</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Price Formula Table ────────────────────────────────────────── *@
+                @if (selectedTemplateId > 0 && priceRows.Count > 0)
+                {
+                    <div class="col-md-12" style="margin-top:15px; overflow-x:auto;">
+                        <h4>Price Formula</h4>
+                        <table class="table table-bordered table-striped price-table">
+                            <thead>
+                                <tr>
+                                    <th>Size</th>
+                                    <th>Sponge (£)</th>
+                                    <th>Filling (£)</th>
+                                    <th>Icing Powder (kg)</th>
+                                    <th>Icing Cost (£)</th>
+                                    <th>Cut/Fill (min)</th>
+                                    <th>Icing (min)</th>
+                                    <th>Deco (min)</th>
+                                    <th>Total Min</th>
+                                    <th>Baker Cost (£)</th>
+                                    <th>Board/Box (£)</th>
+                                    <th>Deco Material (£)</th>
+                                    <th>Topper (£)</th>
+                                    <th>Base Cost (£)</th>
+                                    <th>Final Price (£)</th>
+                                    <th>Advert (£)</th>
+                                    <th>Profit (£)</th>
+                                    <th>Profit %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in priceRows)
+                                {
+                                    <tr data-fid="@row.FormulaId" data-sid="@row.SizeId">
+                                        <td><strong>@row.SizeTitle</strong></td>
+                                        <td>@row.SpongeCost.ToString("0.00")</td>
+                                        <td>@row.FillingCost.ToString("0.00")</td>
+                                        <td>@row.IcingPowderUsed.ToString("0.##")</td>
+                                        <td>@row.IcingPowderCost.ToString("0.00")</td>
+                                        <td>@row.CuttingMins</td>
+                                        <td>@row.IcingMins</td>
+                                        <td>@row.DecorationMins</td>
+                                        <td>@row.TotalMins</td>
+                                        <td>@row.BakerCost.ToString("0.00")</td>
+                                        <td>@row.BoardBoxPrice.ToString("0.00")</td>
+                                        <td>@row.DecorationMaterialCost.ToString("0.00")</td>
+                                        <td>@row.TopperCost.ToString("0.00")</td>
+                                        <td><strong>@row.CakeBaseCost.ToString("0.00")</strong></td>
+                                        <td><strong>£@row.FinalCost.ToString("0.00")</strong></td>
+                                        <td>@row.AdvertCost.ToString("0.00")</td>
+                                        <td>@row.ProfitMargin.ToString("0.00")</td>
+                                        <td>@row.ProfitMarginPer.ToString("0.#")%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="form-group">
+                            <label style="font-weight:bold;">Discount (%)</label>
+                            <input type="text" id="txtDiscount" class="form-control" style="max-width:100px;display:inline-block;" value="@discount.ToString("0.##")" />
+                        </div>
+                    </div>
+                }
+                else if (selectedTemplateId > 0)
+                {
+                    <div class="col-md-8" style="margin-top:15px;">
+                        <div class="alert alert-info">No price formula rows found for this template. Create sizes in the Cake Template editor first.</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    $('#drpTemplate').on('change', function () {
+        var val = $(this).val();
+        if (val !== '0') {
+            window.location.href = '/managetemplateprice?templateID=' + val;
+        } else {
+            window.location.href = '/managetemplateprice';
+        }
+    });
+
+    function saveSalary() {
+        $.post('/managetemplateprice/savesalary', {
+            icingCostPerKg: $('#txtIcingCost').val(),
+            advertCostPer: $('#txtAdvertCost').val(),
+            cuttingSalary: $('#txtCuttingSal').val(),
+            decorationSalary: $('#txtDecoSal').val(),
+            icingSalary: $('#txtIcingSal').val()
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { window.location.reload(); }, 1500);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+</script>
+}

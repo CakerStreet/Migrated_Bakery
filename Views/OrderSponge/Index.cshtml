@@ -1,0 +1,547 @@
+@model CakerStreet.Business.Models.OrderSpongeViewModel
+
+@section Head {
+    <style type="text/css">
+        .chkbox {
+            display: inline-table;
+            margin: 10px 10px 0 0;
+        }
+        .chkbox input {
+            float: left;
+        }
+        .chkbox label {
+            line-height: 12px;
+            font-size: 13px;
+            padding-top: 5px;
+        }
+        .ul_orderlist.stt {
+            background-color: #ffcccc;
+            border: 1px solid #ff0000;
+        }
+        .ul_orderlist {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            float: left;
+            height: 85px;
+            list-style-type: none;
+            margin: 2px;
+            padding: 2px;
+            position: relative;
+            text-align: center;
+            width: 65px;
+        }
+        .ul_orderlist .close {
+            left: 0;
+            opacity: 1;
+            padding: 0 5px;
+            position: absolute;
+            top: 0;
+            z-index: 2;
+        }
+        .ul_orderlist .img {
+            height: 60px;
+            width: 60px;
+        }
+        .ul_orderlist .img > img {
+            max-height: 60px;
+            width: 60px;
+        }
+        .ul_orderlist .txt {
+            font-size: 12px;
+            line-height: 20px;
+        }
+        .txt > a {
+            color: #d9534f;
+            text-decoration: underline;
+        }
+        .middleSection {
+            width: 100%;
+        }
+        .table a.reload {
+            background-attachment: scroll;
+            background-clip: border-box;
+            background-image: url("images/icons/reload-icon-white.png");
+            background-origin: padding-box;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: 12px auto;
+            height: 22px;
+            width: 22px;
+        }
+        a.btnsite {
+            background-color: rgb(133, 0, 0);
+            border: 1px solid rgb(133, 0, 0);
+            border-radius: 3px;
+            color: rgb(255, 255, 255);
+            display: inline-table;
+            margin: 10px auto;
+            padding: 5px;
+            text-decoration: unset;
+        }
+        .table .form-control {
+            padding: 5px;
+        }
+        .table a.orderids {
+            display: inline-table;
+        }
+        .caln {
+            text-align: center;
+        }
+        .raln {
+            text-align: right;
+        }
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .trAddRow {
+            background-color: #ffeeee;
+        }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">
+            Order Sponge list
+        </h2>
+        <a class="pull-right normallink" style="color: #fff; margin-right: 10px; text-decoration: underline;"
+           href="/managespongeorderlist">Order History</a>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="clearfix"></div>
+
+@{
+    // Convert dd/MM/yyyy from URL to yyyy-MM-dd for HTML date input
+    var fromDateValue = "";
+    var toDateValue = "";
+    if (!string.IsNullOrEmpty(Model.FromDate))
+    {
+        var parts = Model.FromDate.Split('/');
+        if (parts.Length == 3) fromDateValue = parts[2] + "-" + parts[1] + "-" + parts[0];
+    }
+    if (!string.IsNullOrEmpty(Model.ToDate))
+    {
+        var parts = Model.ToDate.Split('/');
+        if (parts.Length == 3) toDateValue = parts[2] + "-" + parts[1] + "-" + parts[0];
+    }
+}
+
+        @* ─── Filter Form ─── *@
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="form-container">
+                <div class="form-group">
+                    <div class="col-sm-2">
+                        <input type="date" id="txtFromDate" class="form-control" placeholder="Start Date"
+                               value="@fromDateValue" />
+                    </div>
+                    <div class="col-sm-2">
+                        <input type="date" id="txtToDate" class="form-control" placeholder="End Date"
+                               value="@toDateValue" />
+                    </div>
+                    <div class="col-sm-1">
+                        <button type="button" id="btnSearch" class="btn btn-primary">Go</button>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="chkbox">
+                            <input type="checkbox" id="chkIncludeRequested" @(Model.IncludeRequested ? "checked" : "") />
+                            Include Already Requested
+                        </label>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+                <br />
+
+                @* ─── Data Grid ─── *@
+                @if (Model.HasData)
+                {
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <table class="table tblRep">
+                                <thead>
+                                    <tr>
+                                        <th>Order Ids</th>
+                                        <th style="width: 100px;">Type</th>
+                                        <th style="width: 150px;">Sponge Type</th>
+                                        <th style="width: 200px;">Dietary</th>
+                                        <th style="width: 150px;">Shape</th>
+                                        <th style="width: 150px;">Size</th>
+                                        <th style="width: 50px;">Qty</th>
+                                        <th class="caln" style="width: 120px;">Req. Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in Model.Rows)
+                                    {
+                                        <tr class="tritemRow">
+                                            <td class="tdimg tditem">
+                                                @foreach (var thumb in row.OrderThumbs)
+                                                {
+                                                    <ul class="ul_orderlist">
+                                                        <li class="img">
+                                                            <img width="60" src="@thumb.Image" alt="Order @thumb.OrderId" />
+                                                        </li>
+                                                        <li class="txt">
+                                                            <a target="_blank" href="/printorderbakers?id=@thumb.OrderId">@thumb.OrderId</a>
+                                                        </li>
+                                                    </ul>
+                                                }
+                                            </td>
+                                            <td class="tddrp tditem">@row.ProductTypeName</td>
+                                            <td class="tddrp tditem">
+                                                <select class="form-control">
+                                                    <option selected>@row.Sponge</option>
+                                                    @foreach (var opt in Model.SpongeTypes.Where(s => s != row.Sponge))
+                                                    {
+                                                        <option>@opt</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td class="tddrp tditem">
+                                                <select class="form-control">
+                                                    <option selected>@row.Dietary</option>
+                                                    @foreach (var opt in Model.DietaryTypes.Where(d => d != row.Dietary))
+                                                    {
+                                                        <option>@opt</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td class="tddrp tditem">
+                                                <select class="form-control">
+                                                    <option value="@row.ShapeId" selected>@row.Shape</option>
+                                                    @foreach (var opt in Model.Shapes.Where(s => s.Id != row.ShapeId))
+                                                    {
+                                                        <option value="@opt.Id">@opt.Title</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td class="tddrp tditem">
+                                                <select class="form-control">
+                                                    <option selected>@row.Size</option>
+                                                    @foreach (var opt in Model.Sizes.Where(s => s != row.Size))
+                                                    {
+                                                        <option>@opt</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td class="tdshowqty tditem">@row.Qty</td>
+                                            <td class="tdsubmit tditem">
+                                                <input type="text" style="max-width: 50px;" class="form-control pull-left"
+                                                       value="@row.ReqQty" />
+                                                <button class="btn btn-danger btn-xs pull-left reload"
+                                                        style="margin-left: 7px;" title="Refresh" onclick="refreshRow(this)"></button>
+                                                <button class="btn btn-danger btn-xs pull-right" onclick="deleteRow(this)">X</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    @* ─── Add Sponge Row (Phase 2A — enabled) ─── *@
+                                    <tr class="trAddRow">
+                                        <td class="tdimg tditem">
+                                            <input type="text" id="txtOrderId_static" class="form-control" placeholder="Order-ID" />
+                                        </td>
+                                        <td class="tddrp tditem">
+                                            <select id="ddlPrdType_static" class="form-control">
+                                                <option value="1">Cake</option>
+                                                <option value="6">Cup Cake</option>
+                                            </select>
+                                        </td>
+                                        <td class="tddrp tditem">
+                                            <select id="ddlSponge_static" class="form-control">
+                                                @foreach (var opt in Model.SpongeTypes)
+                                                {
+                                                    <option>@opt</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td class="tddrp tditem">
+                                            <select id="ddlDietery_static" class="form-control">
+                                                @foreach (var opt in Model.DietaryTypes)
+                                                {
+                                                    <option>@opt</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td class="tddrp tditem">
+                                            <select id="ddlShape_static" class="form-control">
+                                                @foreach (var opt in Model.Shapes)
+                                                {
+                                                    <option value="@opt.Id">@opt.Title</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td class="tddrp tditem">
+                                            <select id="ddlSize_static" class="form-control">
+                                                @foreach (var opt in Model.Sizes)
+                                                {
+                                                    <option>@opt</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td class="tddrp tditem">
+                                            <input type="text" id="txtQty_static" style="max-width: 50px;" class="form-control pull-left"
+                                                   value="1" />
+                                        </td>
+                                        <td class="tdsubmit tditem">
+                                            <button id="btnAddSponge" class="btn btn-danger">Add Sponge</button>
+                                        </td>
+                                    </tr>
+                                    @* ─── Submit Section Fields ─── *@
+                                    <tr class="trstaticRow">
+                                        <td colspan="8" class="raln" style="padding-right: 50px;">
+                                            <textarea id="txtRemarks" class="form-control" style="max-width: 500px; height: 65px; display: inline;" placeholder="Enter Remarks"></textarea>
+                                        </td>
+                                    </tr>
+                                    <tr class="trstaticRow">
+                                        <td colspan="8" class="raln" style="padding-right: 50px;">
+                                            <label class="chkbox"><input type="checkbox" id="chkMail" /> Send Mail</label>
+                                            <input type="text" id="txtRegEmail" class="form-control" style="max-width: 250px; display: inline;" placeholder="Email ID" disabled />
+                                            <input type="text" id="txtName" class="form-control" style="max-width: 200px; display: inline;" placeholder="Full Name" />
+                                            <input type="date" id="txtOrderDate" class="form-control" style="max-width: 150px; display: inline;" />
+                                            <input type="date" id="txtDeliveryDate" class="form-control" style="max-width: 150px; display: inline;" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            @* ─── Submit Button (Phase 2B-1 — feature-flagged) ─── *@
+                            <div style="margin-top: 15px;">
+                                @if (ViewBag.SubmitEnabled == true)
+                                {
+                                    <button id="btnSubmitSponge" class="btn btn-danger">Submit</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-danger btn-disabled" disabled title="Sponge submission not enabled">Submit</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    document.getElementById('btnSearch').addEventListener('click', function () {
+        var fromVal = document.getElementById('txtFromDate').value;
+        var toVal = document.getElementById('txtToDate').value;
+        var incVal = document.getElementById('chkIncludeRequested').checked ? 1 : 0;
+
+        if (!fromVal) {
+            alert('Enter Start Date');
+            return;
+        }
+        if (!toVal) {
+            alert('Enter End Date');
+            return;
+        }
+
+        // Convert yyyy-MM-dd (HTML date input) to dd/MM/yyyy (SP format)
+        var fromParts = fromVal.split('-');
+        var toParts = toVal.split('-');
+        var fromFormatted = fromParts[2] + '/' + fromParts[1] + '/' + fromParts[0];
+        var toFormatted = toParts[2] + '/' + toParts[1] + '/' + toParts[0];
+
+        window.location.href = '/orderspongelist?from=' + encodeURIComponent(fromFormatted)
+            + '&to=' + encodeURIComponent(toFormatted)
+            + '&inc=' + incVal;
+    });
+</script>
+
+<script type="text/javascript">
+    // ─── Phase 2A: In-memory grid mutations ───
+
+    // Send Mail toggle
+    var chkMail = document.getElementById('chkMail');
+    if (chkMail) {
+        chkMail.addEventListener('change', function() {
+            var emailField = document.getElementById('txtRegEmail');
+            emailField.disabled = !this.checked;
+            if (!this.checked) emailField.value = '';
+        });
+    }
+
+    // Delete Row
+    function deleteRow(btn) {
+        var row = btn.closest('tr.tritemRow');
+        if (row && confirm('Remove this row?')) {
+            row.remove();
+            updateRowNumbers();
+        }
+    }
+
+    // Refresh Row (recalculate qty based on visible thumbnails)
+    function refreshRow(btn) {
+        var row = btn.closest('tr.tritemRow');
+        if (row) {
+            var thumbs = row.querySelectorAll('.ul_orderlist');
+            var qtyCell = row.querySelector('.tdshowqty');
+            var reqInput = row.querySelector('.tdsubmit input[type="text"]');
+            if (qtyCell) qtyCell.textContent = thumbs.length;
+            if (reqInput) reqInput.value = thumbs.length;
+        }
+    }
+
+    // Add Sponge (adds a new row to the grid from the static inputs)
+    var btnAdd = document.getElementById('btnAddSponge');
+    if (btnAdd) {
+        btnAdd.addEventListener('click', function() {
+            var orderId = document.getElementById('txtOrderId_static').value.trim();
+            var prdType = document.getElementById('ddlPrdType_static');
+            var sponge = document.getElementById('ddlSponge_static');
+            var dietary = document.getElementById('ddlDietery_static');
+            var shape = document.getElementById('ddlShape_static');
+            var size = document.getElementById('ddlSize_static');
+            var qty = document.getElementById('txtQty_static').value.trim();
+
+            if (!orderId) { alert('Enter Order-ID or Sponge Title'); return; }
+            if (!qty || parseInt(qty) < 1) { alert('Enter valid Qty'); return; }
+
+            // Build new row HTML
+            var tbody = document.querySelector('.tblRep tbody');
+            var addRow = tbody.querySelector('.trAddRow');
+            var newRow = document.createElement('tr');
+            newRow.className = 'tritemRow';
+            newRow.innerHTML = '<td class="tdimg tditem"><ul class="ul_orderlist"><li class="img" style="font-size:11px;padding-top:20px;">' + orderId + '</li><li class="txt">#' + orderId + '</li></ul></td>'
+                + '<td class="tddrp tditem">' + prdType.options[prdType.selectedIndex].text + '</td>'
+                + '<td class="tddrp tditem"><select class="form-control"><option selected>' + sponge.value + '</option></select></td>'
+                + '<td class="tddrp tditem"><select class="form-control"><option selected>' + dietary.value + '</option></select></td>'
+                + '<td class="tddrp tditem"><select class="form-control"><option selected>' + shape.options[shape.selectedIndex].text + '</option></select></td>'
+                + '<td class="tddrp tditem"><select class="form-control"><option selected>' + size.value + '</option></select></td>'
+                + '<td class="tdshowqty tditem">' + qty + '</td>'
+                + '<td class="tdsubmit tditem"><input type="text" style="max-width:50px;" class="form-control pull-left" value="' + qty + '" />'
+                + '<button class="btn btn-danger btn-xs pull-left reload" style="margin-left:7px;" title="Refresh" onclick="refreshRow(this)"></button>'
+                + '<button class="btn btn-danger btn-xs pull-right" onclick="deleteRow(this)">X</button></td>';
+
+            tbody.insertBefore(newRow, addRow);
+
+            // Clear inputs
+            document.getElementById('txtOrderId_static').value = '';
+            document.getElementById('txtQty_static').value = '1';
+            alert('Order has been added successfully!');
+        });
+    }
+
+    function updateRowNumbers() {
+        // Re-index rows (optional, for display purposes)
+        var rows = document.querySelectorAll('.tblRep tbody tr.tritemRow');
+        // No row numbers displayed currently, but available for future use
+    }
+
+    // ─── Phase 2B-1: Submit handler ───
+    var btnSubmit = document.getElementById('btnSubmitSponge');
+    if (btnSubmit) {
+        btnSubmit.addEventListener('click', function() {
+            var name = document.getElementById('txtName').value.trim();
+            var orderDateVal = document.getElementById('txtOrderDate').value;
+            var deliveryDateVal = document.getElementById('txtDeliveryDate').value;
+            var remarks = document.getElementById('txtRemarks').value;
+            var sendMail = document.getElementById('chkMail').checked;
+            var email = document.getElementById('txtRegEmail').value.trim();
+
+            if (!name) { alert('Full Name is required'); return; }
+            if (!orderDateVal) { alert('Enter Order Date'); return; }
+            if (!deliveryDateVal) { alert('Enter Delivery Date'); return; }
+            if (sendMail && !email) { alert('Email id is required'); return; }
+
+            // Format dates to dd/MM/yyyy
+            var orderParts = orderDateVal.split('-');
+            var deliveryParts = deliveryDateVal.split('-');
+            var orderDate = orderParts[2] + '/' + orderParts[1] + '/' + orderParts[0];
+            var deliveryDate = deliveryParts[2] + '/' + deliveryParts[1] + '/' + deliveryParts[0];
+
+            // Get from/to from URL
+            var urlParams = new URLSearchParams(window.location.search);
+            var fromDate = urlParams.get('from') || '';
+            var toDate = urlParams.get('to') || '';
+
+            // Collect rows
+            var rows = [];
+            document.querySelectorAll('.tblRep tbody tr.tritemRow').forEach(function(tr) {
+                var orderIds = [];
+                tr.querySelectorAll('.ul_orderlist .txt a').forEach(function(a) {
+                    var id = parseInt(a.textContent.replace('#', '').trim());
+                    if (id > 0) orderIds.push(id);
+                });
+                var productIds = [];
+                tr.querySelectorAll('.ul_orderlist [data-productid]').forEach(function(el) {
+                    var pid = parseInt(el.getAttribute('data-productid'));
+                    if (pid > 0) productIds.push(pid);
+                });
+
+                var selects = tr.querySelectorAll('select.form-control');
+                var sponge = selects.length > 0 ? selects[0].value : '';
+                var dietary = selects.length > 1 ? selects[1].value : '';
+                var shapeSelect = selects.length > 2 ? selects[2] : null;
+                var shapeId = shapeSelect ? parseInt(shapeSelect.value) || 0 : 0;
+                var shapeTitle = shapeSelect ? shapeSelect.options[shapeSelect.selectedIndex].text : '';
+                var size = selects.length > 3 ? selects[3].value : '';
+
+                var typeText = tr.querySelectorAll('.tddrp')[0]?.textContent.trim() || '';
+                var productTypeId = typeText === 'CupCake' ? 6 : 1;
+
+                var qtyCell = tr.querySelector('.tdshowqty');
+                var originalQty = qtyCell ? parseInt(qtyCell.textContent) || 0 : 0;
+                var reqInput = tr.querySelector('.tdsubmit input[type="text"]');
+                var requestedQty = reqInput ? parseInt(reqInput.value) || 0 : 0;
+
+                rows.push({
+                    orderIds: orderIds,
+                    productIds: productIds,
+                    productTypeId: productTypeId,
+                    sponge: sponge,
+                    dietary: dietary,
+                    shapeId: shapeId,
+                    shapeTitle: shapeTitle,
+                    size: size,
+                    originalQty: originalQty,
+                    requestedQty: requestedQty
+                });
+            });
+
+            if (rows.length === 0) { alert('No sponge items to submit'); return; }
+
+            var payload = {
+                fromDate: fromDate,
+                toDate: toDate,
+                name: name,
+                email: email,
+                orderDate: orderDate,
+                deliveryDate: deliveryDate,
+                remarks: remarks,
+                sendMail: sendMail,
+                rows: rows
+            };
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Submitting...';
+
+            fetch('/orderspongelist/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    alert('Sponge order submitted successfully! ID: ' + data.spongeOrderId);
+                    window.location.href = '/managespongeorderlist';
+                } else {
+                    alert(data.error || 'Submit failed');
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = 'Submit';
+                }
+            })
+            .catch(function() {
+                alert('Submit failed. Please try again.');
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Submit';
+            });
+        });
+    }
+</script>

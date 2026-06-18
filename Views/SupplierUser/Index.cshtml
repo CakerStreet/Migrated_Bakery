@@ -1,0 +1,586 @@
+@{
+    ViewData["Title"] = "Manage Supplier Users";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.SupplierUserItem> ?? new List<CakerStreet.Business.Services.SupplierUserItem>();
+    var totalPages = (int)(ViewBag.TotalPages ?? 0);
+    var totalCount = (int)(ViewBag.TotalCount ?? 0);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var search = ViewBag.Search as string ?? "";
+    var filterStatus = (int)(ViewBag.FilterStatus ?? 0);
+    var suppliers = ViewBag.Suppliers as List<CakerStreet.Business.Services.SupplierDropdownItem> ?? new List<CakerStreet.Business.Services.SupplierDropdownItem>();
+    var selectedSupplierId = (long)(ViewBag.SelectedSupplierId ?? 0L);
+    var supplierSelected = selectedSupplierId > 0;
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th {
+            padding: 3px;
+        }
+        .prdlstouter .form-control { padding: 0 5px; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Supplier Users</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        @* ─── Supplier Dropdown Filter ─── *@
+        <div class="col-md-12" style="margin-bottom: 15px;">
+            <label>Select Supplier:</label>
+            <select id="ddlSupplier" class="form-control" style="width: 300px; display: inline-block;" onchange="onSupplierChange();">
+                <option value="0">--Select Supplier--</option>
+                @foreach (var s in suppliers)
+                {
+                    <option value="@s.SupplierId" @(s.SupplierId == selectedSupplierId ? "selected" : "")>@s.SupplierName</option>
+                }
+            </select>
+        </div>
+
+        <div class="clearfix"></div>
+
+        @if (supplierSelected)
+        {
+            <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+                <div class="row-fluid category_box">
+                    <div class="clearfix"></div>
+
+                    @* ─── Filter Bar ─── *@
+                    <div class="col-md-12" id="divtopfilters">
+                        <div class="col-md-3">
+                            <div class="btn-group">
+                                <button class="btn btn-danger bg-red" type="button">Action on
+                                    <span id="spnfilterselected">0</span> selected</button>
+                                <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul role="menu" class="dropdown-menu">
+                                    <li><a href="javascript:void(0);" onclick="bulkSetActive();">Set as Active</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkSetInactive();">Set as Inactive</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkUpdateRecords();">Update Records</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkDelete();">Remove</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <ul class="filter-radio" style="list-style:none; padding:0; margin:0;">
+                                <li><label><input type="radio" name="filterstatus" value="0" @(filterStatus == 0 ? "checked" : "") onchange="doFilterStatus(0);" /> All</label></li>
+                                <li><label><input type="radio" name="filterstatus" value="1" @(filterStatus == 1 ? "checked" : "") onchange="doFilterStatus(1);" /> Active</label></li>
+                                <li><label><input type="radio" name="filterstatus" value="2" @(filterStatus == 2 ? "checked" : "") onchange="doFilterStatus(2);" /> Inactive</label></li>
+                            </ul>
+                        </div>
+
+                        <div class="col-md-3">
+                            <input type="text" id="txtsearch" class="form-contro input-sm" placeholder="Search keyword" value="@search" />
+                            <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doSearch();">Go</a>
+                            @if (!string.IsNullOrEmpty(search))
+                            {
+                                <a href="@GetPageUrl(1, "", selectedSupplierId, filterStatus)" class="btn btn-danger btn-sm">X</a>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    @* ─── Data Table ─── *@
+                    @if (items.Count > 0)
+                    {
+                        <div class="table prdlstouter" id="our_products">
+                            <table class="table table-bordred table-striped">
+                                <thead>
+                                    <tr>
+                                        <th class="chk headertext">
+                                            <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                        </th>
+                                        <th>Name</th>
+                                        <th>Email ID</th>
+                                        <th>Password</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in items)
+                                    {
+                                        <tr class="rowtext" data-id="@item.CustomerId">
+                                            <td class="chk">
+                                                <input type="checkbox" class="chkrow" data-id="@item.CustomerId" onchange="chkuncheckHeadernRowbyrow();" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control row-name" value="@item.Name" style="width:150px;" />
+                                            </td>
+                                            <td>@item.Email</td>
+                                            <td>
+                                                <input type="text" class="form-control row-password" value="@item.Password" style="width:120px;" />
+                                            </td>
+                                            <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                                            <td>
+                                                <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="saveRow(this);">Save</a>
+                                                <a href="javascript:void(0);" class="btn btn-default btn-sm" onclick="removeRow(@item.CustomerId);">Remove</a>
+                                            </td>
+                                        </tr>
+                                    }
+
+                                    @* ─── Add New Row ─── *@
+                                    <tr class="rowtext" id="addNewRow">
+                                        <td class="chk"></td>
+                                        <td>
+                                            <input type="text" id="txtNewName" class="form-control" placeholder="Enter Name" style="width:150px;" />
+                                        </td>
+                                        <td>
+                                            <input type="text" id="txtNewEmail" class="form-control" placeholder="Enter Email" style="width:200px;" />
+                                        </td>
+                                        <td>
+                                            <input type="text" id="txtNewPassword" class="form-control" placeholder="Password" style="width:120px;" />
+                                        </td>
+                                        <td>Active</td>
+                                        <td>
+                                            <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm" onclick="addNewUser();">Submit</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @* ─── Save All Button ─── *@
+                        <div class="divbtnmain_outer" style="margin: 10px 0;">
+                            <a href="javascript:void(0);" class="btn btn-lg btn-black square" onclick="saveAll();">Save All</a>
+                        </div>
+
+                        @* ─── Pagination ─── *@
+                        @if (totalPages > 1)
+                        {
+                            <div class="pagination pagination-right">
+                                <div class="paging_outer">
+                                    <ul class="left">
+                                        <li><a href="@GetPageUrl(1, search, selectedSupplierId, filterStatus)">First</a></li>
+                                        <li class="@(currentPage <= 1 ? "disabled" : "")">
+                                            @if (currentPage > 1)
+                                            {
+                                                <a href="@GetPageUrl(currentPage - 1, search, selectedSupplierId, filterStatus)"><img src="/img/prev-arrow.png" alt="Previous" /></a>
+                                            }
+                                            else
+                                            {
+                                                <span><img src="/img/prev-arrow.png" alt="Previous" /></span>
+                                            }
+                                        </li>
+                                    </ul>
+                                    <ul class="numbering">
+                                        @{
+                                            int pageButtonCount = 3;
+                                            int min = currentPage - pageButtonCount;
+                                            int max = currentPage + pageButtonCount;
+                                            if (max > totalPages) min -= (max - totalPages);
+                                            if (min < 1) max += (1 - min);
+                                            bool needDiv = false;
+
+                                            for (int i = 1; i <= totalPages; i++)
+                                            {
+                                                if (i <= 2 || i > totalPages - 2 || (min <= i && i <= max))
+                                                {
+                                                    <li class="@(i == currentPage ? "active" : "")">
+                                                        <a href="@GetPageUrl(i, search, selectedSupplierId, filterStatus)">@i</a>
+                                                    </li>
+                                                    needDiv = true;
+                                                }
+                                                else if (needDiv)
+                                                {
+                                                    <li class="disabled"><span>...</span></li>
+                                                    needDiv = false;
+                                                }
+                                            }
+                                        }
+                                    </ul>
+                                    <ul class="right">
+                                        <li class="@(currentPage >= totalPages ? "disabled" : "")">
+                                            @if (currentPage < totalPages)
+                                            {
+                                                <a href="@GetPageUrl(currentPage + 1, search, selectedSupplierId, filterStatus)"><img src="/img/nxt-arrow.png" alt="Next" /></a>
+                                            }
+                                            else
+                                            {
+                                                <span><img src="/img/nxt-arrow.png" alt="Next" /></span>
+                                            }
+                                        </li>
+                                        <li><a href="@GetPageUrl(totalPages, search, selectedSupplierId, filterStatus)">Last</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        @* ─── No items: still show Add New row ─── *@
+                        <div class="table prdlstouter" id="our_products">
+                            <table class="table table-bordred table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email ID</th>
+                                        <th>Password</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="rowtext" id="addNewRowEmpty">
+                                        <td>
+                                            <input type="text" id="txtNewNameEmpty" class="form-control" placeholder="Enter Name" style="width:150px;" />
+                                        </td>
+                                        <td>
+                                            <input type="text" id="txtNewEmailEmpty" class="form-control" placeholder="Enter Email" style="width:200px;" />
+                                        </td>
+                                        <td>
+                                            <input type="text" id="txtNewPasswordEmpty" class="form-control" placeholder="Password" style="width:120px;" />
+                                        </td>
+                                        <td>Active</td>
+                                        <td>
+                                            <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm" onclick="addNewUserEmpty();">Submit</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-info">No users found for this supplier.</div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-md-12">
+                <div class="alert alert-info">Please select a supplier from the dropdown above to manage users.</div>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber, string searchVal, long sid, int fs)
+    {
+        var url = "/supplierusers";
+        var queryParts = new List<string>();
+
+        if (sid > 0)
+            queryParts.Add("sid=" + sid);
+
+        if (fs != 0)
+            queryParts.Add("filterstatus=" + fs);
+
+        if (!string.IsNullOrEmpty(searchVal))
+            queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+
+        if (pageNumber != 1)
+            queryParts.Add("pageno=" + pageNumber);
+
+        if (queryParts.Count > 0)
+            url += "?" + string.Join("&", queryParts);
+
+        return url;
+    }
+}
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Current page state ─────────────────────────────────────────────────────
+    var currentSupplierId = @selectedSupplierId;
+    var currentFilterStatus = @filterStatus;
+    var currentSearch = '@System.Net.WebUtility.UrlEncode(search)';
+
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Supplier Dropdown Change ───────────────────────────────────────────────
+
+    function onSupplierChange() {
+        var sid = $('#ddlSupplier').val();
+        if (sid === '0') {
+            window.location.href = '/supplierusers';
+        } else {
+            window.location.href = '/supplierusers?sid=' + sid;
+        }
+    }
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+        updateSelectedCount();
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        $('#spnfilterselected').text($('.rowtext .chkrow:checked').length);
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            ids.push($(this).data('id'));
+        });
+        return ids;
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+
+    function doSearch() {
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword === '') {
+            alert('Please enter search keyword');
+            return;
+        }
+        var url = '/supplierusers?sid=' + currentSupplierId + '&search=' + encodeURIComponent(keyword);
+        if (currentFilterStatus != 0) url += '&filterstatus=' + currentFilterStatus;
+        window.location.href = url;
+    }
+
+    // ─── Filter Status ──────────────────────────────────────────────────────────
+
+    function doFilterStatus(status) {
+        var url = '/supplierusers?sid=' + currentSupplierId;
+        if (status != 0) url += '&filterstatus=' + status;
+        if (currentSearch) url += '&search=' + currentSearch;
+        window.location.href = url;
+    }
+
+    // ─── Add New User ───────────────────────────────────────────────────────────
+
+    function addNewUser() {
+        var email = $.trim($('#txtNewEmail').val());
+        var name = $.trim($('#txtNewName').val());
+        var password = $.trim($('#txtNewPassword').val());
+
+        if (email === '') { alert('Please enter email.'); return; }
+        if (name === '') { alert('Please enter name.'); return; }
+
+        $.post('/supplierusers/add', {
+            email: email,
+            name: name,
+            password: password,
+            supplierId: currentSupplierId
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to add user.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while adding user.', false);
+        });
+    }
+
+    function addNewUserEmpty() {
+        var email = $.trim($('#txtNewEmailEmpty').val());
+        var name = $.trim($('#txtNewNameEmpty').val());
+        var password = $.trim($('#txtNewPasswordEmpty').val());
+
+        if (email === '') { alert('Please enter email.'); return; }
+        if (name === '') { alert('Please enter name.'); return; }
+
+        $.post('/supplierusers/add', {
+            email: email,
+            name: name,
+            password: password,
+            supplierId: currentSupplierId
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to add user.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while adding user.', false);
+        });
+    }
+
+    // ─── Save Single Row ────────────────────────────────────────────────────────
+
+    function saveRow(btn) {
+        var $row = $(btn).closest('tr');
+        var id = $row.data('id');
+        var name = $row.find('.row-name').val();
+        var password = $row.find('.row-password').val();
+
+        var items = [{ id: id, name: name, password: password }];
+
+        $.ajax({
+            url: '/supplierusers/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
+            success: function (r) {
+                if (r.success) {
+                    showMessage('Record saved successfully.', true);
+                } else {
+                    showMessage(r.message || 'Failed to save.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving.', false);
+            }
+        });
+    }
+
+    // ─── Save All (Bulk Save checked rows) ──────────────────────────────────────
+
+    function saveAll() {
+        var items = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            var $row = $(this).closest('tr');
+            items.push({
+                id: $row.data('id'),
+                name: $row.find('.row-name').val(),
+                password: $row.find('.row-password').val()
+            });
+        });
+
+        if (items.length === 0) {
+            alert('Please select at least one row to save.');
+            return;
+        }
+
+        $.ajax({
+            url: '/supplierusers/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                    setTimeout(function () { location.reload(); }, 1000);
+                } else {
+                    showMessage(r.message || 'Failed to save.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving.', false);
+            }
+        });
+    }
+
+    // ─── Bulk Update Records (same as Save All) ─────────────────────────────────
+
+    function bulkUpdateRecords() {
+        saveAll();
+    }
+
+    // ─── Bulk Actions ───────────────────────────────────────────────────────────
+
+    function bulkSetActive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+        $.post('/supplierusers/bulkactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    function bulkSetInactive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+        $.post('/supplierusers/bulkinactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    function bulkDelete() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+        if (!confirm('Are you sure to remove selected ' + ids.length + ' item(s)?')) {
+            return;
+        }
+        $.post('/supplierusers/bulkdelete', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    // ─── Remove Single User ─────────────────────────────────────────────────────
+
+    function removeRow(id) {
+        if (!confirm('Are you sure to remove this user?')) return;
+        $.post('/supplierusers/remove', { id: id }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to remove.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    // ─── Enter key in search box ────────────────────────────────────────────────
+    $(document).ready(function () {
+        $('#txtsearch').on('keypress', function (e) {
+            if (e.which === 13) {
+                doSearch();
+                return false;
+            }
+        });
+    });
+</script>
+}

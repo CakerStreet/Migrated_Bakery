@@ -1,0 +1,387 @@
+@using CakerStreet.Business.Services
+@{
+    ViewBag.Title = "Course Assessment";
+    var course = (CourseModel)ViewBag.Course;
+    var mode = (string)ViewBag.Mode;
+
+    // For ResultDetail
+    var resultDetail = (AssessmentResultModel)ViewBag.Result;
+    var totalQuestions = ViewBag.TotalQuestions ?? 0;
+}
+
+<style type="text/css">
+    .div_QuestionMain_outer {
+        display: table;
+        margin: 0px auto 20px;
+        width: 100%;
+    }
+    ol, ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    .div_QuestionMain > ul.UL_QuestionMain {
+        display: table;
+        width: 100%;
+    }
+    .div_QuestionMain_outer li {
+        line-height: 30px;
+    }
+    .div_QuestionMain > ul.UL_QuestionMain li {
+        float: left;
+        line-height: 20px;
+        font-size: 15px;
+        font-weight: bold;
+        width: 100%;
+        position: relative;
+        padding: 5px 0 5px 90px;
+    }
+    ul.UL_QuestionMain li span {
+        position: absolute;
+        left: 0;
+        top: 5px;
+        color: #b51a1a;
+    }
+    .UL_rpAnswersMain {
+        display: table;
+        width: 100%;
+    }
+    .div_rpAnswersMain {
+        display: table;
+        width: 100%;
+        padding: 7px 0 7px 90px;
+        border-bottom: 1px dashed #ddd;
+        margin-bottom: 15px;
+    }
+    .UL_rpAnswersMain li {
+        float: left;
+        width: 50%;
+        padding: 5px 0 0 0;
+        display: flex;
+        height: 40px;
+        align-items: center;
+    }
+    .UL_rpAnswersMain li label {
+        font-weight: normal;
+        font-size: 13px;
+        line-height: 18px;
+        margin-left: 8px;
+        cursor: pointer;
+    }
+    .informationNotes {
+        display: table;
+        width: 100%;
+        padding: 15px;
+        color: #b51a1a;
+        font-style: italic;
+        background-color: #fcf8e3;
+        border: 1px solid #faebcc;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    .informationNotes span {
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .moudlebuttons_outer {
+        display: table;
+        width: 100%;
+        text-align: center;
+        padding: 20px 0;
+    }
+    .informationNotes.st {
+        color: green;
+        font-style: normal;
+        background-color: #dff0d8;
+        border-color: #d6e9c6;
+    }
+    .informationNotes.stf {
+        color: #a94442;
+        font-style: normal;
+        background-color: #f2dede;
+        border-color: #ebccd1;
+    }
+    @@media screen and (max-width:991px) {
+        .UL_rpAnswersMain li {
+            float: left;
+            width: 100%;
+            padding: 5px 0 0 0;
+            display: flex;
+            height: auto;
+        }
+    }
+    .informationDetail {
+        display: table;
+        width: 100%;
+        line-height: 20px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #d9edf7;
+        border: 1px solid #bce8f1;
+        border-radius: 4px;
+        color: #31708f;
+    }
+    .normallink, .normallink:hover, .normallink:focus {
+        text-decoration: underline;
+        color: #fff;
+    }
+    .rpad10 {
+        padding-right: 10px;
+    }
+    .div_QuestionMainList_outer, .div_ResultMain {
+        display: table;
+        width: 100%;
+    }
+    .UL_ResultMain {
+        display: table-row;
+        line-height: 34px;
+    }
+    .UL_ResultMain.headertext {
+        background-color: #ccc;
+        font-weight: bold;
+    }
+    .UL_ResultMain > li {
+        display: table-cell;
+        padding: 0 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .inventoryWrapper .innerhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #b51a1a;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .inventoryWrapper h2 {
+        margin: 0;
+        color: #b51a1a;
+        font-weight: bold;
+    }
+</style>
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper container">
+    <div class="innerhead">
+        <h2>
+            @if (mode == "Assessment")
+            {
+                @($"{course.CourseName} - Assessment")
+            }
+            else if (mode == "ResultList")
+            {
+                @($"{course.CourseName} - Assessment Results")
+            }
+            else if (mode == "ResultDetail")
+            {
+                @($"{resultDetail.CourseName} - Assessment Result")
+            }
+        </h2>
+        <div>
+            @if (mode == "Assessment" || mode == "ResultList")
+            {
+                <a href="~/course/@course.CourseSeoUrl" class="btn btn-default btn-xs">Back to Course</a>
+            }
+            else if (mode == "ResultDetail")
+            {
+                <a href="~/course/@resultDetail.CourseSeoUrl" class="btn btn-default btn-xs">Back to Course</a>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <input type="hidden" id="hfCourseID" value="@(course?.CourseId ?? resultDetail?.CourseId)" />
+
+            @if (mode == "Assessment")
+            {
+                var questionsList = (List<QuestionModel>)Model;
+                <div class="div_QuestionMainList_outer">
+                    <div class="informationNotes" id="div_informationNotes">
+                        You need to score <span>7</span> correct answers out of <span>10</span> questions
+                        to pass this Food Allergen Awareness Assessment. Good Luck!
+                    </div>
+
+                    @for (int i = 0; i < questionsList.Count; i++)
+                    {
+                        var q = questionsList[i];
+                        <div class="div_QuestionMain">
+                            <ul class="UL_QuestionMain">
+                                <li>
+                                    <span>Question @(i + 1).</span>
+                                    @q.QuestionText
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="div_rpAnswersMain">
+                            <ul class="UL_rpAnswersMain">
+                                @foreach (var ans in q.Answers)
+                                {
+                                    <li>
+                                        <input data-tid="@ans.AnswerId" data-qtid="@ans.QuestionId"
+                                               type="radio" id="rdbtnAnswer_@ans.AnswerId" onchange="SelectSingleRadiobutton(this);"
+                                               name="rdbtnAnswer_Grp_@q.QuestionId" />
+                                        <label for="rdbtnAnswer_@ans.AnswerId">@ans.AnswerText</label>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+
+                <div class="moudlebuttons_outer">
+                    <button type="button" onclick="SubmitAssessment();" class="btn btn-danger btn-lg">Submit Assessment</button>
+                </div>
+            }
+            else if (mode == "ResultList")
+            {
+                var resultsList = (List<AssessmentResultModel>)Model;
+                <div class="div_ResultMain" style="margin-top: 15px;">
+                    <ul class="UL_ResultMain headertext">
+                        <li>Sr.</li>
+                        <li>Staff</li>
+                        <li>Status</li>
+                        <li>Score</li>
+                        <li>Date</li>
+                        <li>Action</li>
+                    </ul>
+
+                    @if (resultsList.Any())
+                    {
+                        for (int i = 0; i < resultsList.Count; i++)
+                        {
+                            var r = resultsList[i];
+                            <ul class="UL_ResultMain">
+                                <li><span>@(i + 1).</span></li>
+                                <li>@r.StaffName</li>
+                                <li>
+                                    <span class="label @(r.IsPass ? "label-success" : "label-danger")">
+                                        @(r.IsPass ? "Pass" : "Fail")
+                                    </span>
+                                </li>
+                                <li>@Math.Round(r.ResultPercentage, 1)%</li>
+                                <li>@r.ModifiedOn.ToString("dd/MM/yyyy")</li>
+                                <li>
+                                    <a href="~/course/result/detail/@r.ResultId" class="btn btn-xs btn-default">View Details</a>
+                                </li>
+                            </ul>
+                        }
+                    }
+                    else
+                    {
+                        <ul class="UL_ResultMain">
+                            <td colspan="6" style="padding: 15px; text-align: center;">No results found for this course yet.</td>
+                        </ul>
+                    }
+                </div>
+            }
+            else if (mode == "ResultDetail")
+            {
+                var marksCount = (resultDetail.ResultPercentage * totalQuestions) / 100m;
+
+                <div class="div_QuestionMainList_outer">
+                    <div class="informationNotes @(resultDetail.IsPass ? "st" : "stf")" id="div_informationNotes">
+                        You have scored <span>@Math.Round(marksCount, 1)</span> [Out of <span>@totalQuestions</span> questions] - <span>@Math.Round(resultDetail.ResultPercentage, 1)%</span>
+                        <br />
+                        <strong>Status: @(resultDetail.IsPass ? "PASS" : "FAIL")</strong>
+                    </div>
+
+                    @if (resultDetail.IsPass)
+                    {
+                        <div class="informationDetail" id="informationDetail">
+                            <p><strong>Congratulations on passing the Food Allergen Awareness course!</strong></p>
+                            <p>Your certificate will be emailed and posted to you within 1 working day, original certificate should be with you within 2-3 working days. Please make sure your address on the system is correct.</p>
+                            <p>Don't forget to check out our other great courses. Remember to come back and take your refresher course when it is due.</p>
+                        </div>
+                    }
+
+                    <div class="moudlebuttons_outer">
+                        @if (resultDetail.IsPass)
+                        {
+                            <a href="~/" class="btn btn-danger btn-lg">Back to Home</a>
+                        }
+                        else
+                        {
+                            <a href="~/course/assessment/@resultDetail.CourseSeoUrl" class="btn btn-danger btn-lg">Start Re-Assessment</a>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+    <script type="text/javascript">
+        function SelectSingleRadiobutton(obj) {
+            var groupName = $(obj).attr("name");
+            $("input[name='" + groupName + "']").each(function () {
+                if (this !== obj) {
+                    $(this).prop('checked', false);
+                }
+            });
+        }
+
+        function SubmitAssessment() {
+            var leftcounter = 0;
+            // Iterate over each question answer div (each unique name group)
+            var namesChecked = {};
+            $("input[type='radio']").each(function() {
+                var name = $(this).attr("name");
+                namesChecked[name] = false;
+            });
+
+            for (var name in namesChecked) {
+                if ($("input[name='" + name + "']:checked").length > 0) {
+                    namesChecked[name] = true;
+                } else {
+                    leftcounter += 1;
+                }
+            }
+
+            if (leftcounter > 0) {
+                alert(leftcounter + " Questions are pending!");
+            }
+            else {
+                var arr_data_entry = [];
+                $("input[type='radio']:checked").each(function () {
+                    var data_entry = {};
+                    data_entry.ansID = parseInt($(this).attr("data-tid").toString());
+                    data_entry.queID = parseInt($(this).attr("data-qtid").toString());
+                    arr_data_entry.push(data_entry);
+                });
+
+                var payload = {
+                    courseID: parseInt($("#hfCourseID").val()),
+                    arr_data_entry: arr_data_entry
+                };
+
+                $.ajax({
+                    type: "POST",
+                    url: "/course/assessment/submit",
+                    data: JSON.stringify(payload),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: false,
+                    cache: false,
+                    success: function (msg) {
+                        if (msg.data_ID == 0) {
+                            alert('Some error occurred! Please try again.');
+                        }
+                        else {
+                            alert(msg.data_str);
+                            location.href = "/course/result/detail/" + msg.data_optionalstr;
+                        }
+                    },
+                    error: function (x, e) {
+                        alert("The call to the server side failed. " + x.responseText);
+                    }
+                });
+            }
+        }
+    </script>
+}

@@ -1,0 +1,293 @@
+@{
+    ViewData["Title"] = "Manage Purchase Order";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var result = ViewBag.Result as CakerStreet.Business.Services.POListResult;
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var statusFilter = (int)(ViewBag.StatusFilter ?? -1);
+    var searchTerm = ViewBag.SearchTerm as string ?? "";
+    var userType = ViewBag.UserType as string ?? "";
+    var isAdmin = (userType == "1" || userType == "2");
+}
+
+@section Head {
+    <style type="text/css">
+        .status-tabs { margin-bottom: 15px; }
+        .status-tabs label { margin-right: 10px; cursor: pointer; }
+        .status-tabs input[type="radio"] { margin-right: 3px; }
+        .po-table th, .po-table td { vertical-align: middle !important; }
+        .remarks-row { background-color: #f9f9f9; }
+        .remark-item { padding: 5px 0; border-bottom: 1px solid #eee; }
+        .remark-item:last-child { border-bottom: none; }
+        .btn-xs { font-size: 11px; padding: 2px 8px; }
+        .pagination > .active > a { background-color: #cf0000; border-color: #cf0000; }
+        .pagination > li > a { border: 1px solid #E1E1E1; color: #6C6764; }
+    </style>
+}
+
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 style="display:inline;">Manage Purchase Order</h4>
+            </div>
+
+            @* === STATUS RADIO BUTTONS === *@
+            <div class="panel-body status-tabs">
+                <label><input type="radio" name="rbStatus" value="0" @(statusFilter == 0 ? "checked" : "") onchange="filterByStatus(0)" /> Pending (@(result?.PendingCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="1" @(statusFilter == 1 ? "checked" : "") onchange="filterByStatus(1)" /> Approved (@(result?.ApprovedCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="3" @(statusFilter == 3 ? "checked" : "") onchange="filterByStatus(3)" /> Sent to Supplier (@(result?.SentToSupplierCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="4" @(statusFilter == 4 ? "checked" : "") onchange="filterByStatus(4)" /> PO Completed (@(result?.CompletedCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="5" @(statusFilter == 5 ? "checked" : "") onchange="filterByStatus(5)" /> Declined (@(result?.DeclinedCount ?? 0))</label>
+            </div>
+
+            @* === SEARCH + ADD NEW === *@
+            <div class="panel-body" style="padding-top:0;">
+                <form method="get" action="/managepurchaseorder" class="form-inline">
+                    <input type="hidden" name="status" value="@statusFilter" />
+                    <input type="text" name="search" class="form-control" placeholder="Search PO#..." value="@searchTerm" style="width:200px;" />
+                    <button type="submit" class="btn btn-danger btn-sm">Go</button>
+                    <a href="/managepurchaseorder" class="btn btn-info btn-sm" style="margin-left:5px;">View All</a>
+                    @if (isAdmin)
+                    {
+                        <a href="/addpurchaseorder" class="btn btn-success btn-sm pull-right">Add New</a>
+                    }
+                </form>
+            </div>
+
+            @* === BULK ACTIONS === *@
+            @if (isAdmin && statusFilter == 0)
+            {
+                <div class="panel-body" style="padding-top:0;">
+                    <button class="btn btn-xs btn-success" onclick="bulkApprove()">Approve Selected</button>
+                    <button class="btn btn-xs btn-warning" onclick="bulkDecline()">Decline Selected</button>
+                    <button class="btn btn-xs btn-danger" onclick="bulkDelete()">Delete Selected</button>
+                </div>
+            }
+
+            @* === TABLE === *@
+            @if (result == null || result.Items.Count == 0)
+            {
+                <div class="panel-body">
+                    <div class="alert alert-danger">No Purchase Orders Found</div>
+                </div>
+            }
+            else
+            {
+                <div class="panel-body">
+                    <table class="table table-bordered table-hover po-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="chkSelectAll" onclick="toggleSelectAll(this)" /></th>
+                                <th>PO #</th>
+                                <th>Date</th>
+                                <th>Supplier</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var po in result.Items)
+                            {
+                                <tr>
+                                    <td><input type="checkbox" class="chkPO" value="@po.PO_ID" /></td>
+                                    <td>@po.PO_SysNo</td>
+                                    <td>@po.PO_Date.ToString("dd/MM/yyyy")</td>
+                                    <td>@po.SupplierName</td>
+                                    <td>&pound;@po.PO_TotalAmt.ToString("0.00")</td>
+                                    <td>
+                                        @if (po.PO_Status == 0) { <span class="label label-warning">Pending</span> }
+                                        else if (po.PO_Status == 1) { <span class="label label-info">Approved (1 dept)</span> }
+                                        else if (po.PO_Status == 2) { <span class="label label-success">Fully Approved</span> }
+                                        else if (po.PO_Status == 3) { <span class="label label-primary">Sent to Supplier</span> }
+                                        else if (po.PO_Status == 4) { <span class="label label-default">Completed</span> }
+                                    </td>
+                                    <td>
+                                        @if (isAdmin)
+                                        {
+                                            @if (po.PO_PurDep_Status == 0)
+                                            {
+                                                <button class="btn btn-xs btn-success" onclick="approvePO(@po.PO_ID)">Approve (PD)</button>
+                                            }
+                                            @if (po.PO_Manager_Status == 0)
+                                            {
+                                                <button class="btn btn-xs btn-info" onclick="managerApprovePO(@po.PO_ID)">Approve (Mgr)</button>
+                                            }
+                                            @if (po.PO_Status == 2)
+                                            {
+                                                <button class="btn btn-xs btn-primary" onclick="sendToSupplier(@po.PO_ID)">Send to Supplier</button>
+                                            }
+                                            @if (po.PO_Status == 3)
+                                            {
+                                                <a href="/managepurchaseorderitemreceived?id=@po.PO_ID" class="btn btn-xs btn-success">Item Received</a>
+                                            }
+                                            @if (po.PO_Status == 0 || po.PO_Status == 1)
+                                            {
+                                                <a href="/addpurchaseorder?id=@po.PO_ID" class="btn btn-xs btn-default">Edit</a>
+                                            }
+                                            <button class="btn btn-xs btn-danger" onclick="declinePO(@po.PO_ID)">Decline</button>
+                                        }
+                                        <button class="btn btn-xs btn-default" onclick="toggleRemarks(@po.PO_ID)">Remarks</button>
+                                    </td>
+                                </tr>
+                                <tr class="remarks-row" id="remarks-row-@po.PO_ID" style="display:none;">
+                                    <td colspan="7">
+                                        <div id="remarks-container-@po.PO_ID"></div>
+                                        <div class="form-inline" style="margin-top:10px;">
+                                            <input type="text" class="form-control input-sm" id="remarkMsg-@po.PO_ID" placeholder="Add remark..." style="width:300px;" />
+                                            <button class="btn btn-xs btn-success" onclick="saveRemark(@po.PO_ID)">Send</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    @* === PAGINATION === *@
+                    @if (result.TotalPages > 1)
+                    {
+                        <nav>
+                            <ul class="pagination">
+                                @if (currentPage > 1)
+                                {
+                                    <li><a href="@GetPageUrl(currentPage - 1)">&laquo;</a></li>
+                                }
+                                @for (int i = 1; i <= result.TotalPages; i++)
+                                {
+                                    <li class="@(i == currentPage ? "active" : "")"><a href="@GetPageUrl(i)">@i</a></li>
+                                }
+                                @if (currentPage < result.TotalPages)
+                                {
+                                    <li><a href="@GetPageUrl(currentPage + 1)">&raquo;</a></li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber)
+    {
+        var statusFilter = (int)(ViewBag.StatusFilter ?? -1);
+        var searchTerm = ViewBag.SearchTerm as string ?? "";
+        var url = "/managepurchaseorder?";
+        var parts = new List<string>();
+        if (statusFilter >= 0) parts.Add("status=" + statusFilter);
+        if (!string.IsNullOrEmpty(searchTerm)) parts.Add("search=" + Uri.EscapeDataString(searchTerm));
+        if (pageNumber > 1) parts.Add("pageno=" + pageNumber);
+        return url + string.Join("&", parts);
+    }
+}
+
+@section FooterScripts {
+<script type="text/javascript">
+    function filterByStatus(status) {
+        window.location.href = '/managepurchaseorder?status=' + status;
+    }
+
+    function toggleSelectAll(el) {
+        $('.chkPO').prop('checked', el.checked);
+    }
+
+    function getCheckedIds() {
+        var ids = [];
+        $('.chkPO:checked').each(function () { ids.push($(this).val()); });
+        return ids;
+    }
+
+    function approvePO(id) {
+        if (!confirm('Approve this Purchase Order (Purchase Dept)?')) return;
+        $.post('/managepurchaseorder/approve', { id: id }, function (r) {
+            alert(r.message);
+            location.reload();
+        });
+    }
+
+    function managerApprovePO(id) {
+        if (!confirm('Approve this Purchase Order (Manager)?')) return;
+        $.post('/managepurchaseorder/managerapprove', { id: id }, function (r) {
+            alert(r.message);
+            location.reload();
+        });
+    }
+
+    function declinePO(id) {
+        if (!confirm('Decline this Purchase Order?')) return;
+        $.post('/managepurchaseorder/decline', { id: id }, function (r) {
+            alert(r.message);
+            location.reload();
+        });
+    }
+
+    function sendToSupplier(id) {
+        if (!confirm('Send this PO to supplier?')) return;
+        $.post('/managepurchaseorder/sendtosupplier', { id: id }, function (r) {
+            alert(r.message);
+            location.reload();
+        });
+    }
+
+    function bulkApprove() {
+        var ids = getCheckedIds();
+        if (ids.length === 0) { alert('Please select at least one PO.'); return; }
+        if (!confirm('Approve ' + ids.length + ' selected PO(s)?')) return;
+        var promises = ids.map(function(id) { return $.post('/managepurchaseorder/approve', { id: id }); });
+        $.when.apply($, promises).then(function () { location.reload(); });
+    }
+
+    function bulkDecline() {
+        var ids = getCheckedIds();
+        if (ids.length === 0) { alert('Please select at least one PO.'); return; }
+        if (!confirm('Decline ' + ids.length + ' selected PO(s)?')) return;
+        var promises = ids.map(function(id) { return $.post('/managepurchaseorder/decline', { id: id }); });
+        $.when.apply($, promises).then(function () { location.reload(); });
+    }
+
+    function bulkDelete() {
+        var ids = getCheckedIds();
+        if (ids.length === 0) { alert('Please select at least one PO.'); return; }
+        if (!confirm('Delete ' + ids.length + ' selected PO(s)? This cannot be undone.')) return;
+        var promises = ids.map(function(id) { return $.post('/managepurchaseorder/decline', { id: id }); });
+        $.when.apply($, promises).then(function () { location.reload(); });
+    }
+
+    function toggleRemarks(poId) {
+        var row = $('#remarks-row-' + poId);
+        if (row.is(':visible')) {
+            row.hide();
+        } else {
+            $.get('/managepurchaseorder/remarks/' + poId, function (data) {
+                var html = '';
+                if (data && data.length > 0) {
+                    data.forEach(function (r) {
+                        var dt = new Date(r.poRemarks_modifiedOn);
+                        html += '<div class="remark-item"><strong>' + r.poRemarks_Name + '</strong> <small>(' + dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString() + ')</small><br/>' + r.poRemarks_message + '</div>';
+                    });
+                } else {
+                    html = '<em>No remarks yet.</em>';
+                }
+                $('#remarks-container-' + poId).html(html);
+                row.show();
+            });
+        }
+    }
+
+    function saveRemark(poId) {
+        var msg = $('#remarkMsg-' + poId).val();
+        if (!msg) { alert('Please enter a remark.'); return; }
+        $.post('/managepurchaseorder/saveremark', { poId: poId, name: '@ViewBag.UserName', message: msg }, function (r) {
+            if (r.success) {
+                $('#remarkMsg-' + poId).val('');
+                toggleRemarks(poId); // hide
+                toggleRemarks(poId); // re-show with new data
+            } else {
+                alert('Failed to save remark.');
+            }
+        });
+    }
+</script>
+}

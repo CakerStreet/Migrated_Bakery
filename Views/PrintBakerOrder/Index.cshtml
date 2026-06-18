@@ -1,0 +1,346 @@
+@model CakerStreet.Business.Services.OrderDetailResult
+@{
+    Layout = "_PrintLayout";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+<style>
+    body, body * {
+        font-family: Arial, sans-serif;
+        font-weight: normal;
+        background-color: #ffffff;
+    }
+    b, strong { font-weight: bold; }
+    .container { max-width: 900px; margin: 0 auto; padding: 10px; }
+    .print-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+    .print-header h2 { margin: 0; font-size: 20px; }
+    .print-header .order-id { font-size: 16px; color: #555; }
+    .info-panels { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .info-panel { flex: 1; min-width: 200px; border: 1px solid #ccc; padding: 8px; border-radius: 3px; }
+    .info-panel h4 { margin: 0 0 5px 0; font-size: 13px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .info-panel p { margin: 2px 0; font-size: 12px; line-height: 1.4; }
+    .product-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
+    .product-table th { background-color: #f5f5f5; border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-weight: bold; }
+    .product-table td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; }
+    .product-table .img-cell img { max-width: 60px; max-height: 60px; }
+    .product-table .attr-list { margin: 3px 0 0 0; padding: 0 0 0 12px; font-size: 11px; color: #555; }
+    .product-table .attr-list li { margin-bottom: 1px; }
+    .totals-section { text-align: right; margin-bottom: 15px; font-size: 13px; }
+    .totals-section table { margin-left: auto; border-collapse: collapse; }
+    .totals-section td { padding: 3px 10px; }
+    .totals-section .total-row { font-weight: bold; font-size: 14px; border-top: 1px solid #333; }
+    .remarks-section { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; border-radius: 3px; }
+    .remarks-section h4 { margin: 0 0 5px 0; font-size: 13px; }
+    .btn-print { background-color: #b51a1a; color: #fff; border: 1px solid #b51a1a; padding: 8px 20px; font-size: 14px; cursor: pointer; border-radius: 3px; }
+    .btn-print:hover { background-color: #8e1414; }
+    .btn-primary { background-color: #b51a1a; color: #ffffff; border-color: #b51a1a; }
+    .btn-primary:hover { background-color: #8e1414; border-color: #8e1414; }
+    .print-actions { text-align: center; margin-bottom: 15px; }
+    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; color: #fff; }
+    .status-pending { background-color: #d9534f; }
+    .status-confirmed { background-color: #5cb85c; }
+    .status-completed { background-color: #5bc0de; }
+    .status-cancelled { background-color: #d9534f; }
+    .delivery-highlight { background-color: #fff3cd; padding: 5px 8px; border-radius: 3px; margin-top: 5px; }
+    .files-list { margin-top: 5px; }
+    .files-list a { font-size: 11px; color: #337ab7; display: block; }
+
+    @@media print {
+        .no-print { display: none !important; }
+        .container { max-width: 100%; }
+        body { margin: 5mm; padding: 0; }
+        @@page { margin: 5mm; size: A4; }
+    }
+</style>
+
+@{
+    var instructionItems = ViewBag.InstructionItems as List<CakerStreet.Business.Controllers.BakerInstructionItem> ?? new List<CakerStreet.Business.Controllers.BakerInstructionItem>();
+    var dispatchLabel = ViewBag.DispatchLabel as string ?? "Dispatch Date:";
+}
+
+<div class="container">
+    <div class="print-actions no-print">
+        <input type="hidden" id="hfOrderID" value="@Model.OrderId" />
+        <button id="btnPrint" class="btn-print" onclick="updateorderprintlog(3);">
+            <span>&#128424;</span> Print Baker's Copy
+        </button>
+        <span id="spntxtwait" style="display:none;" class="text-muted">Please wait...</span>
+    </div>
+
+    <div id="div_instructionouter" class="no-print" style="padding-bottom: 10px; border-bottom: 1px solid #ccc; margin-bottom: 10px; background-color: #ffeeee;">
+        <table style="margin: 0 auto; background-color: #ffeeee;" cellpadding="5">
+            <tr>
+                <td style="text-align: center; font-size: 20px;" colspan="2">Baker's Instructions</td>
+            </tr>
+            <tr>
+                <td style="text-align: left" valign="top">Remarks:</td>
+                <td><textarea id="txtRemarks" class="form-control" style="width: 100%; height: 100px;" placeholder="Enter Remarks (Optional)">@ViewBag.BakerRemarks</textarea></td>
+            </tr>
+            <tr>
+                <td style="text-align: left" width="120px">Ready By:</td>
+                <td>
+                    <input type="text" id="txtReadyByDate" class="form-control" style="width: 120px; display:inline;" placeholder="DD/MM/YYYY" value="@ViewBag.ReadyByDate" />
+                    at <input type="text" id="txtReadyByTime" class="form-control" style="width: 120px; display:inline;" placeholder="HH:MM AM|PM" value="@ViewBag.ReadyByTime" />
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: left" id="dispatchtd">@dispatchLabel</td>
+                <td>
+                    <input type="text" id="txtDispatchedDate" class="form-control" style="width: 120px; display:inline;" placeholder="DD/MM/YYYY" value="@ViewBag.DispatchDate" />
+                    at <input type="text" id="txtDispatchedTime" class="form-control" style="width: 120px; display:inline;" placeholder="HH:MM AM|PM" value="@ViewBag.DispatchTime" />
+                </td>
+            </tr>
+            @if (instructionItems.Count > 0)
+            {
+                <tr>
+                    <td colspan="2">
+                        <fieldset style="padding: 5px 10px; border: 1px solid #aaa;">
+                            <legend style="font-size: 14px;">Saved Instructions:</legend>
+                            @foreach (var item in instructionItems)
+                            {
+                                <div style="border-top: 1px solid #ccc; padding: 5px 0;">
+                                    <b>@item.Title</b><br/>
+                                    @item.Remarks
+                                </div>
+                            }
+                        </fieldset>
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td></td>
+                <td>
+                    <button type="button" class="btn btn-primary" onclick="submitInstructions();">Submit</button>
+                    <button type="button" class="btn btn-primary" onclick="resetInstructions();">Reset</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="print-header">
+        <h2>Baker's Order Copy</h2>
+        <div class="order-id">
+            Order #@Model.OrderId
+            @if (Model.ForwardedOrderId > 0)
+            {
+                <span>(Forwarded from #@Model.ForwardedOrderId)</span>
+            }
+            @if (Model.IsRepeat)
+            {
+                <span>(Repeat Order)</span>
+            }
+        </div>
+        <div>
+            <span>Date: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span> &nbsp;|&nbsp;
+            <span class="status-badge @(Model.Status switch { 0 or 10 or 11 => "status-pending", 4 => "status-completed", _ => "status-confirmed" })">
+                @Model.StatusText
+            </span>
+        </div>
+    </div>
+
+    <div class="info-panels">
+        <div class="info-panel">
+            <h4>Delivery / Collection</h4>
+            @if (Model.DeliveryMode == 0)
+            {
+                <p><b>Mode:</b> Collection</p>
+                <p><b>Date & Time:</b> @Model.CollectionDate.ToString("dd/MM/yyyy (hh:mm tt") - @Model.CollectionDate.AddHours(1).ToString("hh:mm tt)")</p>
+                @if (!string.IsNullOrEmpty(Model.Occasion))
+                {
+                    <p><b>Occasion:</b> @Model.Occasion</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.CollectionRemarks))
+                {
+                    <p><b>Remarks:</b> @Model.CollectionRemarks</p>
+                }
+            }
+            else
+            {
+                <p><b>Mode:</b> Delivery</p>
+                <p><b>Delivery Date:</b> @Model.CollectionDate.ToString("dd/MM/yyyy hh:mm tt")</p>
+                @if (!string.IsNullOrEmpty(Model.Occasion))
+                {
+                    <p><b>Occasion:</b> @Model.Occasion</p>
+                }
+            }
+        </div>
+
+        <div class="info-panel">
+            <h4>Dispatch To</h4>
+            <p><b>@Model.ShippingFullName</b></p>
+            <p>@Model.ShippingAddress</p>
+            <p>@Model.ShippingCity, @Model.ShippingCounty</p>
+            <p>@Model.ShippingZip, @Model.ShippingCountry</p>
+            <p>Phone: @Model.ShippingPhone</p>
+        </div>
+
+        <div class="info-panel">
+            <h4>Customer / Billing</h4>
+            <p><b>@Model.BillingFullName</b></p>
+            <p>@Model.BillingAddress</p>
+            <p>@Model.BillingCity, @Model.BillingCounty</p>
+            <p>@Model.BillingZip, @Model.BillingCountry</p>
+            <p>Email: @Model.CustomerEmail</p>
+            <p>Phone: @Model.BillingPhone</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.CollectionRemarks))
+    {
+        <div class="remarks-section">
+            <h4>Order Remarks</h4>
+            <p>@Model.CollectionRemarks</p>
+        </div>
+    }
+
+    <table class="product-table">
+        <thead>
+            <tr>
+                <th style="width:70px;">Image</th>
+                <th>Product</th>
+                <th style="width:50px;">Qty</th>
+                <th style="width:80px;">Unit Price</th>
+                <th style="width:80px;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.LineItems)
+            {
+                var displayUnitPrice = item.GetDisplayUnitPrice(Model.SaleType, Model.CSMargin, Model.ShopMargin);
+                var displayTotalPrice = item.GetDisplayTotalPrice(Model.SaleType, Model.CSMargin, Model.ShopMargin);
+                var imgSrc = !string.IsNullOrEmpty(item.ProductImage)
+                    ? $"{cdnBase}upload/product_images/resized_300_300/{item.ProductImage}"
+                    : $"{cdnBase}images/blankImages/img75.jpg";
+                <tr>
+                    <td class="img-cell">
+                        <img src="@imgSrc" alt="@item.ProductName" />
+                    </td>
+                    <td>
+                        <b>@item.ProductName</b>
+                        @if (item.Attributes.Any())
+                        {
+                            <ul class="attr-list">
+                                @foreach (var attr in item.Attributes)
+                                {
+                                    <li><b>@attr.Title:</b> @attr.Value</li>
+                                }
+                            </ul>
+                        }
+                        @if (item.Files.Any())
+                        {
+                            <div class="files-list">
+                                @foreach (var file in item.Files)
+                                {
+                                    <a href="@(cdnBase)upload/product_images/@file.FileName" target="_blank">
+                                        📎 @(!string.IsNullOrEmpty(file.FileTitle) ? file.FileTitle : file.FileName)
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </td>
+                    <td>@item.Quantity</td>
+                    <td>£@displayUnitPrice.ToString("N2")</td>
+                    <td>£@displayTotalPrice.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <table>
+            @{
+                var subtotal = Model.LineItems.Sum(i => i.GetDisplayTotalPrice(Model.SaleType, Model.CSMargin, Model.ShopMargin));
+            }
+            <tr>
+                <td>Subtotal:</td>
+                <td>£@subtotal.ToString("N2")</td>
+            </tr>
+            @if (Model.ShippingCost > 0)
+            {
+                <tr>
+                    <td>Delivery:</td>
+                    <td>£@Model.ShippingCost.ToString("N2")</td>
+                </tr>
+            }
+            <tr class="total-row">
+                <td>Total:</td>
+                <td>£@((subtotal + Model.ShippingCost).ToString("N2"))</td>
+            </tr>
+        </table>
+    </div>
+
+    @if (Model.IsFranchise && !string.IsNullOrEmpty(Model.BranchName))
+    {
+        <div class="info-panel" style="margin-bottom: 15px;">
+            <h4>Branch Details</h4>
+            <p><b>@Model.BranchName</b></p>
+            <p>@Model.BranchAddress, @Model.BranchCity</p>
+            <p>@Model.BranchPostcode</p>
+            <p>Phone: @Model.BranchBusinessPhone</p>
+            <p>Email: @Model.BranchOrderEmail</p>
+        </div>
+    }
+</div>
+
+<script type="text/javascript">
+    function updateorderprintlog(typeID) {
+        document.getElementById('spntxtwait').style.display = 'inline';
+        document.getElementById('btnPrint').style.display = 'none';
+        fetch('/printorderbakers/logprint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderIDs: document.getElementById('hfOrderID').value, typeId: typeID })
+        })
+        .then(function() { window.print(); })
+        .catch(function() { window.print(); }); // Print even if log fails
+    }
+
+    function submitInstructions() {
+        var remarks = document.getElementById('txtRemarks').value;
+        var readyByDate = document.getElementById('txtReadyByDate').value;
+        var readyByTime = document.getElementById('txtReadyByTime').value;
+        var dispatchDate = document.getElementById('txtDispatchedDate').value;
+        var dispatchTime = document.getElementById('txtDispatchedTime').value;
+
+        var alerttext = "";
+        if (!readyByDate) alerttext += "Enter Ready By: Date\n";
+        if (!readyByTime) alerttext += "Enter Ready By: Time\n";
+        if (!dispatchDate) alerttext += "Enter Dispatch Date\n";
+        if (!dispatchTime) alerttext += "Enter Dispatch Time\n";
+        if (alerttext) { alert(alerttext); return; }
+
+        fetch('/printorderbakers/saveinstructions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: parseInt(document.getElementById('hfOrderID').value),
+                remarks: remarks,
+                readyByDate: readyByDate,
+                readyByTime: readyByTime,
+                dispatchDate: dispatchDate,
+                dispatchTime: dispatchTime
+            })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { window.location.reload(); }
+            else { alert('Error saving instructions'); }
+        })
+        .catch(function() { alert('Error saving instructions'); });
+    }
+
+    function resetInstructions() {
+        if (!confirm('Reset all baker instructions for this order?')) return;
+        fetch('/printorderbakers/resetinstructions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: parseInt(document.getElementById('hfOrderID').value) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) { window.location.reload(); }
+            else { alert('Error resetting instructions'); }
+        })
+        .catch(function() { alert('Error resetting instructions'); });
+    }
+</script>

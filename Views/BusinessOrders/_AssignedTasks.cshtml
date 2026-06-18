@@ -1,0 +1,768 @@
+@model CakerStreet.Business.Models.AssignedTasksViewModel
+@using CakerStreet.Business.Helpers
+@{
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var strFindFilter = AssignedTasksNavHelper.BuildFindFilter(null, null, null, Model.ActiveDispTime);
+}
+
+@* === LAYER 1: Status sub-nav (All / Assigned Tasks) === *@
+@* Source: bakeryorders.aspx line 152 — divtaskassignedlinks *@
+<div class="panel-heading bot">
+    <ul>
+        <li><a href="/businessorders?ordertype=5">All</a></li>
+        <li><a class="stt" href="/businessorders?ordertype=12">Assigned Tasks</a></li>
+    </ul>
+</div>
+
+@* === LAYER 2: Day tabs === *@
+@* Source: bakeryorders.aspx line 160 — divDayType *@
+<div class="panel-heading day">
+    <ul>
+        <li class="hide"><a id="ancAllDay" class="@(Model.ActiveDayID == 0 ? "stt" : "")"
+            href="/businessorders?ordertype=12">All</a></li>
+        @foreach (var day in Model.DayTabs)
+        {
+            var dayClass = AssignedTasksNavHelper.GetDayTabCssClass(day.Date, day.IsClosed, day.DayID, Model.ActiveDayID, Model.ActiveDayID > 0);
+            <li><a class="@dayClass" href="@AssignedTasksNavHelper.BuildDayTabUrl(day.DayID)"><span>@day.DayName (@day.CakeCount)</span><font>(@day.Date.ToString("dd/MM/yyyy"))</font></a></li>
+        }
+        <li class="pull-right">
+            <input type="text" class="order-to" placeholder="Start Date" />
+        </li>
+    </ul>
+</div>
+
+@* === LAYER 3: Dispatch time slots === *@
+@* Source: bakeryorders.aspx line 186 — divDispatchTimeType *@
+@if (Model.TimeSlots.Count > 0)
+{
+    <div class="panel-heading bot">
+        <ul>
+            <li><a class="@(Model.ActiveDispTime == 0 ? "stt" : "")"
+                href="@AssignedTasksNavHelper.BuildAllDispatchTimeUrl(Model.ActiveDayID)">All</a></li>
+            @foreach (var slot in Model.TimeSlots)
+            {
+                var slotClass = AssignedTasksNavHelper.GetTimeSlotCssClass(slot.TimeID, Model.ActiveDispTime, slot.TotalCount, slot.TotalDone, Model.ActiveDispTime > 0);
+                <li><a class="@slotClass"
+                    href="@AssignedTasksNavHelper.BuildDispatchTimeUrl(Model.ActiveDayID, slot.TimeID)"><span>@slot.TimeSlotName (@slot.CakeCount/@slot.CupcakeCount)</span></a></li>
+            }
+        </ul>
+    </div>
+}
+
+@* === LAYER 4: Task type filters === *@
+@* Source: bakeryorders.aspx line 199 — divTaskTypeLinks *@
+<div class="panel-heading bot">
+    <ul>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(0, false, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(0, false, Model.ActiveDayID, strFindFilter)">All</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(0, true, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(0, true, Model.ActiveDayID, strFindFilter)">Topper (@Model.TopperCount)</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(11, false, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(11, false, Model.ActiveDayID, strFindFilter)">Filling@(!string.IsNullOrEmpty(Model.FillingCount) ? $" ({Model.FillingCount})" : "")</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(12, false, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(12, false, Model.ActiveDayID, strFindFilter)">Icing@(!string.IsNullOrEmpty(Model.IcingCount) ? $" ({Model.IcingCount})" : "")</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(22, false, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(22, false, Model.ActiveDayID, strFindFilter)">Decoration@(!string.IsNullOrEmpty(Model.DecorationCount) ? $" ({Model.DecorationCount})" : "")</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(33, false, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(33, false, Model.ActiveDayID, strFindFilter)">Finishing@(!string.IsNullOrEmpty(Model.FinishingCount) ? $" ({Model.FinishingCount})" : "")</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetTaskTypeCssClass(44, false, Model.ActiveTaskType, Model.ActiveTopper)"
+            href="@AssignedTasksNavHelper.BuildTaskTypeUrl(44, false, Model.ActiveDayID, strFindFilter)">Under Delivery@(!string.IsNullOrEmpty(Model.UnderDeliveryCount) ? $" ({Model.UnderDeliveryCount})" : "")</a></li>
+        @if (Model.ShowCloseDayButton)
+        {
+            <li class="pull-right"><a class="btn btn-danger btn-sm" style="font-size: 12px; color: #fff;">Closed</a></li>
+        }
+        @if (Model.IsBaking)
+        {
+            <li class="pull-right"><a href="@Model.ManifestUrl" target="_blank" class="btn btn-info btn-sm" style="font-size: 12px; color: #fff; margin-right: 10px;">Manifest</a></li>
+            <li class="pull-right"><a href="@Model.OrderSpongeUrl" target="_blank" class="btn btn-info btn-sm" style="font-size: 12px; color: #fff; margin-right: 10px;">Order Sponge</a></li>
+        }
+        <li class="pull-right"><a href="@Model.StaffRotaUrl" target="_blank" class="btn btn-info btn-sm" style="font-size: 12px; color: #fff; margin-right: 10px;">Staff Rota</a></li>
+    </ul>
+</div>
+
+@* === LAYER 5: Delivery mode links === *@
+@* Source: bakeryorders.aspx line 234 — divDeliverymodeLinks *@
+<div class="panel-heading bot">
+    <ul>
+        <li><a class="@AssignedTasksNavHelper.GetDeliveryModeCssClass(0, Model.ActiveDeliveryMode)"
+            href="@AssignedTasksNavHelper.BuildDeliveryModeUrl(0, Model.ActiveTopper, Model.ActiveTaskType, Model.ActiveDayID, strFindFilter)">All</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetDeliveryModeCssClass(1, Model.ActiveDeliveryMode)"
+            href="@AssignedTasksNavHelper.BuildDeliveryModeUrl(1, Model.ActiveTopper, Model.ActiveTaskType, Model.ActiveDayID, strFindFilter)">Collection</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetDeliveryModeCssClass(2, Model.ActiveDeliveryMode)"
+            href="@AssignedTasksNavHelper.BuildDeliveryModeUrl(2, Model.ActiveTopper, Model.ActiveTaskType, Model.ActiveDayID, strFindFilter)">Delivery By Hand</a></li>
+        <li><a class="@AssignedTasksNavHelper.GetDeliveryModeCssClass(4, Model.ActiveDeliveryMode)"
+            href="@AssignedTasksNavHelper.BuildDeliveryModeUrl(4, Model.ActiveTopper, Model.ActiveTaskType, Model.ActiveDayID, strFindFilter)">Delivery By Post</a></li>
+    </ul>
+</div>
+
+@* === LAYER 6: Delivery route tabs (only when dm=2) === *@
+@* Source: bakeryorders.aspx line 247 — divDeliveryrouteLinks *@
+@if (Model.ActiveDeliveryMode == 2)
+{
+    <div class="panel-heading day">
+        <ul>
+            <li><a class="@AssignedTasksNavHelper.GetAllRoutesCssClass(Model.ActiveRouteId, true)"
+                href="@AssignedTasksNavHelper.BuildAllRoutesUrl(Model.ActiveTopper, Model.ActiveTaskType, Model.ActiveDayID, strFindFilter)">All Routes</a></li>
+            @foreach (var route in Model.DeliveryRoutes)
+            {
+                var routeClass = AssignedTasksNavHelper.GetRouteCssClass(route.RouteId, Model.ActiveRouteId, true);
+                <li><a class="@routeClass"
+                    href="@AssignedTasksNavHelper.BuildRouteUrl(route.RouteDate, route.RouteId)"><span>@route.RouteName (@route.OrderCount)</span><font>(@route.RouteDate.ToString("dd/MM/yyyy"))</font></a></li>
+            }
+            <li><a href="/managedeliveryroutes" target="_blank">Manage Routes</a></li>
+        </ul>
+    </div>
+}
+
+@* === SEARCH FORM === *@
+@* Source: bakeryorders.aspx lines 265-305 — search-field section *@
+<div class="search-field">
+    <form method="get" action="/businessorders">
+        <input type="hidden" name="ordertype" value="12" />
+        @if (Model.ActiveDayID > 0)
+        {
+            <input type="hidden" name="dayID" value="@Model.ActiveDayID" />
+        }
+        <div class="pull-left col-sm-2 flush">
+            <select name="dt" class="orderdrpdate form-control">
+                <option value="1">Order Date</option>
+                <option value="2">Occasion date</option>
+            </select>
+        </div>
+        <div class="pull-left col-sm-2 flush-right">
+            <input type="text" name="from" class="order-from form-control" placeholder="Start Date" />
+        </div>
+        <div class="pull-left col-sm-2 flush-right">
+            <input type="text" name="to" class="order-to form-control" placeholder="End Date" />
+        </div>
+        <div class="pull-left col-md-4 col-sm-3 flush-right">
+            <input type="text" name="q" class="order-search form-control" placeholder="Search...Order ID" />
+        </div>
+        <div class="pull-left col-sm-3 col-md-2 flush-right">
+            <button type="submit" class="btn btn-danger pull-left btn-sm">Submit</button>
+            <a href="/businessorders?ordertype=12@(Model.ActiveDayID > 0 ? "&dayID=" + Model.ActiveDayID : "")" class="btn btn-info pull-left btn-sm" style="margin-left: 5px;">Reset</a>
+        </div>
+    </form>
+</div>
+<div class="clearfix"></div>
+
+@* === TASK TABLE === *@
+@* Source: bakeryorders.aspx lines 639-655 — repAssignedTask_outer grouped by dispatchDate *@
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="panel-body">
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    </div>
+}
+else if (Model.TaskRows.Count == 0)
+{
+    <div class="panel-body">
+        <div class="alert alert-danger">No Record found</div>
+    </div>
+}
+else
+{
+    @* === PRODUCTION SUMMARY (littotal) === *@
+    @* Source: bakeryorders.aspx.cs lines 1350-1366 *@
+    var cakeCount = Model.TaskRows.Count(r => r.ProductType == 1);
+    var cupcakeCount = Model.TaskRows.Count(r => r.ProductType == 6);
+    var accessoryCount = Model.TaskRows.Count(r => r.ProductType == 2);
+    var cakeWorth = Model.TaskRows.Where(r => r.ProductType == 1).Sum(r => r.PrdTotal);
+    var cupcakeWorth = Model.TaskRows.Where(r => r.ProductType == 6).Sum(r => r.PrdTotal);
+    var accessoryWorth = Model.TaskRows.Where(r => r.ProductType == 2).Sum(r => r.PrdTotal);
+    <div class="col-sm-12" style="padding: 10px;">
+        <div class="pull-right col-sm-12 text-danger raln">
+            Total: @cakeCount Cakes @(cakeCount > 0 ? $"( Worth: £{cakeWorth})" : "") | @cupcakeCount Cupcakes @(cupcakeCount > 0 ? $"( Worth: £{cupcakeWorth})" : "") | @accessoryCount Party Accessories @(accessoryCount > 0 ? $"( Worth: £{accessoryWorth})" : "")
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+    @* === GROUPED TASK SECTIONS (repAssignedTask_outer) === *@
+    @foreach (var group in Model.TaskRows.GroupBy(r => r.GroupDate).OrderBy(g => g.Key))
+    {
+        var groupDate = group.Key;
+        var groupItems = group.OrderBy(r => r.SortId).ThenBy(r => r.SortId2).ToList();
+        var unprintedCount = groupItems.Count(r => string.IsNullOrEmpty(r.PrintOrderId));
+        var groupCakes = groupItems.Count(r => r.ProductType == 1);
+        var groupCupcakes = groupItems.Count(r => r.ProductType == 6);
+
+        @* === BLUE GROUP HEADER (divheadertext) === *@
+        @* Source: bakeryorders.aspx lines 642-653 *@
+        <div class="divheadertext" data-date="@groupDate.ToString("dd/MM/yyyy")">
+            <div style="text-align: left;" class="pull-left col-sm-3 laln">
+                <a class="btn btn-xs btn-default" onclick="PrintallOrders(this);">Print all</a>
+                | <a class="btn btn-xs btn-danger" onclick="PrintUnprintedOrders(this);">Unprinted (@unprintedCount)</a>
+            </div>
+            @groupDate.ToString("dd/MM/yyyy") - <b>@groupDate.DayOfWeek</b>
+            - <span class="headertext">@groupCakes Cakes | @groupCupcakes Cupcakes | @groupItems.Count(r => r.ProductType == 2) Party Accessories</span>
+            <a onclick="getroutefordelivery(this);" class="pull-right link-white font13">Get Route</a>
+        </div>
+
+        @* === TABLE CONTAINER (div_forwarded_assigned) === *@
+        @* Source: bakeryorders.aspx line 654 *@
+        <div class="div_forwarded_assigned">
+            <table class="table bootstrap-datatable pending_orders">
+                <thead>
+                    <tr>
+                        <th class="hide">Order</th>
+                        <th style="width: 150px">Dates</th>
+                        <th style="width: 150px">Item</th>
+                        <th style="width: 180px">Item Detail</th>
+                        <th class="visible-lg" style="width: 180px">Customer</th>
+                        <th style="width: 180px">Picture</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* === DATA ROW (repAssignedTask ItemTemplate — first <tr>) === *@
+                    @* Source: bakeryorders.aspx lines 687-810 *@
+                    @foreach (var row in groupItems)
+                    {
+                        var dispDate = row.DispatchDate;
+                        var collDate = row.CollectionDate;
+                        var isPostal = (row.DeliveryMode == 4);
+                        var isDeliveryByHand = (row.DeliveryMode == 2);
+                        var distanceText = "";
+                        if (!string.IsNullOrEmpty(row.PostcodeDistance) && row.PostcodeDistance.Contains(","))
+                        {
+                            var parts = row.PostcodeDistance.Split(',');
+                            if (double.TryParse(parts[0], out var miles) && double.TryParse(parts[1], out var secs))
+                            {
+                                distanceText = $"({miles:F1} Miles from <b>{row.BranchPostcode.ToUpper()}</b>, {TimeSpan.FromSeconds(secs):hh\\:mm})";
+                            }
+                        }
+
+                        <tr data-id="@row.OrderDetailId" data-tid="0" data-taskid="@(row.TaskId),@(row.TaskStatus)">
+                            @* DATES COLUMN *@
+                            <td valign="top">
+                                @if (isPostal)
+                                {
+                                    <text><u>Dispatched Date:</u><br />@dispDate.ToString("dd-MM-yyyy") @(dispDate.Date == DateTime.Now.Date ? "- <b class='big'>Today</b>" : $"({dispDate:dddd})")<br />(04:00 PM - 06:00 PM)<br /><br /></text>
+                                    <text><u>Delivery Date:</u><br />@collDate.ToString("dd-MM-yyyy") (@collDate.ToString("dddd"))<br />(10:00 AM - 05:30 PM)</text>
+                                }
+                                else if (isDeliveryByHand)
+                                {
+                                    <text><u>Dispatched Date:</u><br />@dispDate.ToString("dd-MM-yyyy") @(dispDate.Date == DateTime.Now.Date ? "- <b class='big'>Today</b>" : $"({dispDate:dddd})")<br /><b class='big'>@collDate.AddHours(-2).ToString("hh:mm")<b class='sml'>@collDate.AddHours(-2).ToString("tt")</b> - @collDate.ToString("hh:mm")<b class='sml'>@collDate.ToString("tt")</b></b><br /><br /></text>
+                                    <text><u>Delivery Date:</u><br />@collDate.ToString("dd-MM-yyyy") (@collDate.ToString("dddd"))<br />(@collDate.ToString("hh:mm tt") - @collDate.AddHours(2).ToString("hh:mm tt"))</text>
+                                }
+                                else
+                                {
+                                    <text><u>Collection Date:</u><br />@collDate.ToString("dd-MM-yyyy") @(collDate.Date == DateTime.Now.Date ? "- <b class='big'>Today</b>" : $"({collDate:dddd})")<br /><b class='big'>@collDate.ToString("hh:mm")<b class='sml'>@collDate.ToString("tt")</b> - @collDate.AddHours(1).ToString("hh:mm")<b class='sml'>@collDate.AddHours(1).ToString("tt")</b></b></text>
+                                }
+                                <span class="deliverymodenorm"><br /><br />
+                                    @(row.DeliveryMode == 1 ? "Collection" : row.DeliveryMode == 2 ? "Delivery By Hand" : row.DeliveryMode == 4 ? "Delivery By Post (Postal Cake)" : "Collection")
+                                </span>
+                                <span class="hide spnhide">@dispDate.ToString("dd-MM-yyyy")</span>
+                            </td>
+                            @* ITEM COLUMN *@
+                            <td class="norm" valign="top">
+                                <a target="_blank" href="/product/@row.ProductSeoUrl">SKU: @row.ProductCode</a><br />
+                                <font color="#a94442">@row.ProductName</font>
+                                <br />
+                                <span class="orderdetnorm"><a target="_blank" href="/businessorderdetail?ordid=@row.OrderId">#@row.OrderId</a>
+                                    | Qty:@row.Quantity</span>
+                                <div class="div_Documents" style="text-align: left">
+                                    <a href="/businessorderdetail?ordid=@(row.OrderId)#files" target="_blank">Files / Topper / Cutters </a>
+                                </div>
+                                <div class="div_Documents" style="text-align: left">
+                                    <a style="cursor: pointer;">View | Edit Ingredients</a>
+                                </div>
+                                @if (row.IsBaking && Model.ChecklistDefinitions.Count > 0)
+                                {
+                                    var rowStates = Model.ChecklistStates.GetValueOrDefault(row.OrderDetailId, new List<CakerStreet.Business.Models.ChecklistItemState>());
+                                    <div class="div_checklist">
+                                        <ul>
+                                            <li class="liheader">Checklist</li>
+                                            <li><u>Sponge Status: <b>@(row.SpongeStatus switch { 0 => "Pending", 1 => "In Process", 2 => "Processed", _ => "Pending" })</b></u></li>
+                                            @foreach (var chk in Model.ChecklistDefinitions)
+                                            {
+                                                var state = rowStates.FirstOrDefault(s => s.ChecklistId == chk.ChecklistId);
+                                                var isChecked = state?.IsDone == true;
+                                                <li class="clsitem" data-itemid="@chk.ChecklistId" data-id="@row.OrderDetailId">
+                                                    <input type="checkbox" class="chk-checklist" @(isChecked ? "checked" : "")
+                                                           data-checklistid="@chk.ChecklistId" data-orderdetailid="@row.OrderDetailId" />
+                                                    @chk.Title
+                                                    @if (state?.ModifiedOn != null && isChecked)
+                                                    {
+                                                        <span class="normallink" style="padding: 3px 10px; color: #a40000; text-decoration: none; display: inline-table; margin-left: 5px;">[@state.ModifiedOn.Value.ToString("dd MMM yyyy")]</span>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </td>
+                            @* ITEM DETAIL COLUMN *@
+                            <td class="deliverymode" valign="top">
+                                @if (row.ShapeId > 0)
+                                {
+                                    <div class="attDet" data-id="@row.OrderDetailId">
+                                        <b>Shape, Size &amp; Type</b><br />
+                                        <b>Shape:</b> As Shown<br />
+                                        <b>Size:</b> @row.SizeTitle<br />
+                                        <b>Type:</b> @row.CakeTypeTitle<br />
+                                        <a style="cursor:pointer;" class="text-info">Show Detail</a>
+                                    </div>
+                                }
+                                <div class="watermarktext@(row.IsOnHold ? " in" : "")">Holded</div>
+                                @if (!string.IsNullOrEmpty(row.CollectionRemarks))
+                                {
+                                    <div class="div_remarks">@row.CollectionRemarks</div>
+                                }
+                                @if (!string.IsNullOrEmpty(row.ReviewStars) && row.ReviewStars != "0" && row.ReviewRemarks != "APC Booked")
+                                {
+                                    <div class="div_reviews">
+                                        <ul>
+                                            <li class="liremarksTitle">CRM Remarks</li>
+                                            @if (row.ReviewStars != "0")
+                                            {
+                                                <li class="liimg"><img class="imgstar" src="@(cdnBase)bakery_content/img/stars/starrating@(row.ReviewStars).png" /></li>
+                                            }
+                                            @if (!string.IsNullOrEmpty(row.ReviewRemarks))
+                                            {
+                                                <li class="remarks">@(row.ReviewRemarks.Length > 100 ? row.ReviewRemarks.Substring(0, 95) + "..." : row.ReviewRemarks)</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                @if (row.FollowingOrderId > 0)
+                                {
+                                    <img src="@(cdnBase)bakery_content/img/Fowarded.png" />
+                                }
+                                <div class="hidden-lg div_custdetail"><b>Customer Detail</b><br />
+                                    @row.CustomerName<br />@row.Phone<br />@row.Postcode.ToUpper()
+                                    @Html.Raw(distanceText)
+                                </div>
+                            </td>
+                            @* CUSTOMER COLUMN *@
+                            <td class="visible-lg prd-img2" valign="top">
+                                @row.CustomerName<br />
+                                @row.Phone<br />
+                                @row.Postcode.ToUpper()
+                                @Html.Raw(distanceText)
+                            </td>
+                            @* PICTURE COLUMN *@
+                            <td class="img1" data-id="@row.OrderId">
+                                <div class="image_main">
+                                    <a target="_blank" href="/product/@row.ProductSeoUrl">
+                                        <img border="0" loading="lazy" src="@(cdnBase)upload/Product_Images/resized_300_300/@row.ProductImage"
+                                             title="@row.ProductName" /></a>
+                                    @if (!row.IsChangeOrderImageMarked)
+                                    {
+                                        <div class="div_imagewatermark">
+                                            <span>Click New Image</span>
+                                            <div class="form-group col-md-12 caln div_typewisefilter" style="margin: 0;">
+                                                <a style="text-decoration: unset" href="/businessfiles?orderID=@(row.OrderId)&orderdetailid=@(row.OrderDetailId)#Files" target="_blank">
+                                                    <img src="@(cdnBase)bakery_content/img/download-icon.png" />
+                                                    <img src="@(cdnBase)bakery_content/img/upload-icon.png" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (row.OrderImages.Count > 0)
+                                    {
+                                        <ul class="ul_otherimages">
+                                            @foreach (var img in row.OrderImages)
+                                            {
+                                                <li><img border="0" style="width: 50px;" loading="lazy" src="@(cdnBase)upload/Product_Images/resized_200_200/@img.ProductImage" title="@img.ProductName" /></li>
+                                            }
+                                        </ul>
+                                    }
+                                    @if (row.DeliveryMode == 2)
+                                    {
+                                        <a class="ancTag DeliveryRoute_@(row.OrderId)@(row.RouteId == 0 ? "" : " stt")" data-id="@row.OrderId" data-tid="@row.OrderId">@(row.RouteId == 0 ? "Set Delivery Route" : $"Edit Delivery Route - {row.RouteTitle}")</a>
+                                    }
+                                </div>
+                                @if (row.DeliveryMode == 4)
+                                {
+                                    <div style="margin-top:7px;">
+                                        <ul>
+                                            <li class="remarks" style="text-align:center;font-size:12px;margin-bottom: 7px;">
+                                                @if (row.ReviewRemarks != null && (row.ReviewRemarks.Contains("APC Booked") || row.ReviewRemarks.Contains("DHL Booked")))
+                                                {
+                                                    <font style="color:green;">@row.ReviewRemarks</font>
+                                                }
+                                                else
+                                                {
+                                                    <a href="/businessapc?orderID=@row.OrderId" target="_blank" class="text-danger"><u>Book an APC</u></a>
+                                                }
+                                            </li>
+                                        </ul>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                        @* === ACTION ROW (second <tr>) === *@
+                        @* Source: bakeryorders.aspx lines 811-870 *@
+                        @if (row.FollowingOrderId == 0 && row.OrderStatus != 0 && row.OrderStatus != 1)
+                        {
+                            <tr class="trOrderlist" data-tid="0" data-userid="@(Model.LoggedInUserType == "3" ? Model.LoggedInUserId.ToString() : "0")" data-id="@row.OrderDetailId" data-orderid="@row.OrderId" data-taskid="@(row.TaskId),@(row.TaskStatus)">
+                                <td colspan="8" valign="top" style="border-top-width: 0px; text-align: center">
+                                    @if (row.IsBaking)
+                                    {
+                                        <div class="div_actionouter">
+                                            <div class="btn-group task-group divUser@(row.TaskStatus == "44" ? " hide" : "")">
+                                                @if (Model.LoggedInUserType == "3")
+                                                {
+                                                    @* Staff user: show own name, no dropdown (source: line 832) *@
+                                                    <button type="button" class="btnuser btn dropdown-toggle btn-default">@Model.LoggedInUserName</button>
+                                                }
+                                                else
+                                                {
+                                                    @* Admin/owner: show dropdown with staff list *@
+                                                    <button type="button" data-toggle="dropdown" class="btnuser btn dropdown-toggle btn-default">@(string.IsNullOrEmpty(row.AssignedUserName) ? "--Select Staff--" : row.AssignedUserName)</button>
+                                                    <button type="button" class="btnusertogglebtn btn togglebtn dropdown-toggle btn-default" data-toggle="dropdown">
+                                                        <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                    </button>
+                                                    <ul class="dropdown-menu drptaskuserlist" data-id="@row.OrderId" role="menu">
+                                                        @foreach (var staff in Model.StaffList)
+                                                        {
+                                                            <li><a href="javascript:void(0)" data-userid="@staff.UserId">@staff.UserName</a></li>
+                                                        }
+                                                    </ul>
+                                                }
+                                            </div>
+                                            <a class="ancprintbakercopy pull-left ancprintbakercopy_@(row.OrderId)@(string.IsNullOrEmpty(row.PrintOrderId) ? " text-danger" : " fadedbox")">
+                                                <img border="0" src="@(cdnBase)bakery_content/images/icons/print-icon.png" /></a>
+                                            <span class="spntaskTitle">
+                                                <span class="btn btn-xs @AssignedTasksNavHelper.GetTaskStatusCssClass(row.TaskStatus)">
+                                                    @AssignedTasksNavHelper.GetTaskStatusButtonText(row.ProductType, row.TaskStatus, row.IsCompleted, row.AssignedUserName)
+                                                </span>
+                                            </span>
+                                            <div class="btn-group task-group divtaskselectouter@(row.TaskStatus == "44" || (row.TaskStatus == "33" && row.IsCompleted == "True") ? " hide" : "")">
+                                                <div class="actionButtons">
+                                                    <ul>
+                                                        <li><a class="prev@(row.IsDone == "False" || string.IsNullOrEmpty(row.TaskStatus) ? " fd" : "")"><img border="0" src="@(cdnBase)bakery_content/images/icons/rewind-icon.png" /></a></li>
+                                                        <li><a class="play@(row.IsDone == "False" ? " st" : "")"><img border="0" src="@(cdnBase)bakery_content/images/icons/play-icon.png" /></a></li>
+                                                        <li><a class="pause@(row.IsDone == "False" ? "" : " fd")"><img border="0" src="@(cdnBase)bakery_content/images/icons/pause-icon.png" /></a></li>
+                                                        <li><a class="stop@(row.IsDone == "False" ? "" : " fd")"><img border="0" src="@(cdnBase)bakery_content/images/icons/stop-icon.png" /></a></li>
+                                                        <li><a class="remarks@(row.IsDone == "False" ? "" : " fd")"><img border="0" src="@(cdnBase)bakery_content/images/icons/message-icon.png" /></a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <a class="btn btn-xs btn-info pull-right" style="margin-left:5px;">Incl. Processing</a>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @* === HISTORY ROW (third <tr class="trOrderlist_bot">) === *@
+                        @* Source: bakeryorders.aspx lines 970-1050 *@
+                        @if (row.FollowingOrderId == 0 && !string.IsNullOrEmpty(row.TaskId) && row.TaskId != "0")
+                        {
+                            var taskIdLong = long.Parse(row.TaskId);
+                            var historyEntries = Model.TaskHistory.GetValueOrDefault(taskIdLong, new List<CakerStreet.Business.Models.TaskHistoryEntry>());
+                            if (historyEntries.Count > 0)
+                            {
+                                var currentDate = DateTime.Today;
+                                <tr class="trOrderlist_bot" data-id="@row.OrderDetailId" data-taskid="@(row.TaskId),@(row.TaskStatus)">
+                                    <td colspan="8" style="border-top-width: 0px; padding-top: 0px !important">
+                                        <div class="divtaskdetail divtaskdetail_bot">
+                                            @foreach (var hist in historyEntries)
+                                            {
+                                                var titleFaded = (currentDate == hist.EndDate.Date) ? "" : " fadedbox";
+                                                var staFaded = (currentDate == hist.StartDate.Date) ? "" : " fadedbox";
+                                                var endFaded = (currentDate == hist.EndDate.Date) ? "" : " fadedbox";
+                                                var hideStart = (hist.StartDate == hist.EndDate && hist.IsDone) ? " hide" : "";
+                                                var hideEnd = !hist.IsDone ? " hide" : "";
+                                                var endIcon = (hist.Remarks == "Paused") ? "pause" : "stop";
+                                                var hideRemarks = (string.IsNullOrEmpty(hist.Remarks) || hist.Remarks == "Paused") ? " hide" : "";
+                                                <ul>
+                                                    <li class="liTitle col-md-2 col-sm-3 flush@(titleFaded)">@hist.StageName <span class="liusername">(@hist.UserName)</span></li>
+                                                    <li class="litaskdate col-md-2 col-sm-2 flush@(hideStart)@(staFaded)"><img src="@(cdnBase)bakery_content/images/icons/play-icon.png" /> @hist.StartDate.ToString("dd-MM | HH:mm")</li>
+                                                    <li class="litaskdate lienddate col-md-2 col-sm-2 flush@(hideEnd)@(endFaded)"><img src="@(cdnBase)bakery_content/images/icons/@(endIcon)-icon.png" /> @hist.EndDate.ToString("dd-MM | HH:mm")</li>
+                                                    <li class="litaskdate col-md-2 col-sm-2 flush@(hideEnd)@(endFaded)">@(hist.EndDate.Subtract(hist.StartDate))</li>
+                                                    <li class="liremarks_outer col-md-6 col-sm-5 flush@(endFaded)">
+                                                        <div class="liremarks col-sm-12@(hideRemarks)">@hist.Remarks</div>
+                                                    </li>
+                                                </ul>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@* === TASK ACTION JAVASCRIPT === *@
+<script type="text/javascript">
+    // Staff selection — matches legacy: save to DB then reload page
+    $(document).on('click', '.drptaskuserlist li a', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var userId = $(this).data('userid');
+        var $row = $(this).closest('tr');
+        var orderId = $row.data('orderid') || $row.closest('[data-orderid]').data('orderid');
+        var orderDetailId = $row.data('id');
+        
+        if (!orderId || !orderDetailId || !userId) {
+            alert('Missing order/detail/user data. Cannot assign.');
+            return;
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/task-action",
+            data: JSON.stringify({
+                orderId: parseInt(orderId),
+                orderDetailId: parseInt(orderDetailId),
+                action: 'assign',
+                userId: parseInt(userId),
+                remarks: ''
+            }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to assign staff.');
+                }
+            },
+            error: function () { alert('Server error assigning staff.'); }
+        });
+    });
+
+    // Play (start task) — with double-click protection
+    $(document).on('click', '.actionButtons .play', function (e) {
+        e.preventDefault();
+        if ($(this).hasClass('fd') || $(this).hasClass('processing')) return;
+        $(this).addClass('processing');
+        var $row = $(this).closest('tr');
+        taskAction($row.data('orderid'), $row.data('id'), 'start', 0);
+    });
+
+    // Pause
+    $(document).on('click', '.actionButtons .pause', function (e) {
+        e.preventDefault();
+        if ($(this).hasClass('fd')) return;
+        var $row = $(this).closest('tr');
+        taskAction($row.data('orderid'), $row.data('id'), 'pause', 0);
+    });
+
+    // Stop (complete stage)
+    $(document).on('click', '.actionButtons .stop', function (e) {
+        e.preventDefault();
+        if ($(this).hasClass('fd')) return;
+        var $row = $(this).closest('tr');
+        taskAction($row.data('orderid'), $row.data('id'), 'complete', 0);
+    });
+
+    // Rewind (previous stage)
+    $(document).on('click', '.actionButtons .prev', function (e) {
+        e.preventDefault();
+        if ($(this).hasClass('fd')) return;
+        var $row = $(this).closest('tr');
+        taskAction($row.data('orderid'), $row.data('id'), 'rewind', 0);
+    });
+
+    // Remarks
+    $(document).on('click', '.actionButtons .remarks', function (e) {
+        e.preventDefault();
+        if ($(this).hasClass('fd')) return;
+        var $row = $(this).closest('tr');
+        var remarks = prompt('Enter remarks:');
+        if (remarks !== null) {
+            taskAction($row.data('orderid'), $row.data('id'), 'remarks', 0, remarks);
+        }
+    });
+
+    // Checklist checkbox toggle — persists to tbl_lnkOrderChecklist2Order
+    $(document).on('change', '.chk-checklist', function () {
+        var checklistId = parseInt($(this).data('checklistid'));
+        var orderDetailId = parseInt($(this).data('orderdetailid'));
+        var isDone = $(this).is(':checked');
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/update-checklist",
+            data: JSON.stringify({ orderDetailId: orderDetailId, checklistId: checklistId, isDone: isDone }),
+            contentType: "application/json",
+            success: function (result) {
+                if (!result.success) {
+                    alert(result.message || 'Failed to update checklist.');
+                }
+            },
+            error: function () { alert('Server error updating checklist.'); }
+        });
+    });
+
+    function taskAction(orderId, orderDetailId, action, userId, remarks) {
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/task-action",
+            data: JSON.stringify({
+                orderId: parseInt(orderId || 0),
+                orderDetailId: parseInt(orderDetailId || 0),
+                action: action,
+                userId: parseInt(userId || 0),
+                remarks: remarks || ''
+            }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Action failed.');
+                }
+            },
+            error: function () { alert('Server error.'); }
+        });
+    }
+
+    // ─── Get Route (Phase 2B) ──────────────────────────────────────────────────
+    // Collects order IDs from the dispatch group and opens the map page in a new window.
+    // Legacy used server session; modern version passes order IDs via query string.
+    function getroutefordelivery(varID) {
+        var orderIDs = [];
+        $(varID).closest('.divheadertext').next('.div_forwarded_assigned').find('tr.trOrderlist[data-orderid]').each(function () {
+            var oid = $(this).attr('data-orderid');
+            if (oid && orderIDs.indexOf(oid) === -1) orderIDs.push(oid);
+        });
+        var strDate = $(varID).closest('.divheadertext').attr('data-date') || '';
+        if (orderIDs.length > 0) {
+            window.open('/map-orderlocation?orderIds=' + orderIDs.join(',') + '&date=' + encodeURIComponent(strDate));
+        } else {
+            alert('No orders found for this date.');
+        }
+    }
+
+    // ─── Route Picker Popup (Phase 2A) ─────────────────────────────────────────
+    // Matches legacy showhide_DeliveryRoute behaviour from jsbakeryorders.js
+    $(document).on('click', 'a[class*="DeliveryRoute_"]', function (e) {
+        e.preventDefault();
+        var link = this;
+        var orderId = $(link).data('id');
+        if (!orderId) return;
+
+        // Find the date from the group header (divheadertext is a previous sibling of div_forwarded_assigned)
+        var $container = $(link).closest('.div_forwarded_assigned');
+        var $header = $container.prev('.divheadertext');
+        var routeDate = $header.data('date') || '';
+        if (!routeDate) return;
+
+        // Remove any existing popup
+        $('.div_routepicker_popup').remove();
+
+        // Fetch routes for this date + order
+        $.getJSON('/managedeliveryroutes/routesfororder?orderId=' + orderId + '&date=' + encodeURIComponent(routeDate), function (routes) {
+            // Build popup
+            var html = '<span class="rp-headertext">' + routeDate + '</span>' +
+                '<a class="normallink" target="_blank" href="/managedeliveryroutes?search=' + encodeURIComponent(routeDate) + '">Manage Route</a>' +
+                '<span class="rp-close" style="cursor:pointer;float:right;font-weight:bold;">X</span><ul>';
+
+            for (var i = 0; i < routes.length; i++) {
+                var r = routes[i];
+                html += '<li class="' + (r.isSelected > 0 ? 'stt' : '') + '"><a data-id="' + r.id + '">' + r.title + '</a></li>';
+            }
+            html += '</ul>';
+
+            var $popup = $('<div class="div_routepicker_popup" data-orderid="' + orderId + '"></div>').html(html);
+            $('body').append($popup);
+
+            // Position near the clicked link
+            var offset = $(link).offset();
+            $popup.css({
+                top: (offset.top + 20) + 'px',
+                left: (offset.left - 120) + 'px'
+            });
+
+            // Close button
+            $popup.find('.rp-close').on('click', function () { $popup.remove(); });
+
+            // Route click handler
+            $popup.find('li a').on('click', function () {
+                var routeId = $(this).data('id');
+                var $li = $(this).closest('li');
+                var isCurrentlySelected = $li.hasClass('stt');
+
+                if (isCurrentlySelected && !confirm('Are you really want to remove this route?')) return;
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/managedeliveryroutes/assignroute',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ orderId: parseInt(orderId), routeId: parseInt(routeId), routeDate: routeDate }),
+                    success: function (data) {
+                        if (data.success) {
+                            $popup.remove();
+                            // Update the link text/class
+                            var $orderLink = $('a[class*="DeliveryRoute_' + orderId + '"]');
+                            if ($orderLink.length) {
+                                if (data.assigned === '1') {
+                                    $orderLink.addClass('stt');
+                                    // Find route title from the fetched data
+                                    var matchedRoute = null;
+                                    for (var j = 0; j < routes.length; j++) {
+                                        if (routes[j].id == routeId) { matchedRoute = routes[j]; break; }
+                                    }
+                                    var titleOnly = matchedRoute ? matchedRoute.title.split(' - (')[0] : '';
+                                    $orderLink.text('Edit Delivery Route - ' + titleOnly);
+                                } else {
+                                    $orderLink.removeClass('stt');
+                                    $orderLink.text('Set Delivery Route');
+                                }
+                            }
+                        }
+                    },
+                    error: function () { alert('Server error assigning route.'); }
+                });
+            });
+        });
+    });
+
+    // Close popup when clicking outside
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.div_routepicker_popup').length && !$(e.target).is('a[class*="DeliveryRoute_"]')) {
+            $('.div_routepicker_popup').remove();
+        }
+    });
+</script>
+
+@* === Route Picker Popup Styles (Phase 2A) === *@
+<style>
+    .div_routepicker_popup {
+        position: absolute;
+        z-index: 9999;
+        background: #fff;
+        border: 1px solid #ccc;
+        padding: 10px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        min-width: 250px;
+        max-width: 350px;
+    }
+    .div_routepicker_popup .rp-headertext {
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    .div_routepicker_popup .normallink {
+        font-size: 12px;
+    }
+    .div_routepicker_popup ul {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0 0 0;
+    }
+    .div_routepicker_popup ul li {
+        padding: 5px 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    .div_routepicker_popup ul li:hover {
+        background-color: #f5f5f5;
+    }
+    .div_routepicker_popup ul li.stt {
+        background-color: #d4edda;
+        font-weight: bold;
+    }
+    .div_routepicker_popup ul li.stt a {
+        color: #155724;
+    }
+    .div_routepicker_popup ul li a {
+        cursor: pointer;
+        text-decoration: none;
+        color: #333;
+    }
+</style>

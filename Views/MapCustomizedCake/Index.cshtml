@@ -1,0 +1,246 @@
+@{
+    ViewData["Title"] = "Map Cake";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var custUrl = ViewBag.HdCustGlobalUrl as string ?? "";
+    var expiredProduct = ViewBag.ExpiredProduct as ExpiredProductInfo;
+    var mappedProducts = ViewBag.MappedProducts as List<MappedProductInfo> ?? new List<MappedProductInfo>();
+}
+
+@section Head {
+    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal { font-weight: normal; }
+        .img img { max-height: 60px; max-width: 60px; }
+        .table.prdlstouter { margin-top: 20px; }
+        .ui-menu img {
+            max-width: 40px; height: 40px;
+            position: absolute; left: 3px; top: 3px; z-index: 1;
+        }
+        .ui-menu .ui-menu-item-wrapper { padding-left: 40px; line-height: 40px; }
+        .ui-menu img:hover { max-width: unset; height: auto; z-index: 2; }
+        .ui-menu li span {
+            font-size: 1em; padding: 0 0 10px 10px;
+            margin: 0 0 10px 0 !important; white-space: nowrap;
+        }
+    </style>
+}
+
+<input type="hidden" id="hfProductID" value="@expiredProduct?.ProductId" />
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse3" aria-expanded="true">
+                        <span class="glyphicon glyphicon-minus"></span>
+                    </a>
+                </div>
+                <div class="col-md-11">
+                    <h2>Map Cake - @expiredProduct?.ProductName (@expiredProduct?.ProductCode)</h2>
+                </div>
+            </div>
+            <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+
+                @* Expired product image *@
+                <div class="col-md-12 caln">
+                    <a href="@custUrl/@expiredProduct?.ProductSeoUrl" target="_blank">
+                        <img src="@custUrl/upload/Product_images/resized_300_300/@expiredProduct?.ProductImage"
+                             style="max-width: 150px; max-height: 150px;"
+                             onerror="this.src='@cdnBase/images/blankImages/110x135.jpg'" />
+                    </a>
+                </div>
+                <div class="clearfix"></div>
+
+                @* Search input *@
+                <div class="col-md-12 top-margin">
+                    <div class="col-md-6 raln">
+                        <input type="text" id="txtSearchTopper" class="form-control input-sm" placeholder="Search Cake" />
+                        <input type="hidden" id="hfTopperID" value="" />
+                    </div>
+                    <div class="col-md-4"></div>
+                </div>
+
+                @* Item detail area (populated by AJAX) *@
+                <div id="dvItem" class="col-md-12 top-margin"></div>
+                <div class="clearfix"></div>
+
+                @* Status message area *@
+                <div id="pnlMsg" style="display:none;" class="col-md-12">
+                    <span id="ltMsg"></span>
+                </div>
+                <div class="clearfix"></div>
+
+                @* Mapped products table *@
+                @if (mappedProducts.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="img">&nbsp;</th>
+                                    <th class="name">Title</th>
+                                    <th class="action">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in mappedProducts)
+                                {
+                                    <tr class="rowtext">
+                                        <td class="img">
+                                            <a target="_blank" href="/edititem?prdID=@item.ProductId" class="ancPrdName">
+                                                <img src="@custUrl/upload/Product_Images/resized_80_80/@item.ProductImage"
+                                                     style="border-width: 0px;"
+                                                     onerror="this.src='@cdnBase/images/blankImages/img75.jpg'" />
+                                            </a>
+                                        </td>
+                                        <td class="name">@item.ProductName (@item.ProductCode)</td>
+                                        <td class="action">
+                                            <a href="javascript:void(0);"
+                                               class="btn btn-danger btn-red btn-sm btn-savelist btn-unlink"
+                                               data-expired-id="@item.SkuMappingNewPrdId">Unlink</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-danger col-md-12">No Item Mapped.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Autocomplete search
+            $('#txtSearchTopper').autocomplete({
+                minLength: 1,
+                select: function (event, ui) {
+                    event.preventDefault();
+                    $("#txtSearchTopper").val(ui.item.label);
+                    $("#hfTopperID").val(ui.item.value);
+                    GetItemDetail();
+                    return false;
+                },
+                open: function (event, ui) {
+                    $(".ui-autocomplete").css("z-index", 1000);
+                },
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/mapcustomizedcake/search",
+                        type: "POST",
+                        dataType: "json",
+                        data: JSON.stringify({
+                            keyword: request.term,
+                            expiredProductId: parseInt($('#hfProductID').val())
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item.productName,
+                                    value: item.productId,
+                                    img: $("#hdCustGlobalUrl").val() + "/upload/Product_images/resized_200_200/" + item.productImage
+                                };
+                            }));
+                        },
+                        error: function (xhr, status, error) {
+                            alert(status + ' - ' + error);
+                        }
+                    });
+                },
+                messages: { noResults: "", results: "" }
+            }).autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li><div><img src='" + item.img + "'><span>" + item.label + "</span></div></li>").appendTo(ul);
+            };
+
+            // Link Item button click
+            $("body").on("click", "#ancLinkItem", function () {
+                var activeId = $(this).attr("data-id");
+                var expiredId = $('#hfProductID').val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "/mapcustomizedcake/link",
+                    data: JSON.stringify({
+                        expiredProductId: parseInt(expiredId),
+                        activeProductId: parseInt(activeId)
+                    }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        if (msg.success) {
+                            alert("Item has been linked successfully.");
+                            location.reload();
+                        } else {
+                            alert(msg.message || "Failed to link item.");
+                        }
+                    },
+                    error: function (x, e) {
+                        alert("The call to the server side failed. " + x.responseText);
+                    }
+                });
+            });
+
+            // Unlink button click
+            $("body").on("click", ".btn-unlink", function () {
+                if (!confirm('Are you sure to unlink this item?')) return;
+
+                var expiredId = $(this).attr("data-expired-id");
+
+                $.ajax({
+                    type: "POST",
+                    url: "/mapcustomizedcake/unlink",
+                    data: JSON.stringify({ expiredProductId: parseInt(expiredId) }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        if (msg.success) {
+                            alert("Item has been unmapped successfully.");
+                            location.reload();
+                        } else {
+                            alert(msg.message || "Failed to unlink item.");
+                        }
+                    },
+                    error: function (x, e) {
+                        alert("The call to the server side failed. " + x.responseText);
+                    }
+                });
+            });
+        });
+
+        function GetItemDetail() {
+            var prdId = $("#hfTopperID").val();
+
+            $.ajax({
+                type: "POST",
+                url: "/mapcustomizedcake/detail",
+                data: JSON.stringify({ productId: parseInt(prdId) }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (msg) {
+                    if (msg.success) {
+                        var item = msg.data;
+                        var prdimage = $("#hdCustGlobalUrl").val() + "/upload/Product_images/resized_200_200/" + item.productImage;
+                        var html = "<div class='row'><div class='col-sm-6 col-md-4'><div class='thumbnail'>" +
+                            "<img src='" + prdimage + "'>" +
+                            "<div class='caption'><h5><b>" + item.productName + "</b></h5>" +
+                            "<p><a id='ancLinkItem' data-id='" + item.productId + "' class='btn btn-sm btn-primary' role='button'>Link Item</a></p>" +
+                            "</div></div></div></div>";
+                        $("#dvItem").html(html);
+                    }
+                },
+                error: function (x, e) {
+                    alert("The call to the server side failed. " + x.responseText);
+                }
+            });
+        }
+    </script>
+}

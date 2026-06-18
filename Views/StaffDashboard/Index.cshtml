@@ -1,0 +1,1012 @@
+@model StaffDashboardViewModel
+@{
+    ViewData["Title"] = Model.IsAdminView ? "Staff Dashboard" : "My Dashboard";
+    var monthNames = new[] { "", "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December" };
+    var monthLabel = monthNames[Model.CurrentMonth] + " " + Model.CurrentYear;
+}
+
+@section Head {
+    <style type="text/css">
+        .cssdaystyle.cssselectable > a {
+            background-color: #fff; color: #000 !important; cursor: default;
+        }
+        .cssdaystyle.cssselectable.csstodaydatestyle > a {
+            color: #000 !important; background-color: #ddd;
+        }
+        .cssdaystyle.cssselectable > a:hover {
+            text-decoration: none;
+        }
+        .div_webstoretiming {
+            padding-bottom: 12px;
+            margin-top: 14px;
+        }
+        .form-group.divsep {
+            float: left;
+            width: 100%;
+            padding: 10px 0;
+            margin: 7px 0;
+        }
+        .flush {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .workinghours {
+            background-color: #ffdbdb;
+        }
+        .div_webstoretiming1 {
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+        .headertext label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .orderWrappernew {
+            padding-bottom: 0;
+        }
+        .innerhead {
+            background-color: #D63D40;
+            padding: 10px 0;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        .innerhead h2 {
+            margin: 0;
+            padding: 0 15px;
+            font-size: 20px;
+            color: #fff;
+        }
+        .innerhead a {
+            color: #fff;
+        }
+        .text-danger.absolutelnk {
+            position: absolute;
+            right: 0;
+            top: 6px;
+            line-height: 34px;
+            width: 24px;
+            text-align: center;
+        }
+        .form-group.divsep {
+            float: left;
+            width: 100%;
+            padding: 10px 0;
+            margin: 7px 0;
+        }
+        .form-group.divsep.app {
+            background-color: #a3e8a3;
+        }
+        .form-group.divsep.dec {
+            background-color: #ffc1c1;
+        }
+        .divremarks {
+            color: #f00;
+        }
+        .bg_isclose2 {
+            background-color: #c4dae8;
+        }
+        .bg_isclose3 {
+            background-color: #e6d5a4;
+        }
+
+        /* Calendar styles */
+        .calendar-grid {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #D63D40;
+            margin: 0 auto;
+            max-width: 400px;
+        }
+        .calendar-grid th {
+            background-color: #D63D40;
+            color: #fff;
+            text-align: center;
+            padding: 6px 2px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .calendar-grid .cal-title {
+            background-color: #D63D40;
+            color: #fff;
+            text-align: center;
+            padding: 8px;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+        .calendar-grid td {
+            width: 14.28%;
+            height: 45px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #eee;
+            font-size: 8pt;
+            font-family: Verdana, sans-serif;
+        }
+        .calendar-grid td.other-month {
+            color: #999;
+        }
+        .calendar-grid td.today {
+            background-color: #ddd;
+        }
+        .calendar-grid td.bgAvail {
+            background-color: #6db36d;
+            color: #fff;
+        }
+        .calendar-grid td.bgcanAvail {
+            background-color: #6cacd3;
+            color: #fff;
+        }
+        .calendar-grid td.bgclose {
+            background-color: #db2b2b;
+            color: #fff;
+        }
+        .calendar-grid td.bgLeave {
+            background-color: #f0b400;
+            color: #fff;
+        }
+
+        /* Legend */
+        .tbl_colourcode {
+            margin: 20px auto;
+        }
+        .tbl_colourcode td {
+            padding: 0 10px 0 3px;
+            border-width: 0;
+            font-size: 12px;
+        }
+        .tbl_colourcode .swatch {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+        .swatch-avail { background-color: #6db36d; }
+        .swatch-canavail { background-color: #6cacd3; }
+        .swatch-notavail { background-color: #db2b2b; }
+        .swatch-leave { background-color: #f0b400; }
+        .swatch-undefined { background-color: #fff; border: 1px solid #d5d5d5; }
+
+        /* Working hours table */
+        .wh-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .wh-table th, .wh-table td {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .wh-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+        /* Disabled buttons */
+        .btn-disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        @@media screen and (max-width: 800px) {
+            .tbl_colourcode td {
+                float: left;
+                margin: 5px 0;
+            }
+            .div_webstoretiming1 {
+                border: 1px solid #ddd;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+}
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin flush">
+                <div class="orderWrappernew">
+                    <!-- Header -->
+                    <div class="innerhead">
+                        <div class="col-md-12">
+                            <h2 style="display: inline-block;">@(Model.IsAdminView ? "" : "My ") Dashboard</h2>
+                            <a href="/businessorders" style="float:right;color:#fff;"><u>Orders Dashboard</u></a>
+                            <font style="float:right;margin:0 7px;">|</font>
+                            @if (Model.IsAdminView)
+                            {
+                                <a href="/managestafftimingrequest" style="float:right;color:#fff;"><u>Staff Request</u>@if (Model.StaffRequestCount > 0) { <text> - @Model.StaffRequestCount</text> }</a>
+                                <font style="float:right;margin:0 7px;">|</font>
+                            }
+                            <a href="/staffrota" style="float:right;color:#fff;"><u>Manage Rota</u></a>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+
+                    <!-- Staff Dropdown (admin only) -->
+                    @if (Model.IsAdminView)
+                    {
+                        <div class="form-group">
+                            <div class="col-sm-12">
+                                <label>
+                                    <select class="form-control" onchange="if(this.value > 0) window.location.href='/dashboard?staffID='+this.value; else window.location.href='/dashboard';">
+                                        <option value="0">--Select Staff--</option>
+                                        @foreach (var staff in Model.StaffList)
+                                        {
+                                            <option value="@staff.Id" @(staff.Id == Model.SelectedStaffId ? "selected" : "")>@staff.Name</option>
+                                        }
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                    }
+
+                    @if (Model.SelectedStaffId > 0)
+                    {
+                        <!-- Availability Section -->
+                        <div class="col-sm-12 flush">
+                            <div class="form-group">
+                                <div class="col-sm-12 headertext">
+                                    <label>@(Model.IsAdminView ? "" : "My ") Availability</label>
+                                </div>
+
+                                <!-- Calendar -->
+                                <div class="col-md-4 col-md-offset-4 col-sm-6 col-sm-offset-3">
+                                    <table class="calendar-grid">
+                                        <tr>
+                                            <td colspan="7" class="cal-title">
+                                                &lt; @monthLabel &gt;
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Mon</th>
+                                            <th>Tue</th>
+                                            <th>Wed</th>
+                                            <th>Thu</th>
+                                            <th>Fri</th>
+                                            <th>Sat</th>
+                                            <th>Sun</th>
+                                        </tr>
+                                        @for (int week = 0; week < 6; week++)
+                                        {
+                                            <tr>
+                                                @for (int day = 0; day < 7; day++)
+                                                {
+                                                    var idx = week * 7 + day;
+                                                    if (idx < Model.CalendarDays.Count)
+                                                    {
+                                                        var cell = Model.CalendarDays[idx];
+                                                        var tdClass = "";
+                                                        if (!cell.IsCurrentMonth)
+                                                        {
+                                                            tdClass = "other-month";
+                                                        }
+                                                        else
+                                                        {
+                                                            tdClass = cell.CssClass;
+                                                            if (cell.Date.Date == DateTime.Today)
+                                                            {
+                                                                tdClass += " today";
+                                                            }
+                                                        }
+                                                        <td class="@tdClass">@cell.DayOfMonth</td>
+                                                    }
+                                                }
+                                            </tr>
+                                        }
+                                    </table>
+                                </div>
+                                <div class="clearfix"></div>
+
+                                <!-- Legend -->
+                                <div class="col-sm-12">
+                                    <table class="tbl_colourcode" border="0" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td><span class="swatch swatch-avail">&nbsp;</span></td>
+                                            <td>Available</td>
+                                            <td><span class="swatch swatch-canavail">&nbsp;</span></td>
+                                            <td>Can Available, (if Needed)</td>
+                                            <td><span class="swatch swatch-notavail">&nbsp;</span></td>
+                                            <td>Not Available</td>
+                                            <td><span class="swatch swatch-leave">&nbsp;</span></td>
+                                            <td>Leave Request</td>
+                                            <td><span class="swatch swatch-undefined">&nbsp;</span></td>
+                                            <td>Undefined</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="clearfix"></div>
+
+                            <div class="clearfix"></div>
+
+                            <!-- Special Availability Days / Leave Request LIST -->
+                            @if (Model.SpecialDays.Any(s => s.Id > 0))
+                            {
+                                <div class="col-sm-12 headertext">
+                                    <label>Special Availability Days / Leave Request:</label>
+                                </div>
+                            }
+                            @foreach (var sd in Model.SpecialDays)
+                            {
+                                var bgClass = sd.IsClosed == 2 ? "bg_isclose2" : (sd.IsClosed == 3 ? "bg_isclose3" : "");
+                                <div class="col-sm-10 col-md-10 col-xs-10 col-xs-offset-1 row-height div_webstoretiming @bgClass" style="position:relative; padding:10px; margin-bottom:5px; border:1px solid #ddd;">
+                                    <div class="form-group" style="margin-bottom:0;">
+                                        <div class="col-sm-2 col-xs-12 unbold labelleft">
+                                            @sd.Date.ToString("dd/MM/yyyy")
+                                        </div>
+                                        <div class="col-sm-4 col-xs-12 raln">
+                                            @sd.AvailabilityText
+                                        </div>
+                                        @if (sd.IsClosed == 3 && !sd.IsAdminRequested)
+                                        {
+                                            <div class="col-sm-6 col-xs-12 raln">
+                                                <em>@sd.Remarks</em>
+                                            </div>
+                                        }
+                                        @if (sd.IsClosed == 2)
+                                        {
+                                            <div class="col-sm-1 col-xs-6 raln">From</div>
+                                            <div class="col-sm-2 col-xs-6">@(sd.FromHour):00</div>
+                                            <div class="col-sm-1 col-xs-6 raln">To</div>
+                                            <div class="col-sm-2 col-xs-6">@(sd.ToHour):00</div>
+                                        }
+                                        @if (sd.ApprovedStatus == 0)
+                                        {
+                                            <a href="#" class="text-danger absolutelnk" onclick="deleteSpecialDay(@sd.Id, @sd.StaffId); return false;">X</a>
+                                        }
+                                    </div>
+                                    @* Admin-requested row: show Approve/Decline and requester info *@
+                                    @if (sd.IsAdminRequested)
+                                    {
+                                        <div class="form-group divsep @sd.StatusCssClass">
+                                            <div class="col-sm-3">
+                                                @if (sd.ApprovedStatus == 0)
+                                                {
+                                                    <a href="#" class="btn btn-success btn-sm" onclick="approveSpecialDay(@sd.Id, @sd.StaffId); return false;">Approve</a>
+                                                    <a href="#" class="btn btn-danger btn-sm" onclick="openDeclineModal(@sd.Id, '@sd.Date.ToString("dd/MM/yyyy")', '@System.Net.WebUtility.HtmlEncode(sd.RequestedName)', '@sd.AvailabilityText', '@(sd.IsClosed == 2 ? sd.FromHour + ":00 - " + sd.ToHour + ":00" : "")', '@System.Net.WebUtility.HtmlEncode(sd.Remarks)'); return false;">Decline</a>
+                                                }
+                                            </div>
+                                            <div class="col-sm-5 laln" style="color:#ff0000">
+                                                Requested By: @sd.RequestedName<br />
+                                                At: @sd.ApprovedOn.ToString("dd/MM/yyyy hh:mm tt")
+                                            </div>
+                                            <div class="col-sm-4 laln @(sd.ApprovedStatus == 1 ? "" : "divremarks")">
+                                                <em>@sd.Remarks</em>
+                                            </div>
+                                        </div>
+                                    }
+                                    @* Status row: shown when approved or declined *@
+                                    @if (sd.ApprovedStatus > 0)
+                                    {
+                                        <div class="form-group divsep @sd.StatusCssClass">
+                                            <div class="col-sm-3">
+                                                Status: @sd.StatusText
+                                            </div>
+                                            <div class="col-sm-5">
+                                                @sd.StatusText By: @sd.ApprovedName<br />
+                                                At: @sd.ApprovedOn.ToString("dd/MM/yyyy hh:mm tt")
+                                            </div>
+                                            <div class="col-sm-4 laln @(sd.ApprovedStatus == 1 ? "" : "divremarks")">
+                                                @if (sd.ApprovedStatus != 1) { <text>'</text> }<em>@sd.ApprovedRemarks</em>@if (sd.ApprovedStatus != 1) { <text>'</text> }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            <div class="clearfix"></div>
+
+                            <!-- Add Leave / Special Availability buttons -->
+                            <div class="col-lg-6 col-md-6 col-sm-6 top-margin">
+                                <a class="btn black-rounded specialdays addoption_btn" href="#" id="btnAddLeaveRequest" onclick="openLeaveRequestModal(); return false;">+ <span>Add Leave Request</span></a>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-6 top-margin">
+                                <a class="btn black-rounded specialdays addoption_btn" href="#" id="btnAddSpecialAvailability" onclick="openSpecialAvailabilityModal(); return false;">+ <span>Add Special Availability</span></a>
+                            </div>
+
+                            <div class="clearfix"></div>
+                            <hr />
+
+                            <!-- Working Hours Section -->
+                            <div class="col-sm-12 flush workinghours">
+                                <div class="form-group">
+                                    <div class="col-sm-12 headertext">
+                                        <label>Working Hours:</label>
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <table class="wh-table" id="tblWorkingHours">
+                                            <thead>
+                                                <tr>
+                                                    <th>Day</th>
+                                                    <th>Availability</th>
+                                                    <th>From</th>
+                                                    <th>To</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var row in Model.WorkingHours)
+                                                {
+                                                    <tr data-dayid="@row.DayId">
+                                                        <td>@row.DayName</td>
+                                                        <td>
+                                                            <select class="form-control" name="availability">
+                                                                <option value="0" @(row.AvailabilityStatus == 0 ? "selected" : "")>Always Available</option>
+                                                                <option value="1" @(row.AvailabilityStatus == 1 ? "selected" : "")>Not Available</option>
+                                                                <option value="2" @(row.AvailabilityStatus == 2 ? "selected" : "")>Can Available, (if Needed)</option>
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select class="form-control" name="fromHour" @(row.AvailabilityStatus == 1 ? "disabled" : "")>
+                                                                <option value="-1" @(row.FromHour == -1 ? "selected" : "")>Flexible</option>
+                                                                @for (int h = 0; h <= 23; h++)
+                                                                {
+                                                                    <option value="@h" @(h == row.FromHour ? "selected" : "")>@h.ToString("00"):00</option>
+                                                                }
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select class="form-control" name="toHour" @(row.AvailabilityStatus == 1 ? "disabled" : "")>
+                                                                <option value="-1" @(row.ToHour == -1 ? "selected" : "")>Flexible</option>
+                                                                @for (int h = 0; h <= 23; h++)
+                                                                {
+                                                                    <option value="@h" @(h == row.ToHour ? "selected" : "")>@h.ToString("00"):00</option>
+                                                                }
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="clearfix"></div>
+
+                                    <!-- Save Changes button -->
+                                    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                                        <a class="btn btn-danger btn-md" id="btnSaveWorkingHours" href="#">Save Changes</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notification area -->
+                            <div id="staffDashNotification" style="display:none; margin:15px; padding:12px 15px; border-radius:4px;"></div>
+
+                            <!-- Leave Request Modal -->
+                            <div class="modal fade" id="leaveRequestModal" tabindex="-1" role="dialog" aria-labelledby="leaveRequestModalLabel">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                            <h4 class="modal-title" id="leaveRequestModalLabel">New Leave Request</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div id="leaveRequestError" style="display:none;" class="alert alert-danger"></div>
+                                            <div class="form-group">
+                                                <label for="leaveFromDate">From Date</label>
+                                                <input type="date" id="leaveFromDate" class="form-control" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="leaveToDate">To Date</label>
+                                                <input type="date" id="leaveToDate" class="form-control" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="leaveRemarks">Remarks</label>
+                                                <textarea id="leaveRemarks" maxlength="500" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                            <button type="button" id="btnSaveLeaveRequest" class="btn btn-danger">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Special Availability Modal -->
+                            <div class="modal fade" id="specialAvailabilityModal" tabindex="-1" role="dialog" aria-labelledby="specialAvailabilityModalLabel">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                            <h4 class="modal-title" id="specialAvailabilityModalLabel">Special Availability</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div id="specialAvailabilityError" style="display:none;" class="alert alert-danger"></div>
+                                            <div class="form-group">
+                                                <label for="specialDate">Date</label>
+                                                <input type="date" id="specialDate" class="form-control" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="specialFromHour">From Time</label>
+                                                <select id="specialFromHour" class="form-control">
+                                                    <option value="0">0:00</option>
+                                                    <option value="1">1:00</option>
+                                                    <option value="2">2:00</option>
+                                                    <option value="3">3:00</option>
+                                                    <option value="4">4:00</option>
+                                                    <option value="5">5:00</option>
+                                                    <option value="6">6:00</option>
+                                                    <option value="7">7:00</option>
+                                                    <option value="8">8:00</option>
+                                                    <option value="9">9:00</option>
+                                                    <option value="10">10:00</option>
+                                                    <option value="11">11:00</option>
+                                                    <option value="12">12:00</option>
+                                                    <option value="13">13:00</option>
+                                                    <option value="14">14:00</option>
+                                                    <option value="15">15:00</option>
+                                                    <option value="16">16:00</option>
+                                                    <option value="17">17:00</option>
+                                                    <option value="18">18:00</option>
+                                                    <option value="19">19:00</option>
+                                                    <option value="20">20:00</option>
+                                                    <option value="21">21:00</option>
+                                                    <option value="22">22:00</option>
+                                                    <option value="23">23:00</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="specialToHour">To Time</label>
+                                                <select id="specialToHour" class="form-control">
+                                                    <option value="0">0:00</option>
+                                                    <option value="1">1:00</option>
+                                                    <option value="2">2:00</option>
+                                                    <option value="3">3:00</option>
+                                                    <option value="4">4:00</option>
+                                                    <option value="5">5:00</option>
+                                                    <option value="6">6:00</option>
+                                                    <option value="7">7:00</option>
+                                                    <option value="8">8:00</option>
+                                                    <option value="9">9:00</option>
+                                                    <option value="10">10:00</option>
+                                                    <option value="11">11:00</option>
+                                                    <option value="12">12:00</option>
+                                                    <option value="13">13:00</option>
+                                                    <option value="14">14:00</option>
+                                                    <option value="15">15:00</option>
+                                                    <option value="16">16:00</option>
+                                                    <option value="17">17:00</option>
+                                                    <option value="18">18:00</option>
+                                                    <option value="19">19:00</option>
+                                                    <option value="20">20:00</option>
+                                                    <option value="21">21:00</option>
+                                                    <option value="22">22:00</option>
+                                                    <option value="23">23:00</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                            <button type="button" id="btnSaveSpecialAvailability" class="btn btn-danger">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Decline Modal -->
+                            <div class="modal fade" id="declineModal" tabindex="-1" role="dialog" aria-labelledby="declineModalLabel">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                            <h4 class="modal-title" id="declineModalLabel">Decline Staff Availability</h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div id="declineError" style="display:none;" class="alert alert-danger"></div>
+                                            <input type="hidden" id="declineId" />
+                                            <div class="form-horizontal" role="form">
+                                                <div class="form-group">
+                                                    <label class="col-sm-3 control-label">Date:</label>
+                                                    <div class="col-sm-4 control-label" style="text-align: left;">
+                                                        <span id="declineDate"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-sm-3 control-label">Requested By:</label>
+                                                    <div class="col-sm-4 control-label" style="text-align: left;">
+                                                        <span id="declineStaffName"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-sm-3 control-label">Availability:</label>
+                                                    <div class="col-sm-4 control-label" style="text-align: left;">
+                                                        <span id="declineAvailability"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group" id="declineTimeRow">
+                                                    <label class="col-sm-3 control-label">From - To</label>
+                                                    <div class="col-sm-4 control-label" style="text-align: left;">
+                                                        <span id="declineTime"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-sm-3 control-label">Remarks:</label>
+                                                    <div class="col-sm-4 control-label" style="text-align: left;">
+                                                        <span id="declineOrigRemarks"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-sm-3 control-label">Your Remarks: <span class="text-danger">*</span></label>
+                                                    <div class="col-sm-9">
+                                                        <textarea id="declineRemarks" class="form-control" placeholder="Remarks" rows="3"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                            <button type="button" id="btnSaveDecline" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Working Hours Scripts -->
+                            <script type="text/javascript">
+                                (function () {
+                                    var staffId = @Model.SelectedStaffId;
+
+                                    // "Not Available" handler: when availability changes to 1, disable From/To and set to -1
+                                    var table = document.getElementById('tblWorkingHours');
+                                    if (table) {
+                                        var availSelects = table.querySelectorAll('select[name="availability"]');
+                                        availSelects.forEach(function (sel) {
+                                            sel.addEventListener('change', function () {
+                                                var row = this.closest('tr');
+                                                var fromSel = row.querySelector('select[name="fromHour"]');
+                                                var toSel = row.querySelector('select[name="toHour"]');
+                                                if (this.value === '1') {
+                                                    fromSel.value = '0';
+                                                    toSel.value = '0';
+                                                    fromSel.disabled = true;
+                                                    toSel.disabled = true;
+                                                } else {
+                                                    fromSel.disabled = false;
+                                                    toSel.disabled = false;
+                                                }
+                                            });
+                                        });
+                                    }
+
+                                    // Save click handler
+                                    var btnSave = document.getElementById('btnSaveWorkingHours');
+                                    if (btnSave) {
+                                        btnSave.addEventListener('click', function (e) {
+                                            e.preventDefault();
+                                            var rows = table.querySelectorAll('tbody tr');
+                                            var entries = [];
+                                            rows.forEach(function (row) {
+                                                var dayId = parseInt(row.getAttribute('data-dayid'), 10);
+                                                var availability = parseInt(row.querySelector('select[name="availability"]').value, 10);
+                                                var fromHour = parseInt(row.querySelector('select[name="fromHour"]').value, 10);
+                                                var toHour = parseInt(row.querySelector('select[name="toHour"]').value, 10);
+                                                entries.push({
+                                                    dayId: dayId,
+                                                    availabilityStatus: availability,
+                                                    fromHour: fromHour,
+                                                    toHour: toHour
+                                                });
+                                            });
+
+                                            var payload = {
+                                                staffId: staffId,
+                                                entries: entries
+                                            };
+
+                                            fetch('/dashboard/save-working-hours', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload)
+                                            })
+                                            .then(function (response) { return response.json(); })
+                                            .then(function (data) {
+                                                var notif = document.getElementById('staffDashNotification');
+                                                if (data.success) {
+                                                    notif.style.display = 'block';
+                                                    notif.style.backgroundColor = '#dff0d8';
+                                                    notif.style.color = '#3c763d';
+                                                    notif.style.border = '1px solid #d6e9c6';
+                                                    notif.textContent = 'Working hours saved successfully.';
+                                                } else {
+                                                    notif.style.display = 'block';
+                                                    notif.style.backgroundColor = '#f2dede';
+                                                    notif.style.color = '#a94442';
+                                                    notif.style.border = '1px solid #ebccd1';
+                                                    notif.textContent = data.error || 'Save failed. Please try again.';
+                                                }
+                                                setTimeout(function () { notif.style.display = 'none'; }, 5000);
+                                            })
+                                            .catch(function () {
+                                                var notif = document.getElementById('staffDashNotification');
+                                                notif.style.display = 'block';
+                                                notif.style.backgroundColor = '#f2dede';
+                                                notif.style.color = '#a94442';
+                                                notif.style.border = '1px solid #ebccd1';
+                                                notif.textContent = 'Save failed. Please try again.';
+                                                setTimeout(function () { notif.style.display = 'none'; }, 5000);
+                                            });
+                                        });
+                                    }
+                                })();
+                            </script>
+
+                            <!-- Special Days Operations Scripts -->
+                            <script type="text/javascript">
+                                function deleteSpecialDay(id, staffId) {
+                                    if (!confirm('Are you sure you want to delete this entry?')) return;
+                                    fetch('/dashboard/delete-special-day', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: id, staffId: staffId })
+                                    })
+                                    .then(function (response) { return response.json(); })
+                                    .then(function (data) {
+                                        if (data.success) { window.location.reload(); }
+                                        else { alert(data.error || 'Delete failed.'); }
+                                    })
+                                    .catch(function () { alert('Delete failed. Please try again.'); });
+                                }
+
+                                function approveSpecialDay(id, staffId) {
+                                    if (!confirm('Approve this request?')) return;
+                                    fetch('/dashboard/approve-special-day', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ id: id, staffId: staffId })
+                                    })
+                                    .then(function (response) { return response.json(); })
+                                    .then(function (data) {
+                                        if (data.success) { window.location.reload(); }
+                                        else { alert(data.error || 'Approve failed.'); }
+                                    })
+                                    .catch(function () { alert('Approve failed. Please try again.'); });
+                                }
+
+                                function openDeclineModal(id, date, staffName, availability, time, remarks) {
+                                    document.getElementById('declineId').value = id;
+                                    document.getElementById('declineDate').textContent = date;
+                                    document.getElementById('declineStaffName').textContent = staffName;
+                                    document.getElementById('declineAvailability').textContent = availability;
+                                    var timeRow = document.getElementById('declineTimeRow');
+                                    if (time) {
+                                        document.getElementById('declineTime').textContent = time;
+                                        timeRow.style.display = '';
+                                    } else {
+                                        timeRow.style.display = 'none';
+                                    }
+                                    document.getElementById('declineOrigRemarks').textContent = remarks;
+                                    document.getElementById('declineRemarks').value = '';
+                                    var errorDiv = document.getElementById('declineError');
+                                    errorDiv.style.display = 'none';
+                                    errorDiv.textContent = '';
+                                    $('#declineModal').modal('show');
+                                }
+
+                                (function () {
+                                    var btnDecline = document.getElementById('btnSaveDecline');
+                                    if (btnDecline) {
+                                        btnDecline.addEventListener('click', function () {
+                                            var errorDiv = document.getElementById('declineError');
+                                            errorDiv.style.display = 'none';
+                                            var id = parseInt(document.getElementById('declineId').value, 10);
+                                            var remarks = document.getElementById('declineRemarks').value;
+                                            if (!remarks || !remarks.trim()) {
+                                                errorDiv.textContent = 'Remarks are required.';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+                                            fetch('/dashboard/decline-special-day', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ id: id, staffId: 0, remarks: remarks })
+                                            })
+                                            .then(function (response) { return response.json(); })
+                                            .then(function (data) {
+                                                if (data.success) {
+                                                    $('#declineModal').modal('hide');
+                                                    window.location.reload();
+                                                } else {
+                                                    errorDiv.textContent = data.error || 'Decline failed.';
+                                                    errorDiv.style.display = 'block';
+                                                }
+                                            })
+                                            .catch(function () {
+                                                errorDiv.textContent = 'Decline failed. Please try again.';
+                                                errorDiv.style.display = 'block';
+                                            });
+                                        });
+                                    }
+                                })();
+                            </script>
+
+                            <!-- Leave Request Scripts -->
+                            <script type="text/javascript">
+                                var leaveRequestStaffId = @Model.SelectedStaffId;
+
+                                function openLeaveRequestModal() {
+                                    // Clear fields on open (Req 3.4)
+                                    document.getElementById('leaveFromDate').value = '';
+                                    document.getElementById('leaveToDate').value = '';
+                                    document.getElementById('leaveRemarks').value = '';
+                                    var errorDiv = document.getElementById('leaveRequestError');
+                                    errorDiv.style.display = 'none';
+                                    errorDiv.textContent = '';
+                                    $('#leaveRequestModal').modal('show');
+                                }
+
+                                (function () {
+                                    var btnSaveLeave = document.getElementById('btnSaveLeaveRequest');
+                                    if (btnSaveLeave) {
+                                        btnSaveLeave.addEventListener('click', function () {
+                                            var errorDiv = document.getElementById('leaveRequestError');
+                                            errorDiv.style.display = 'none';
+                                            errorDiv.textContent = '';
+
+                                            var fromDateVal = document.getElementById('leaveFromDate').value;
+                                            var toDateVal = document.getElementById('leaveToDate').value;
+                                            var remarks = document.getElementById('leaveRemarks').value;
+
+                                            // Client-side validation
+                                            if (!fromDateVal) {
+                                                errorDiv.textContent = 'Please select a From Date.';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+                                            if (!toDateVal) {
+                                                errorDiv.textContent = 'Please select a To Date.';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+
+                                            var fromDate = new Date(fromDateVal);
+                                            var toDate = new Date(toDateVal);
+                                            var today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+
+                                            if (fromDate < today) {
+                                                errorDiv.textContent = 'Past date(s) are not accepted';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+
+                                            if (toDate < fromDate) {
+                                                errorDiv.textContent = 'from date should be less than or equal to to date';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+
+                                            // Format dates as dd/MM/yyyy
+                                            var fromParts = fromDateVal.split('-');
+                                            var toParts = toDateVal.split('-');
+                                            var formattedFrom = fromParts[2] + '/' + fromParts[1] + '/' + fromParts[0];
+                                            var formattedTo = toParts[2] + '/' + toParts[1] + '/' + toParts[0];
+
+                                            var payload = {
+                                                staffId: leaveRequestStaffId,
+                                                fromDate: formattedFrom,
+                                                toDate: formattedTo,
+                                                remarks: remarks
+                                            };
+
+                                            fetch('/dashboard/submit-leave-request', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload)
+                                            })
+                                            .then(function (response) { return response.json(); })
+                                            .then(function (data) {
+                                                if (data.success) {
+                                                    $('#leaveRequestModal').modal('hide');
+                                                    window.location.reload();
+                                                } else {
+                                                    errorDiv.textContent = data.error || 'Save failed. Please try again.';
+                                                    errorDiv.style.display = 'block';
+                                                }
+                                            })
+                                            .catch(function () {
+                                                errorDiv.textContent = 'Save failed. Please try again.';
+                                                errorDiv.style.display = 'block';
+                                            });
+                                        });
+                                    }
+                                })();
+                            </script>
+
+                            <!-- Special Availability Scripts -->
+                            <script type="text/javascript">
+                                var specialAvailabilityStaffId = @Model.SelectedStaffId;
+
+                                function openSpecialAvailabilityModal() {
+                                    document.getElementById('specialDate').value = '';
+                                    document.getElementById('specialFromHour').value = '0';
+                                    document.getElementById('specialToHour').value = '0';
+                                    var errorDiv = document.getElementById('specialAvailabilityError');
+                                    errorDiv.style.display = 'none';
+                                    errorDiv.textContent = '';
+                                    $('#specialAvailabilityModal').modal('show');
+                                }
+
+                                (function () {
+                                    var btnSaveSpecial = document.getElementById('btnSaveSpecialAvailability');
+                                    if (btnSaveSpecial) {
+                                        btnSaveSpecial.addEventListener('click', function () {
+                                            var errorDiv = document.getElementById('specialAvailabilityError');
+                                            errorDiv.style.display = 'none';
+                                            errorDiv.textContent = '';
+
+                                            var dateVal = document.getElementById('specialDate').value;
+                                            var fromHour = parseInt(document.getElementById('specialFromHour').value, 10);
+                                            var toHour = parseInt(document.getElementById('specialToHour').value, 10);
+
+                                            // Client-side validation
+                                            if (!dateVal) {
+                                                errorDiv.textContent = 'Please select a date.';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+
+                                            var selectedDate = new Date(dateVal);
+                                            var today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+
+                                            if (selectedDate < today) {
+                                                errorDiv.textContent = 'Past date(s) are not accepted';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+
+                                            if (fromHour >= toHour) {
+                                                errorDiv.textContent = 'From time must be earlier than To time';
+                                                errorDiv.style.display = 'block';
+                                                return;
+                                            }
+
+                                            // Format date as dd/MM/yyyy
+                                            var dateParts = dateVal.split('-');
+                                            var formattedDate = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
+
+                                            var payload = {
+                                                staffId: specialAvailabilityStaffId,
+                                                date: formattedDate,
+                                                fromHour: fromHour,
+                                                toHour: toHour
+                                            };
+
+                                            fetch('/dashboard/submit-special-availability', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload)
+                                            })
+                                            .then(function (response) { return response.json(); })
+                                            .then(function (data) {
+                                                if (data.success) {
+                                                    $('#specialAvailabilityModal').modal('hide');
+                                                    window.location.reload();
+                                                } else {
+                                                    errorDiv.textContent = data.error || 'Save failed. Please try again.';
+                                                    errorDiv.style.display = 'block';
+                                                }
+                                            })
+                                            .catch(function () {
+                                                errorDiv.textContent = 'Save failed. Please try again.';
+                                                errorDiv.style.display = 'block';
+                                            });
+                                        });
+                                    }
+                                })();
+                            </script>
+                        </div>
+                    }
+                    else if (Model.IsAdminView)
+                    {
+                        <div class="col-sm-12">
+                            <div class="alert alert-info">Please select a staff member from the dropdown above.</div>
+                        </div>
+                    }
+
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

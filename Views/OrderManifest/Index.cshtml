@@ -1,0 +1,262 @@
+@{
+    ViewData["Title"] = "Order Manifest";
+
+    var counts = ViewBag.Counts as List<ManifestCountItem> ?? new List<ManifestCountItem>();
+    var orders = ViewBag.Orders as List<ManifestOrderItem> ?? new List<ManifestOrderItem>();
+    var selectedDate = ViewBag.SelectedDate as string ?? DateTime.Today.ToString("dd/MM/yyyy");
+    var bakeryId = (int)(ViewBag.BakeryId ?? 0);
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var printBaseUrl = "/printorderbakers/";
+}
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   3.1 — Date Filter Bar
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+<div class="row" style="margin-top:10px;">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-inline">
+                    <label>Date:</label>
+                    <input type="text" id="txtManifestDate" class="form-control" style="width:150px;" value="@selectedDate" />
+                    <button type="button" class="btn btn-danger btn-sm" onclick="goToDate();">Go</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   3.2 — Bakery Count Summary
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+@if (counts.Any())
+{
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    @foreach (var c in counts)
+                    {
+                        <span>@c.BranchName (@c.Count)</span><br />
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ═══════════════════════════════════════════════════════════════════════════════
+   3.3 — Grouped Order Table
+   ═══════════════════════════════════════════════════════════════════════════════ *@
+@if (orders.Any())
+{
+    var grouped = orders
+        .GroupBy(o => o.DispatchDate.Date)
+        .OrderBy(g => g.Key)
+        .ToList();
+
+    <div class="row">
+        <div class="col-lg-12">
+            <table border="0" cellpadding="0" cellspacing="5" width="100%">
+            @{ int groupCounter = 0; }
+            @foreach (var group in grouped)
+            {
+                groupCounter++;
+                var dayDate = group.Key;
+                var dayItems = group.ToList();
+                var isToday = (dayDate.Date == DateTime.Today.Date);
+
+                var cakeCount = dayItems.Count(x => x.ProductType == 1);
+                var cupcakeCount = dayItems.Count(x => x.ProductType == 6);
+                var accessoryCount = dayItems.Count(x => x.ProductType == 2);
+                var totalCount = dayItems.Count;
+
+                // Day header
+                var dayName = dayDate.ToString("dddd").ToUpper();
+                var dateDisplay = dayDate.ToString("(dd/MM/yyyy)");
+                var dayHeader = isToday
+                    ? "<font style='font-size:16px;font-weight:bold;text-transform:uppercase;'>TODAY - " + dayName + "</font> " + dateDisplay
+                    : "<font style='font-size:16px;font-weight:bold;text-transform:uppercase;'>" + dayName + "</font> " + dateDisplay;
+
+                <tr style="color:#ff0000;">
+                    <td style="line-height:22px;font-size:14px;text-align:left;@(groupCounter > 1 ? "padding-top:10px;" : "")">
+                        @Html.Raw(dayHeader)
+                        <span style="float:right;color:#555;">Total: @totalCount [@cakeCount + @cupcakeCount + @accessoryCount]</span>
+                    </td>
+                </tr>
+
+                @* ═══════════════════════════════════════════════════════════════
+                   3.4 — Order Table Rows
+                   ═══════════════════════════════════════════════════════════════ *@
+                <tr>
+                    <td style="border:1px solid #ccc;">
+                        <table border="0" cellpadding="5" cellspacing="0" width="100%">
+                            <tr style="background-color:#cccccc;text-align:center;">
+                                <th width="100px">Order ID</th>
+                                <th width="150px">Delivery Method</th>
+                                <th>Date(s)</th>
+                                <th width="180px">Status</th>
+                            </tr>
+                            @{
+                                var sortedItems = dayItems
+                                    .OrderByDescending(o => o.OrderBranchId)
+                                    .ThenBy(o => o.CollectionDate)
+                                    .ToList();
+                                int rowCounter = 0;
+                            }
+                            @foreach (var order in sortedItems)
+                            {
+                                rowCounter++;
+                                // Display ID logic
+                                string displayId;
+                                if (order.IsRepeat)
+                                {
+                                    displayId = order.ForwardedOrderId + "/ReOrd";
+                                }
+                                else if (order.ForwardedOrderId > 0)
+                                {
+                                    displayId = order.ForwardedOrderId + "/FWD";
+                                }
+                                else
+                                {
+                                    displayId = order.OrderId.ToString();
+                                }
+
+                                // Product type label
+                                var productTypeLabel = order.ProductType == 1 ? "Cake"
+                                    : order.ProductType == 6 ? "Cupcake"
+                                    : "Party Accessory";
+
+                                // Delivery method text
+                                string deliveryMethodHtml;
+                                if (order.OrderBakeryId != order.OrderBranchId && order.DeliveryMode == 1)
+                                {
+                                    deliveryMethodHtml = "<font color='#850000'>Delivery to <b style='display:table'>"
+                                        + order.BranchNameDetail + " (" + order.BranchPostcode + ")</b></font><br/>"
+                                        + "Collection from <font color='#850000'><b>" + order.BranchPostcode + "</b></font><br/>"
+                                        + "(" + order.ShippingZip + ")";
+                                }
+                                else if (order.DeliveryMode == 4)
+                                {
+                                    deliveryMethodHtml = "Postal Delivery<br/>(" + order.ShippingZip + ")";
+                                }
+                                else if (order.DeliveryMode == 3)
+                                {
+                                    deliveryMethodHtml = "Hand Delivery (CakerSt.)<br/>(" + order.ShippingZip + ")";
+                                }
+                                else if (order.DeliveryMode == 2)
+                                {
+                                    deliveryMethodHtml = "Hand Delivery (Bakery)<br/>(" + order.ShippingZip + ")";
+                                }
+                                else
+                                {
+                                    deliveryMethodHtml = "Collection<br/>(" + order.ShippingZip + ")";
+                                }
+
+                                // Date display logic
+                                string dateHtml;
+                                if (order.DeliveryMode == 4)
+                                {
+                                    // Postal: Ready By + Dispatch Date + Delivery Date
+                                    dateHtml = "<b>Ready By:</b><br/>"
+                                        + order.ReadyDispatchDate.ToString("dd-MMM-yyyy") + " (04:00 PM)"
+                                        + "<br/><br/><b>Dispatch Date:</b><br/>"
+                                        + order.DispatchDate.ToString("dd-MMM-yyyy")
+                                        + "<br/>(03:00 PM - 05:00 PM)"
+                                        + "<br/><br/><b>Delivery Date:</b><br/>"
+                                        + order.CollectionDate.ToString("dd-MMM-yyyy")
+                                        + "<br/>(10:00 AM - 05:30 PM)";
+                                }
+                                else
+                                {
+                                    // Collection / Hand Delivery
+                                    var modeLabel = (order.DeliveryMode == 1) ? "Collection" : "Delivery";
+                                    dateHtml = "<b>" + modeLabel + " Date:</b><br/>"
+                                        + order.CollectionDate.ToString("dd-MMM-yyyy")
+                                        + "<br/>(" + order.CollectionDate.ToString("hh:mm tt")
+                                        + " - " + order.CollectionDate.AddHours(2).ToString("hh:mm tt") + ")";
+                                }
+
+                                // Status text
+                                string statusText;
+                                if (order.FollowingOrderId > 0)
+                                {
+                                    statusText = "Forwarded";
+                                }
+                                else
+                                {
+                                    statusText = order.OrderStatus switch
+                                    {
+                                        0 => "Pending",
+                                        1 => "Confirmed",
+                                        2 => "Processed",
+                                        3 => "Under Delivery",
+                                        4 => "Completed",
+                                        5 => "Under Processing",
+                                        11 => "Cancelled",
+                                        _ => ""
+                                    };
+                                }
+
+                                var borderColor = (rowCounter > 1) ? "#aaa" : "#ccc";
+                                var printUrl = printBaseUrl + order.OrderId;
+
+                                <tr style="text-align:center;vertical-align:top;">
+                                    <td style="border-top:1px solid @borderColor;">
+                                        <a target="_blank" href="@printUrl">#@displayId</a><br />
+                                        <a target="_blank" href="@printUrl">
+                                            <img style="width:80px;border-width:0;" src="@(cdnBase)resized_300_300/@order.ProductImage1" />
+                                        </a><br /><br />
+                                        @productTypeLabel
+                                    </td>
+                                    <td style="border-top:1px solid @borderColor;">
+                                        @Html.Raw(deliveryMethodHtml)
+                                    </td>
+                                    <td style="border-top:1px solid @borderColor;">
+                                        @Html.Raw(dateHtml)
+                                    </td>
+                                    <td style="border-top:1px solid @borderColor;">
+                                        @statusText
+                                    </td>
+                                </tr>
+
+                                @* ═══════════════════════════════════════════════════════════
+                                   3.5 — Remarks row
+                                   ═══════════════════════════════════════════════════════════ *@
+                                @if (!string.IsNullOrEmpty(order.Remarks))
+                                {
+                                    <tr style="background-color:#f5f5f5;">
+                                        <td style="text-align:left;" colspan="4"><b>Remarks</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align:justify;" colspan="4">@order.Remarks</td>
+                                    </tr>
+                                }
+                            }
+                        </table>
+                    </td>
+                </tr>
+            }
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="alert alert-info">No orders found for the selected date.</div>
+        </div>
+    </div>
+}
+
+@section FooterScripts {
+    <script type="text/javascript">
+        function goToDate() {
+            var dateVal = document.getElementById('txtManifestDate').value;
+            if (dateVal) {
+                window.location.href = '/manageordermenifest?from=' + encodeURIComponent(dateVal);
+            }
+        }
+    </script>
+}

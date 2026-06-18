@@ -1,0 +1,342 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var todayDate = (DateTime)ViewBag.TodayDate;
+    var staffList = ViewBag.StaffList as List<CakerStreet.Business.Services.BakeryStaffItem> ?? new();
+    var checklistItems = ViewBag.ChecklistItems as List<CakerStreet.Business.Services.CleaningChecklistItem> ?? new();
+    var savedChecklist = ViewBag.SavedChecklist as CakerStreet.Business.Services.SavedCleaningChecklist;
+    var savedDetails = ViewBag.SavedDetails as List<CakerStreet.Business.Services.CleaningChecklistDetail> ?? new();
+    var savedNotes = ViewBag.SavedNotes as List<CakerStreet.Business.Services.CleaningChecklistNote> ?? new();
+    var historicalList = ViewBag.HistoricalList as List<CakerStreet.Business.Services.CleaningGridItem> ?? new();
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style type="text/css">
+        .inventoryWrapper .innerhead {
+            display: table;
+            width: 100%;
+        }
+        .normallink, .normallink:hover, .normallink:focus {
+            font-size: 14px;
+            text-decoration: underline;
+            color: #fff;
+        }
+        .headertext {
+            display: table;
+            margin-bottom: 10px;
+            width: 100%;
+            background-color: #ddd;
+            line-height: 34px;
+            padding: 0 10px;
+            text-align: right;
+        }
+        .headertext label {
+            float: left;
+            margin-bottom: 0;
+            line-height: 34px;
+        }
+        .div_QuestionMainList_outer, .div_ResultMain {
+            display: table;
+            width: 100%;
+        }
+        .UL_ResultMain {
+            display: table-row;
+            line-height: 20px;
+        }
+        .UL_ResultMain.headertext {
+            background-color: #ccc;
+            font-weight: bold;
+        }
+        .UL_ResultMain > li {
+            display: table-cell;
+            padding: 10px 7px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .padding-top-mobile {
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        .alert-success {
+            margin-top: 15px;
+        }
+        .note-row {
+            margin-bottom: 10px;
+        }
+    </style>
+}
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                <div class="orderWrappernew">
+                    <div class="innerhead">
+                        <div class="col-md-12" style="padding-left: 0; padding-right: 0;">
+                            <h2>
+                                Cleaning Checklist
+                                <a href="/dailydairychecklists" class="pull-right normallink">Back</a>
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse4" aria-expanded="true" style="padding-left: 0; padding-right: 0; margin-top: 15px;">
+                        
+                        <form action="/addupdcleaningchecks/submit" method="post" id="frmCleaningChecklist" onsubmit="return validateForm();">
+                            <input type="hidden" name="dateStr" value="@todayDate.ToString("dd-MM-yyyy")" />
+
+                            <div id="dvCleaningChecklist" class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr class="active">
+                                            <th style="width: 40px; text-align: center;">
+                                                <input id="chkAll" type="checkbox" />
+                                            </th>
+                                            <th>Item</th>
+                                            <th>Frequency</th>
+                                            <th>Precautions</th>
+                                            <th>Methods</th>
+                                            <th style="width: 180px;">Staff</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in checklistItems)
+                                        {
+                                            var savedDetail = savedDetails.FirstOrDefault(d => d.ChecklistId == item.CleaningChecklistId);
+                                            var isChecked = savedDetail != null;
+                                            var selectedStaffId = isChecked ? savedDetail.StaffId : item.StaffId;
+
+                                            <tr>
+                                                <td style="text-align: center; vertical-align: middle;">
+                                                    <input type="checkbox" name="checkedItems" value="@item.CleaningChecklistId" class="chk-item" @(isChecked ? "checked" : "") />
+                                                </td>
+                                                <td style="vertical-align: middle;">@item.Item</td>
+                                                <td style="vertical-align: middle;">@item.Frequency</td>
+                                                <td style="vertical-align: middle;">@item.Precautions</td>
+                                                <td style="vertical-align: middle;">@item.Methods</td>
+                                                <td style="vertical-align: middle;">
+                                                    <select name="staff_@item.CleaningChecklistId" class="form-control select-staff">
+                                                        @foreach (var staff in staffList)
+                                                        {
+                                                            var isSelected = selectedStaffId == staff.Id ? "selected" : "";
+                                                            <option value="@staff.Id" @isSelected>@staff.Name</option>
+                                                        }
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <span id="errCheckboxes" class="text-danger small" style="display:none; margin-bottom: 15px; display: block;">please select at least 1 item</span>
+
+                            <div class="headertext">
+                                <label>Cleaning Checks</label>
+                                <input type="text" id="litTodaydate" value="@todayDate.ToString("dd/MM/yyyy")" class="form-control" style="width:120px; float: right; margin-top: 3px; margin-left: 10px;" />
+                            </div>
+                            <div class="clearfix"></div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label>Any problems or changes – what did you do?</label>
+                                <textarea name="remarks" placeholder="Remarks | Problem, if any..." class="form-control" style="height:70px;">@(savedChecklist?.Remarks ?? "")</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="checklistAllDone" value="true" id="chkChecklistAllDone" @(savedChecklist != null && savedChecklist.IsDone ? "checked" : "") />
+                                    Checklist All Done
+                                </label>
+                                <span id="errChecklistAllDone" class="text-danger small" style="display:none; display: block; margin-top: 5px;">please select Checklist All Done checkbox</span>
+                            </div>
+
+                            <div id="notesContainer">
+                                @{
+                                    int noteIndex = 0;
+                                }
+                                @foreach (var note in savedNotes)
+                                {
+                                    <div class="row note-row" id="noteRow_@noteIndex">
+                                        <div class="col-sm-10">
+                                            <textarea name="note_@noteIndex" placeholder="Notes" class="form-control" style="height: 70px;">@note.Notes</textarea>
+                                        </div>
+                                        <div class="col-sm-2" style="vertical-align: middle; line-height: 70px;">
+                                            <button type="button" class="btn btn-danger btn-xs" onclick="deleteNote(@noteIndex)">X</button>
+                                        </div>
+                                    </div>
+                                    noteIndex++;
+                                }
+                            </div>
+
+                            <div class="form-group" style="margin-top: 10px;">
+                                <button type="button" class="btn btn-default btn-xs" id="btnAddNotes" onclick="addNote()">+ Add Notes</button>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 20px;">
+                                <button type="submit" class="btn btn-black square">Submit</button>
+                                @if (savedChecklist != null)
+                                {
+                                    <a href="/addupdcleaningchecks" class="btn btn-primary btn-xs" style="margin-left: 10px;">Back</a>
+                                }
+                            </div>
+                        </form>
+
+                        <div class="clearfix"></div>
+
+                        @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+                        {
+                            <div class="alert alert-success">
+                                @ViewBag.SuccessMessage
+                            </div>
+                        }
+
+                        <!-- Historical Checks Report List Grid -->
+                        <div class="col-lg-12 padding-top-mobile" style="padding-left: 0; padding-right: 0;">
+                            <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding" style="padding-left: 0; padding-right: 0;">
+                                <form action="/addupdcleaningchecks/@todayDate.ToString("dd-MM-yyyy")" method="get" class="form-horizontal">
+                                    <div class="form-group">
+                                        <div class="col-md-offset-6 col-md-2 col-sm-4">
+                                            <input type="text" name="sdate" value="@ViewBag.StartDate" autocomplete="off" class="form-control" placeholder="Start Date" required />
+                                        </div>
+                                        <div class="col-md-2 col-sm-4">
+                                            <input type="text" name="edate" value="@ViewBag.EndDate" autocomplete="off" class="form-control" placeholder="End Date" required />
+                                        </div>
+                                        <div class="col-md-2 col-sm-4">
+                                            <button type="submit" class="btn btn-primary">Go</button>
+                                        </div>
+                                    </div>
+                                </form>
+
+                                <div class="form-group">
+                                    <div class="col-sm-12" style="padding-left: 0; padding-right: 0;">
+                                        <div class="div_QuestionMainList_outer">
+                                            <div class="div_ResultMain">
+                                                <ul class="UL_ResultMain headertext">
+                                                    <li style="width: 25%;">Date</li>
+                                                    <li style="width: 60%;">Cleaning Check</li>
+                                                    <li style="width: 15%;">Action</li>
+                                                </ul>
+
+                                                @if (historicalList.Count == 0)
+                                                {
+                                                    <ul class="UL_ResultMain">
+                                                        <li colspan="3" class="text-center" style="padding: 20px; display: table-cell;">No checklists found for selected date range.</li>
+                                                    </ul>
+                                                }
+                                                else
+                                                {
+                                                    foreach (var item in historicalList)
+                                                    {
+                                                        <ul class="UL_ResultMain">
+                                                            <li>
+                                                                <span>@item.DayDate.ToString("dddd")<br />@item.DayDate.ToString("dd/MM/yyyy")</span>
+                                                            </li>
+                                                            <li>
+                                                                @if (string.IsNullOrEmpty(item.ProblemDuringChecklist))
+                                                                {
+                                                                    @:No Change / Problem Found!<br />
+                                                                }
+                                                                else
+                                                                {
+                                                                    @:<b>Any problems or changes – what did you do?</b><br />
+                                                                    @Html.Raw(item.ProblemDuringChecklist.Replace("\n", "<br/>"))
+                                                                    <br />
+                                                                }
+                                                                All Checklist Done <font color="red">- @item.CustomerName</font>
+                                                            </li>
+                                                            <li>
+                                                                <a href="/addupdcleaningchecks/@item.DayDate.ToString("dd-MM-yyyy")">View | Edit</a>
+                                                            </li>
+                                                        </ul>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    var noteCounter = @noteIndex;
+
+    $(document).ready(function () {
+        $("#litTodaydate, input[name='sdate'], input[name='edate']").datepicker({
+            dateFormat: "dd/mm/yy"
+        });
+
+        $("#chkAll").click(function () {
+            $(".chk-item").prop('checked', $(this).prop('checked'));
+            validateCheckboxes();
+        });
+
+        $(".chk-item").change(function () {
+            validateCheckboxes();
+        });
+
+        $("#chkChecklistAllDone").change(function () {
+            validateAllDone();
+        });
+
+        $("#litTodaydate").change(function () {
+            var inputDate = $(this).val();
+            var formatted = inputDate.replace(/\//g, "-");
+            window.location.href = "/addupdcleaningchecks/" + formatted;
+        });
+
+        validateCheckboxes();
+        validateAllDone();
+    });
+
+    function addNote() {
+        var html = '<div class="row note-row" id="noteRow_' + noteCounter + '">' +
+            '    <div class="col-sm-10">' +
+            '        <textarea name="note_' + noteCounter + '" placeholder="Notes" class="form-control" style="height: 70px;"></textarea>' +
+            '    </div>' +
+            '    <div class="col-sm-2" style="vertical-align: middle; line-height: 70px;">' +
+            '        <button type="button" class="btn btn-danger btn-xs" onclick="deleteNote(' + noteCounter + ')">X</button>' +
+            '    </div>' +
+            '</div>';
+        $("#notesContainer").append(html);
+        noteCounter++;
+    }
+
+    function deleteNote(index) {
+        $("#noteRow_" + index).remove();
+    }
+
+    function validateCheckboxes() {
+        var checkedCount = $(".chk-item:checked").length;
+        if (checkedCount === 0) {
+            $("#errCheckboxes").show();
+            return false;
+        }
+        $("#errCheckboxes").hide();
+        return true;
+    }
+
+    function validateAllDone() {
+        if (!$("#chkChecklistAllDone").is(":checked")) {
+            $("#errChecklistAllDone").show();
+            return false;
+        }
+        $("#errChecklistAllDone").hide();
+        return true;
+    }
+
+    function validateForm() {
+        var isCheckboxesValid = validateCheckboxes();
+        var isAllDoneValid = validateAllDone();
+        return isCheckboxesValid && isAllDoneValid;
+    }
+</script>

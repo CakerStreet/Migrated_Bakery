@@ -1,0 +1,132 @@
+@model dynamic
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var checklists = ViewBag.Checklists as List<CakerStreet.Business.Services.CleaningGridItem> ?? new();
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style type="text/css">
+        .normallink, .normallink:hover, .normallink:focus {
+            text-decoration: underline;
+            color: #fff;
+            font-size: 14px;
+        }
+        .rpad10 {
+            padding-right: 10px;
+        }
+        .div_QuestionMainList_outer, .div_ResultMain {
+            display: table;
+            width: 100%;
+        }
+        .UL_ResultMain {
+            display: table-row;
+            line-height: 20px;
+        }
+        .UL_ResultMain.headertext {
+            background-color: #ccc;
+            font-weight: bold;
+        }
+        .UL_ResultMain > li {
+            display: table-cell;
+            padding: 10px 7px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .UL_ResultMain.headertext > li {
+            line-height: 34px;
+            padding: 0 7px;
+        }
+        .inventoryWrapper .innerhead {
+            display: table;
+            width: 100%;
+        }
+    </style>
+}
+
+<div class="row top-margin">
+</div>
+<div class="clearfix">
+</div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">
+            Cleaning Checklists
+        </h2>
+        <a href="/addupdcleaningchecks" class="pull-right normallink rpad10">Add New Checklist</a>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <form action="/managedailycheck_cleaning" method="get" class="form-horizontal">
+                <div class="form-group">
+                    <div class="col-md-2 col-sm-4">
+                        <input type="text" name="sdate" value="@ViewBag.StartDate" autocomplete="off" class="form-control" placeholder="Start Date" required />
+                    </div>
+                    <div class="col-md-2 col-sm-4">
+                        <input type="text" name="edate" value="@ViewBag.EndDate" autocomplete="off" class="form-control" placeholder="End Date" required />
+                    </div>
+                    <div class="col-md-2 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Go</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="form-group">
+                <div class="col-sm-12">
+                    <div class="div_QuestionMainList_outer">
+                        <div class="div_ResultMain">
+                            <ul class="UL_ResultMain headertext">
+                                <li style="width: 25%;">Date</li>
+                                <li style="width: 60%;">Cleaning Check</li>
+                                <li style="width: 15%;">Action</li>
+                            </ul>
+
+                            @if (checklists.Count == 0)
+                            {
+                                <ul class="UL_ResultMain">
+                                    <li colspan="3" class="text-center" style="padding: 20px; display: table-cell;">No checklists found for selected date range.</li>
+                                </ul>
+                            }
+                            else
+                            {
+                                foreach (var item in checklists)
+                                {
+                                    <ul class="UL_ResultMain">
+                                        <li>
+                                            <span>@item.DayDate.ToString("dddd")<br />@item.DayDate.ToString("dd/MM/yyyy")</span>
+                                        </li>
+                                        <li>
+                                            @if (string.IsNullOrEmpty(item.ProblemDuringChecklist))
+                                            {
+                                                @:No Change / Problem Found!<br />
+                                            }
+                                            else
+                                            {
+                                                @:<b>Any problems or changes – what did you do?</b><br />
+                                                @Html.Raw(item.ProblemDuringChecklist.Replace("\n", "<br/>"))
+                                                <br />
+                                            }
+                                            All Checklist Done <font color="red">- @item.CustomerName</font>
+                                        </li>
+                                        <li>
+                                            <a href="/addupdcleaningchecks/@item.DayDate.ToString("dd-MM-yyyy")">View | Edit</a>
+                                        </li>
+                                    </ul>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("input[name='sdate'], input[name='edate']").datepicker({
+            dateFormat: "dd/mm/yy"
+        });
+    });
+</script>

@@ -1,0 +1,299 @@
+@{
+    ViewData["Title"] = "Manage Supply Order Items Received";
+    var soDetail = ViewBag.SODetail as CakerStreet.Business.Services.SupplyOrderItemReceivedViewModel;
+    var staffList = ViewBag.StaffList as List<CakerStreet.Business.Services.StaffListItem>;
+}
+
+@section Head {
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .form-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; }
+        .form-section h5 { margin-top: 0; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+        .items-table th, .items-table td { vertical-align: middle !important; font-size: 12px; }
+        .items-table input[type="text"] { width: 80px; text-align: right; }
+        .computed-field { background-color: #f5f5f5; }
+        .btn-save { margin-top: 15px; }
+    </style>
+}
+
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 style="display:inline;">Manage Supply Order Items Received</h4>
+                <a href="/managesupplyorder?status=3" class="btn btn-default btn-sm pull-right">Back to SO List</a>
+            </div>
+
+            @* === SO INFO === *@
+            <div class="panel-body">
+                <div class="form-section">
+                    <h5>Supply Order Info</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Invoice No:</label>
+                            <span class="form-control-static"><strong>@soDetail?.PO_SysNo</strong></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Purchase Date:</label>
+                            <span class="form-control-static"><strong>@soDetail?.PO_Date.ToString("dd/MM/yyyy")</strong></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Supplier:</label>
+                            <span class="form-control-static"><strong>@soDetail?.SupplierName</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                @* === RECEIVED INFO FORM === *@
+                <div class="form-section">
+                    <h5>Received Details</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="txtInvoiceNo">Invoice No <span class="text-danger">*</span></label>
+                                <input type="text" id="txtInvoiceNo" class="form-control input-sm" placeholder="Enter invoice number" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="txtInvoiceDate">Invoice Date <span class="text-danger">*</span></label>
+                                <input type="text" id="txtInvoiceDate" class="form-control input-sm datepicker" placeholder="dd/mm/yyyy" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="txtReceivedDate">Received Date <span class="text-danger">*</span></label>
+                                <input type="text" id="txtReceivedDate" class="form-control input-sm datepicker" placeholder="dd/mm/yyyy" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="ddlReceivedBy">Received By <span class="text-danger">*</span></label>
+                                <select id="ddlReceivedBy" class="form-control input-sm">
+                                    <option value="0">--Select User--</option>
+                                    @if (staffList != null)
+                                    {
+                                        @foreach (var staff in staffList)
+                                        {
+                                            <option value="@staff.CustomerId">@staff.CustomerName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="txtRemarks">Remarks</label>
+                                <textarea id="txtRemarks" class="form-control input-sm" rows="2" placeholder="Optional remarks..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* === LINE ITEMS TABLE === *@
+                <div class="form-section">
+                    <h5>Line Items</h5>
+                    @if (soDetail == null || soDetail.LineItems.Count == 0)
+                    {
+                        <div class="alert alert-warning">No line items found for this Supply Order.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-condensed items-table" id="tblItems">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product Name</th>
+                                        <th>Code</th>
+                                        <th>Qty</th>
+                                        <th>Rate</th>
+                                        <th>Amount</th>
+                                        <th>Discount</th>
+                                        <th>Subtotal</th>
+                                        <th>VAT%</th>
+                                        <th>VAT</th>
+                                        <th>Net Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < soDetail.LineItems.Count; i++)
+                                    {
+                                        var item = soDetail.LineItems[i];
+                                        <tr data-prdid="@item.POdet_PrdID" data-reqid="@item.PrdStockRequest_Id">
+                                            <td>@(i + 1)</td>
+                                            <td>@item.ProductName</td>
+                                            <td>@item.ProductCode</td>
+                                            <td><input type="text" class="form-control input-sm txtQty" value="@item.POdet_Qty" onchange="recalcRow(this)" /></td>
+                                            <td><input type="text" class="form-control input-sm txtRate" value="@item.POdet_RatePerItem.ToString("0.00")" onchange="recalcRow(this)" /></td>
+                                            <td class="computed-field lblAmt">@item.POdet_Amount.ToString("0.00")</td>
+                                            <td><input type="text" class="form-control input-sm txtDiscount" value="@item.POdet_disc.ToString("0.00")" onchange="recalcRow(this)" /></td>
+                                            <td class="computed-field lblSubtotal">@item.POdet_Subtotal.ToString("0.00")</td>
+                                            <td><input type="text" class="form-control input-sm txtVatPer" value="@item.POdet_VatPer.ToString("0.00")" onchange="recalcRow(this)" style="width:60px;" /></td>
+                                            <td class="computed-field lblVat">@item.POdet_Vat.ToString("0.00")</td>
+                                            <td class="computed-field lblNetTotal"><strong>@item.POdet_NetTotal.ToString("0.00")</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="10" class="text-right"><strong>Grand Total:</strong></td>
+                                        <td class="computed-field"><strong id="lblGrandTotal">@soDetail.LineItems.Sum(x => x.POdet_NetTotal).ToString("0.00")</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+                @* === SAVE BUTTON === *@
+                <div class="text-right">
+                    <button type="button" class="btn btn-danger btn-save" id="btnSave" onclick="saveItemReceived()">
+                        <i class="glyphicon glyphicon-floppy-disk"></i> Save Item Received
+                    </button>
+                </div>
+
+                <div id="dvMsg" class="alert alert-danger" style="display:none; margin-top:15px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="hdPOID" value="@soDetail?.PO_ID" />
+
+@section FooterScripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        // Init datepickers
+        $('.datepicker').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true
+        });
+
+        // Set today's date as default for received date
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        $('#txtReceivedDate').val(dd + '/' + mm + '/' + yyyy);
+    });
+
+    function recalcRow(el) {
+        var row = $(el).closest('tr');
+        var qty = parseFloat(row.find('.txtQty').val()) || 0;
+        var rate = parseFloat(row.find('.txtRate').val()) || 0;
+        var discount = parseFloat(row.find('.txtDiscount').val()) || 0;
+        var vatPer = parseFloat(row.find('.txtVatPer').val()) || 0;
+
+        var amount = qty * rate;
+        var subtotal = amount - discount;
+        var vat = subtotal * (vatPer / 100);
+        var netTotal = subtotal + vat;
+
+        row.find('.lblAmt').text(amount.toFixed(2));
+        row.find('.lblSubtotal').text(subtotal.toFixed(2));
+        row.find('.lblVat').text(vat.toFixed(2));
+        row.find('.lblNetTotal').html('<strong>' + netTotal.toFixed(2) + '</strong>');
+
+        recalcGrandTotal();
+    }
+
+    function recalcGrandTotal() {
+        var total = 0;
+        $('#tblItems tbody tr').each(function () {
+            var netText = $(this).find('.lblNetTotal').text();
+            total += parseFloat(netText) || 0;
+        });
+        $('#lblGrandTotal').text(total.toFixed(2));
+    }
+
+    function parseDate(dateStr) {
+        // Parse dd/mm/yyyy to ISO
+        if (!dateStr) return null;
+        var parts = dateStr.split('/');
+        if (parts.length !== 3) return null;
+        return parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00';
+    }
+
+    function saveItemReceived() {
+        var invoiceNo = $('#txtInvoiceNo').val().trim();
+        var invoiceDate = $('#txtInvoiceDate').val().trim();
+        var receivedDate = $('#txtReceivedDate').val().trim();
+        var receivedBy = $('#ddlReceivedBy').val();
+        var remarks = $('#txtRemarks').val().trim();
+        var poId = parseInt($('#hdPOID').val());
+
+        // Validation
+        if (!invoiceNo) { showMsg('Please enter Invoice No.'); return; }
+        if (!invoiceDate) { showMsg('Please enter Invoice Date.'); return; }
+        if (!receivedDate) { showMsg('Please enter Received Date.'); return; }
+        if (!receivedBy || receivedBy === '0') { showMsg('Please select Received By.'); return; }
+
+        var parsedInvoiceDate = parseDate(invoiceDate);
+        var parsedReceivedDate = parseDate(receivedDate);
+        if (!parsedInvoiceDate || !parsedReceivedDate) { showMsg('Invalid date format. Use dd/mm/yyyy.'); return; }
+
+        // Build items array
+        var items = [];
+        $('#tblItems tbody tr').each(function () {
+            var row = $(this);
+            items.push({
+                POdet_PrdID: parseInt(row.data('prdid')),
+                PrdStockRequest_Id: parseInt(row.data('reqid')) || 0,
+                POdet_Qty: parseInt(row.find('.txtQty').val()) || 0,
+                POdet_RatePerItem: parseFloat(row.find('.txtRate').val()) || 0,
+                POdet_Amount: parseFloat(row.find('.lblAmt').text()) || 0,
+                POdet_disc: parseFloat(row.find('.txtDiscount').val()) || 0,
+                POdet_Subtotal: parseFloat(row.find('.lblSubtotal').text()) || 0,
+                POdet_VatPer: parseFloat(row.find('.txtVatPer').val()) || 0,
+                POdet_Vat: parseFloat(row.find('.lblVat').text()) || 0,
+                POdet_NetTotal: parseFloat(row.find('.lblNetTotal').text()) || 0
+            });
+        });
+
+        var model = {
+            PO_ID: poId,
+            InvoiceNo: invoiceNo,
+            InvoiceDate: parsedInvoiceDate,
+            ReceivedDate: parsedReceivedDate,
+            ReceivedBy: parseInt(receivedBy),
+            Remarks: remarks,
+            Items: items
+        };
+
+        $('#btnSave').prop('disabled', true).text('Saving...');
+        hideMsg();
+
+        $.ajax({
+            url: '/managesupplyorderitemreceived/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(model),
+            success: function (r) {
+                if (r.success) {
+                    window.location.href = '/managesupplyorder?status=4&msg=' + encodeURIComponent('Supply Order Item(s) have been saved successfully');
+                } else {
+                    showMsg(r.message || 'Failed to save.');
+                    $('#btnSave').prop('disabled', false).html('<i class="glyphicon glyphicon-floppy-disk"></i> Save Item Received');
+                }
+            },
+            error: function () {
+                showMsg('An error occurred. Please try again.');
+                $('#btnSave').prop('disabled', false).html('<i class="glyphicon glyphicon-floppy-disk"></i> Save Item Received');
+            }
+        });
+    }
+
+    function showMsg(msg) {
+        $('#dvMsg').text(msg).show();
+    }
+
+    function hideMsg() {
+        $('#dvMsg').hide();
+    }
+</script>
+}

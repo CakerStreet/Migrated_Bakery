@@ -1,0 +1,171 @@
+@model List<CakerStreet.Business.Services.RecipePrintModel>
+@{
+    Layout = null;
+    var recordCount = ViewBag.RecordCount ?? 0;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Order Detail</title>
+    <link rel="shortcut icon" href="~/images/icons/favicon.ico?version=1.1" type="image/png" />
+    <link href="~/css/bootstrap.css" media="all" rel="stylesheet" type="text/css" />
+
+    <style type="text/css" media="all">
+        body, body * {
+            font-weight: normal;
+            background-color: transparent;
+        }
+        .divmain {
+            margin: 0 auto;
+            position: relative;
+            width: 668px;
+        }
+        h5 {
+            float: left;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .flush {
+            padding: 0;
+        }
+        .ligrp {
+            float: left;
+            margin: 5px;
+            line-height: 20px;
+            font-size: 14px;
+        }
+        .divIngredientlistOuter {
+            float: left;
+            width: 100%;
+            text-align: justify;
+        }
+        span.serving {
+            float: right;
+            font-size: 14px;
+            line-height: 24px;
+            color: #555;
+        }
+        h3 {
+            margin: 0;
+            border-bottom: 1px dashed #aaa;
+            padding-bottom: 10px;
+            color: #df3f42;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .div_reciepe {
+            padding-bottom: 14px;
+            border-bottom: 1px solid #777;
+            margin-bottom: 14px;
+            float: left;
+            width: 100%;
+        }
+        .nact {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        ul {
+            padding: 0;
+            list-style-type: none;
+            margin: 0;
+        }
+        .divIngredientlistOuter ul.directionul {
+            width: 100%;
+            padding-left: 20px;
+            position: relative;
+        }
+        .divIngredientlistOuter ul.directionul::before {
+            content: "-";
+            position: absolute;
+            left: 3px;
+            line-height: 20px;
+            top: 0;
+            font-weight: bold;
+            color: #f00;
+        }
+        .directionul li {
+            font-size: 14px;
+            line-height: 20px;
+            margin-bottom: 5px;
+        }
+    </style>
+
+    <style type="text/css" media="print">
+        @@media page {
+            size: A4 landscape;
+        }
+        @@page {
+            margin: 5mm;
+            padding: 0;
+        }
+        #dvPrintButtons {
+            visibility: hidden;
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="dvPrintButtons" class="row" style="margin-top: 15px; margin-bottom: 15px; text-align: center;">
+            <div>@recordCount Records found</div>
+            <div class="btn-group" style="margin-top: 5px;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="window.print();">Print</button>
+            </div>
+        </div>
+
+        <div class="divmain">
+            @if (Model != null && Model.Count > 0)
+            {
+                foreach (var recipe in Model)
+                {
+                    <div class="div_reciepe col-sm-12 flush" style="page-break-inside: avoid;">
+                        <h3>
+                            @recipe.Title
+                            @if (!string.IsNullOrEmpty(recipe.ChapterName) || !string.IsNullOrEmpty(recipe.BookName))
+                            {
+                                <span style="font-size: 12px; color: #777; font-weight: normal; margin-left: 10px;">
+                                    (@recipe.BookName - @recipe.ChapterName)
+                                </span>
+                            }
+                            <span class="serving">Serving: @recipe.Serving</span>
+                        </h3>
+
+                        <div class="divIngredient col-sm-12 flush">
+                            <h5><u>Ingredients:</u></h5>
+                            <div class="divIngredientlistOuter col-sm-12 flush">
+                                <ul>
+                                    @foreach (var ing in recipe.Ingredients)
+                                    {
+                                        <li class="ligrp cuttype1 @(ing.IsActive ? "act" : "nact")">
+                                            <span style="color: #f55;">#</span>@ing.Name
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="divIngredient col-sm-12 flush">
+                            <h5><u>Directions:</u></h5>
+                            <div class="divIngredientlistOuter col-sm-12 flush">
+                                @foreach (var dir in recipe.Directions)
+                                {
+                                    <ul class="directionul">
+                                        <li>@Html.Raw(dir)</li>
+                                    </ul>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">No recipes found to print.</div>
+            }
+        </div>
+    </div>
+</body>
+</html>

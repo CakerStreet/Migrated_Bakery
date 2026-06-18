@@ -1,0 +1,196 @@
+@{
+    ViewData["Title"] = "Manage Module Assignment";
+    var typeId = (int)(ViewBag.TypeId ?? 0);
+    var selectedId = (int)(ViewBag.SelectedId ?? 0);
+    var staffList = ViewBag.StaffList as List<CakerStreet.Business.Services.StaffSelectItem> ?? new List<CakerStreet.Business.Services.StaffSelectItem>();
+    var roleList = ViewBag.RoleList as List<CakerStreet.Business.Services.RoleSelectItem> ?? new List<CakerStreet.Business.Services.RoleSelectItem>();
+    var modules = ViewBag.Modules as List<CakerStreet.Business.Services.ModuleItem> ?? new List<CakerStreet.Business.Services.ModuleItem>();
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .module-table { margin-top: 15px; }
+        .module-table td { vertical-align: middle; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Module Assignment</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                <div class="col-md-12" style="margin-bottom: 15px;">
+                    @* ─── Type Dropdown ─────────────────────────────────────────────── *@
+                    <div class="col-md-3">
+                        <label>Type:</label>
+                        <select id="ddlType" class="form-control" onchange="onTypeChange();">
+                            <option value="0">--Select Type--</option>
+                            <option value="1" selected="@(typeId == 1)">Staff</option>
+                            <option value="2" selected="@(typeId == 2)">Role</option>
+                        </select>
+                    </div>
+
+                    @* ─── Staff/Role Dropdown ──────────────────────────────────────── *@
+                    <div class="col-md-4">
+                        @if (typeId == 1)
+                        {
+                            <label>Staff:</label>
+                            <select id="ddlStaff" class="form-control" onchange="onStaffRoleChange();">
+                                <option value="0">--Select Staff--</option>
+                                @foreach (var staff in staffList)
+                                {
+                                    <option value="@staff.Id" selected="@(staff.Id == selectedId)">@staff.Name</option>
+                                }
+                            </select>
+                        }
+                        else if (typeId == 2)
+                        {
+                            <label>Role:</label>
+                            <select id="ddlStaff" class="form-control" onchange="onStaffRoleChange();">
+                                <option value="0">--Select Role--</option>
+                                @foreach (var role in roleList)
+                                {
+                                    <option value="@role.Id" selected="@(role.Id == selectedId)">@role.Name</option>
+                                }
+                            </select>
+                        }
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Module List ──────────────────────────────────────────────────── *@
+                @if (modules.Count > 0)
+                {
+                    <div class="col-md-12 module-table">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Assign</th>
+                                    <th>Module Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var mod in modules)
+                                {
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="chkModule" 
+                                                   data-moduleid="@mod.ModuleId" 
+                                                   @(mod.IsAssigned ? "checked" : "") />
+                                        </td>
+                                        <td>@mod.ModuleName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="col-md-12" style="margin-top: 10px;">
+                            <button type="button" class="btn btn-primary" onclick="saveAssignments();">Save</button>
+                        </div>
+                    </div>
+                }
+                else if (typeId > 0 && selectedId > 0)
+                {
+                    <div class="col-md-12">
+                        <div class="alert alert-info">No modules found.</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    // Set dropdown selected values on page load
+    $(document).ready(function () {
+        var typeId = @typeId;
+        var selectedId = @selectedId;
+        if (typeId > 0) {
+            $('#ddlType').val(typeId);
+        }
+        if (selectedId > 0) {
+            $('#ddlStaff').val(selectedId);
+        }
+    });
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    function onTypeChange() {
+        var typeVal = $('#ddlType').val();
+        if (typeVal === '0') {
+            window.location.href = '/managemoduleassignment';
+        } else {
+            window.location.href = '/managemoduleassignment?typeid=' + typeVal;
+        }
+    }
+
+    function onStaffRoleChange() {
+        var typeVal = $('#ddlType').val();
+        var idVal = $('#ddlStaff').val();
+        if (idVal === '0') {
+            window.location.href = '/managemoduleassignment?typeid=' + typeVal;
+        } else {
+            window.location.href = '/managemoduleassignment?typeid=' + typeVal + '&id=' + idVal;
+        }
+    }
+
+    function saveAssignments() {
+        var typeId = @typeId;
+        var selectedId = @selectedId;
+
+        if (typeId === 0 || selectedId === 0) {
+            showMessage('Please select a type and staff/role first.', false);
+            return;
+        }
+
+        var moduleIds = [];
+        $('.chkModule:checked').each(function () {
+            moduleIds.push(parseInt($(this).data('moduleid')));
+        });
+
+        $.ajax({
+            url: '/managemoduleassignment/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                typeId: typeId,
+                id: selectedId,
+                moduleIds: moduleIds
+            }),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                } else {
+                    showMessage(r.message || 'Failed to save.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving.', false);
+            }
+        });
+    }
+</script>
+}

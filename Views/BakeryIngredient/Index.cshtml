@@ -1,0 +1,276 @@
+@{
+    ViewData["Title"] = "Manage Bakery Ingredient";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.BakeryIngredientItem> ?? new List<CakerStreet.Business.Services.BakeryIngredientItem>();
+    var userType = ViewBag.UserType as string ?? "";
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .alert-msg { display: none; margin: 10px 0; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Bakery Ingredient</h2>
+        <a href="/managetemplateforingredients" target="_blank" class="pull-right" style="color:#fff; margin-right:10px;">Manage Template For Ingredients</a>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+        <div class="clearfix"></div>
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+                <div class="table prdlstouter" id="our_products">
+                    <table class="table table-bordred table-striped">
+                        <thead>
+                            <tr>
+                                <th class="chk headertext">
+                                    <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                </th>
+                                <th class="name">Ingredient</th>
+                                <th class="Email">Qty</th>
+                                <th class="Pwd">Min. Qty</th>
+                                <th class="action">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblBody">
+                            @foreach (var item in items)
+                            {
+                                <tr class="rowtext" data-id="@item.BakeryIngredient_ID">
+                                    <td class="chk">
+                                        <input type="checkbox" class="chkrow" onchange="chkuncheckHeadernRowbyrow();" />
+                                    </td>
+                                    <td class="name">
+                                        <input type="hidden" class="hfID" value="@item.BakeryIngredient_ID" />
+                                        <input type="text" class="form-control txtIngredient" value="@item.BakeryIngredient_title" />
+                                    </td>
+                                    <td class="Email">
+                                        <input type="text" class="form-control qty txtQty" placeholder="e.g 50" style="max-width:100px; display:inline;" value="@item.BakeryIngredient_qty.ToString("G29")" />
+                                        <select class="form-control ddlUnit" style="max-width:80px; display:inline;">
+                                            <option value="KG" @(item.BakeryIngredient_Unit == "KG" ? "selected" : "")>KG</option>
+                                            <option value="Ltr" @(item.BakeryIngredient_Unit == "Ltr" ? "selected" : "")>Ltr</option>
+                                        </select>
+                                    </td>
+                                    <td class="Pwd">
+                                        <input type="text" class="form-control qty txtMinQty" placeholder="e.g 5" style="max-width:80px;" value="@item.BakeryIngredient_minQty.ToString("G29")" />
+                                    </td>
+                                    <td class="action">
+                                        <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="saveRow(this);">Save</a>
+                                        <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="deleteRow(this);">Delete</a>
+                                    </td>
+                                </tr>
+                            }
+                            @* Add New Row *@
+                            <tr class="rowtext" id="addNewRow">
+                                <td class="chk"></td>
+                                <td class="name">
+                                    <input type="text" class="form-control" id="txtNewIngredient" placeholder="Enter Ingredient" />
+                                </td>
+                                <td class="Email">
+                                    <input type="text" class="form-control qty" id="txtNewQty" placeholder="e.g 50" style="max-width:100px; display:inline;" />
+                                    <select class="form-control" id="ddlNewUnit" style="max-width:80px; display:inline;">
+                                        <option value="KG">KG</option>
+                                        <option value="Ltr">Ltr</option>
+                                    </select>
+                                </td>
+                                <td class="Pwd">
+                                    <input type="text" class="form-control qty" id="txtNewMinQty" placeholder="e.g 5" style="max-width:80px;" />
+                                </td>
+                                <td class="action">
+                                    <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="addNewIngredient();">Submit</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="divbtnmain_outer">
+                    <a href="javascript:void(0);" class="btn btn-lg btn-black square" onclick="saveAll();">Save All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Validation Helpers ─────────────────────────────────────────────────────
+
+    function validateRow(row) {
+        var title = row.find('.txtIngredient').val().trim();
+        var qty = row.find('.txtQty').val().trim();
+        var minQty = row.find('.txtMinQty').val().trim();
+
+        if (!title) { alert('Enter Ingredient'); return false; }
+        if (!qty) { alert('Enter Qty'); return false; }
+        if (isNaN(qty) || parseFloat(qty) <= 0) { alert('Qty should be greater than 0'); return false; }
+        if (!minQty) { alert('Enter Min Qty'); return false; }
+        if (isNaN(minQty) || parseFloat(minQty) <= 0) { alert('Min Qty should be greater than 0'); return false; }
+        return true;
+    }
+
+    function validateAddRow() {
+        var title = $('#txtNewIngredient').val().trim();
+        var qty = $('#txtNewQty').val().trim();
+        var minQty = $('#txtNewMinQty').val().trim();
+
+        if (!title) { alert('Enter Ingredient'); return false; }
+        if (!qty) { alert('Enter Qty'); return false; }
+        if (isNaN(qty) || parseFloat(qty) <= 0) { alert('Qty should be greater than 0'); return false; }
+        if (!minQty) { alert('Enter Minimum Qty'); return false; }
+        if (isNaN(minQty) || parseFloat(minQty) <= 0) { alert('Minimum Qty should be greater than 0'); return false; }
+        return true;
+    }
+
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success');
+        $div.addClass(isSuccess ? 'alert-success' : 'alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(); }, 4000);
+    }
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+    }
+
+    // ─── Save Single Row ────────────────────────────────────────────────────────
+
+    function saveRow(btn) {
+        var $row = $(btn).closest('tr');
+        if (!validateRow($row)) return;
+
+        var id = $row.find('.hfID').val();
+        var title = $row.find('.txtIngredient').val().trim();
+        var unit = $row.find('.ddlUnit').val();
+        var qty = $row.find('.txtQty').val().trim();
+        var minQty = $row.find('.txtMinQty').val().trim();
+
+        $.post('/managebakeryingredient/save', {
+            id: id,
+            title: title,
+            unit: unit,
+            qty: qty,
+            minQty: minQty
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+
+    // ─── Delete Row ─────────────────────────────────────────────────────────────
+
+    function deleteRow(btn) {
+        if (!confirm('Are you sure to delete this item?')) return;
+
+        var $row = $(btn).closest('tr');
+        var id = $row.find('.hfID').val();
+
+        $.post('/managebakeryingredient/delete', { id: id }, function (r) {
+            if (r.success) {
+                $row.fadeOut(300, function () { $(this).remove(); });
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while deleting.', false);
+        });
+    }
+
+    // ─── Add New Ingredient ─────────────────────────────────────────────────────
+
+    function addNewIngredient() {
+        if (!validateAddRow()) return;
+
+        var title = $('#txtNewIngredient').val().trim();
+        var unit = $('#ddlNewUnit').val();
+        var qty = $('#txtNewQty').val().trim();
+        var minQty = $('#txtNewMinQty').val().trim();
+
+        $.post('/managebakeryingredient/add', {
+            title: title,
+            unit: unit,
+            qty: qty,
+            minQty: minQty
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                // Reload page to show new item in list
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to add ingredient.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while adding.', false);
+        });
+    }
+
+    // ─── Save All ───────────────────────────────────────────────────────────────
+
+    function saveAll() {
+        var items = [];
+        var valid = true;
+
+        $('#tblBody tr.rowtext').not('#addNewRow').each(function () {
+            var $row = $(this);
+            if (!validateRow($row)) { valid = false; return false; }
+
+            items.push({
+                BakeryIngredient_ID: parseInt($row.find('.hfID').val()),
+                BakeryIngredient_title: $row.find('.txtIngredient').val().trim(),
+                BakeryIngredient_Unit: $row.find('.ddlUnit').val(),
+                BakeryIngredient_qty: parseFloat($row.find('.txtQty').val().trim()),
+                BakeryIngredient_minQty: parseFloat($row.find('.txtMinQty').val().trim())
+            });
+        });
+
+        if (!valid) return;
+        if (items.length === 0) { alert('No items to save.'); return; }
+
+        $.ajax({
+            url: '/managebakeryingredient/saveall',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                } else {
+                    showMessage(r.message || 'Failed to save.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving all.', false);
+            }
+        });
+    }
+</script>
+}

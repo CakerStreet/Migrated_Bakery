@@ -1,0 +1,657 @@
+@using CakerStreet.Business.Services
+@model dynamic
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Ingredients";
+    var result = ViewBag.Result as ManageIngredientListResult ?? new ManageIngredientListResult();
+    var books = ViewBag.RecipeBooks as List<BookItem> ?? new List<BookItem>();
+    var categories = ViewBag.Categories as List<RecipeIngredientCategory> ?? new List<RecipeIngredientCategory>();
+    var units = ViewBag.MeasuringUnits as List<MeasuringUnitItem> ?? new List<MeasuringUnitItem>();
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+
+    int filterStatus = ViewBag.FilterStatus is int fs ? fs : 1;
+    int activeStatus = ViewBag.ActiveStatus is int acs ? acs : 1;
+    int cookingStatus = ViewBag.CookingStatus is int cs ? cs : 2;
+    int tagGrpStatus = ViewBag.TagGrpStatus is int tgs ? tgs : 1;
+    int selectedCatId = ViewBag.CatId is int cid ? cid : 0;
+    int selectedGrpCatId = ViewBag.GrpCatId is int gcid ? gcid : 0;
+    string searchKeyword = ViewBag.SearchKeyword as string ?? "";
+    string searchTags = ViewBag.SearchTags as string ?? "";
+}
+
+<link href="~/css/inventory.css" rel="stylesheet" />
+<style>
+    .filter-radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        background: #f9f9f9;
+        padding: 10px 15px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        margin-bottom: 15px;
+    }
+    .filter-radio-group .radio-label {
+        font-weight: bold;
+        margin-right: 5px;
+        color: #555;
+    }
+    .filter-radio-group label {
+        margin-right: 10px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+    .litags {
+        background-color: #fff;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        margin: 4px;
+        padding: 2px 8px;
+        font-size: 13px;
+    }
+    .litags a {
+        margin-left: 8px;
+        color: #d9534f;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .litags a:hover {
+        color: #c9302c;
+    }
+    .apply-selected-row th {
+        background-color: #f2f2f2;
+        padding: 4px 8px;
+    }
+    .apply-selected-row input {
+        height: 28px;
+        padding: 2px 6px;
+        font-size: 12px;
+    }
+    .modal-backdrop.in {
+        opacity: 0.5;
+        display: block !important;
+    }
+    .modal.in {
+        display: block !important;
+    }
+</style>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="innerhead">
+            <h2 style="display: inline-block;">Manage Ingredients</h2>
+            <div class="btn-group pull-right" style="margin-top: 15px; margin-right: 15px;">
+                <button class="btn btn-danger bg-black" type="button">Manage</button>
+                <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button">
+                    <span class="caret"></span>
+                </button>
+                <ul role="menu" class="dropdown-menu">
+                    <li><a href="/managereceipe">Manage Recipe</a></li>
+                    <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                    <li><a href="/webstorecategory">Manage Ingredients Category</a></li>
+                    <li><a href="/managereceipematrix">Recipe Matrix</a></li>
+                </ul>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+        {
+            <div class="alert alert-success">
+                @ViewBag.SuccessMessage
+            </div>
+        }
+
+        <div class="inventoryWrapper">
+            <!-- Filter Form -->
+            <form id="filterForm" method="get" action="/manageingredient">
+                <input type="hidden" id="hdnTags" name="searchtags" value="@searchTags" />
+                <input type="hidden" id="hdCurrentPage" name="pageno" value="@ViewBag.CurrentPage" />
+
+                <!-- Radio Button Filters -->
+                <div class="filter-radio-group">
+                    <div>
+                        <span class="radio-label">Filter Type:</span>
+                        <label><input type="radio" name="filterstatus" value="1" @(filterStatus == 1 ? "checked" : "") onchange="this.form.submit();" /> Ingredient</label>
+                        <label><input type="radio" name="filterstatus" value="2" @(filterStatus == 2 ? "checked" : "") onchange="this.form.submit();" /> Directions</label>
+                        <label><input type="radio" name="filterstatus" value="3" @(filterStatus == 3 ? "checked" : "") onchange="this.form.submit();" /> Nutritions</label>
+                    </div>
+
+                    <div>
+                        <span class="radio-label">Status:</span>
+                        <label><input type="radio" name="activestatus" value="0" @(activeStatus == 0 ? "checked" : "") onchange="this.form.submit();" /> All</label>
+                        <label><input type="radio" name="activestatus" value="1" @(activeStatus == 1 ? "checked" : "") onchange="this.form.submit();" /> Active</label>
+                        <label><input type="radio" name="activestatus" value="2" @(activeStatus == 2 ? "checked" : "") onchange="this.form.submit();" /> Inactive</label>
+                    </div>
+
+                    <div>
+                        <span class="radio-label">Cooking:</span>
+                        <label><input type="radio" name="cookingstatus" value="0" @(cookingStatus == 0 ? "checked" : "") onchange="this.form.submit();" /> All</label>
+                        <label><input type="radio" name="cookingstatus" value="1" @(cookingStatus == 1 ? "checked" : "") onchange="this.form.submit();" /> Cooking</label>
+                        <label><input type="radio" name="cookingstatus" value="2" @(cookingStatus == 2 ? "checked" : "") onchange="this.form.submit();" /> Non-Cooking</label>
+                    </div>
+
+                    <div>
+                        <span class="radio-label">Tags Link:</span>
+                        <label><input type="radio" name="taggrpstatus" value="0" @(tagGrpStatus == 0 ? "checked" : "") onchange="this.form.submit();" /> All</label>
+                        <label><input type="radio" name="taggrpstatus" value="1" @(tagGrpStatus == 1 ? "checked" : "") onchange="this.form.submit();" /> #Tag Linked</label>
+                        <label><input type="radio" name="taggrpstatus" value="2" @(tagGrpStatus == 2 ? "checked" : "") onchange="this.form.submit();" /> #Tag Non-linked</label>
+                    </div>
+                </div>
+
+                <!-- Books / Categories / Autocomplete Row -->
+                <div class="row form-group">
+                    <div class="col-sm-3">
+                        <select name="catid" class="form-control input-sm" onchange="this.form.submit();">
+                            <option value="0">--All Books--</option>
+                            @foreach (var book in books)
+                            {
+                                <option value="@book.BookId" selected="@(selectedCatId == book.BookId ? "selected" : null)">@book.BookName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-sm-3">
+                        <select name="grpcatid" class="form-control input-sm" onchange="this.form.submit();">
+                            <option value="0">--All Categories--</option>
+                            @foreach (var cat in categories)
+                            {
+                                <option value="@cat.CategoryId" selected="@(selectedGrpCatId == cat.CategoryId ? "selected" : null)">@cat.CategoryName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control input-sm" value="@searchKeyword" placeholder="Search keyword" />
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-danger btn-sm">Go</button>
+                                @if (!string.IsNullOrEmpty(searchKeyword))
+                                {
+                                    <a href="/manageingredient" class="btn btn-default btn-sm">X</a>
+                                }
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Autocomplete tags linking -->
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <div class="taglinks" id="taglinks_having" style="position: relative;">
+                            <input type="text" id="txttag_having" class="form-control input-sm" placeholder="are in recipe..." autocomplete="off" style="max-width: 300px; display: inline-block;" />
+                            <div id="tagContainer" style="display: inline-block; vertical-align: middle; margin-left: 10px;">
+                                @if (!string.IsNullOrEmpty(searchTags))
+                                {
+                                    foreach (var tag in searchTags.Split(','))
+                                    {
+                                        if (!string.IsNullOrWhiteSpace(tag))
+                                        {
+                                            <span class="litags" data-text="@tag">
+                                                @tag
+                                                <a onclick="removeTag(this);">&times;</a>
+                                            </span>
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Bulk actions menu and Count -->
+            <div class="row form-group">
+                <div class="col-sm-4">
+                    <div class="btn-group" id="actionbutton">
+                        <button class="btn btn-danger bg-red" type="button">
+                            Action on <span id="spnfilterselected">0</span> selected
+                        </button>
+                        <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button">
+                            <span class="caret"></span>
+                        </button>
+                        <ul role="menu" class="dropdown-menu">
+                            <li><a href="#" onclick="openFindReplaceModal(); return false;">Find and Replace</a></li>
+                            <li><a href="#" onclick="submitBulkAction('update'); return false;">Update Records</a></li>
+                            <li><a href="#" onclick="submitBulkAction('delete'); return false;">Remove Item(s)</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-4 text-right" style="line-height: 34px;">
+                    <strong>@result.TotalCount</strong> Records found
+                </div>
+                <div class="col-sm-4 text-right">
+                    @Html.Partial("~/Views/ManageIngredient/_Paging.cshtml")
+                </div>
+            </div>
+
+            <!-- Grid Form -->
+            <form id="gridForm" method="post" action="/manageingredient/bulk">
+                <!-- Data Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="ingredientsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px; text-align: center;">
+                                    <input type="checkbox" id="chkSelectAll" onchange="toggleSelectAll(this);" />
+                                </th>
+                                @if (filterStatus == 1)
+                                {
+                                    <th style="min-width: 170px;">
+                                        Ingredients
+                                        <input type="checkbox" id="chkgrp" />
+                                    </th>
+                                    <th style="min-width: 100px;">
+                                        Cut-Type
+                                        <input type="checkbox" id="chkcutttupe" />
+                                    </th>
+                                }
+                                <th>
+                                    @(filterStatus == 1 ? "Instructions" : filterStatus == 2 ? "Direction" : "Nutrition")
+                                    <input type="checkbox" id="chkIng" />
+                                </th>
+                                @if (filterStatus == 1)
+                                {
+                                    <th style="width: 70px;">Serving</th>
+                                    <th>#Tag (Marking)</th>
+                                    <th style="width: 140px;">Ml/Serving</th>
+                                    <th style="width: 150px;">Measuring/Serving</th>
+                                }
+                                <th>Section</th>
+                                <th style="width: 80px; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <thead>
+                            <tr class="apply-selected-row">
+                                <th></th>
+                                @if (filterStatus == 1)
+                                {
+                                    <th>
+                                        <input type="text" id="txtGRPApply" class="form-control" placeholder="Apply To Selected" onchange="applyHeaderToRows('txtGRPApply', 'bulk-grp');" />
+                                    </th>
+                                    <th>
+                                        <input type="text" id="txtCutApply" class="form-control" placeholder="Apply To Selected" onchange="applyHeaderToRows('txtCutApply', 'bulk-cut');" />
+                                    </th>
+                                }
+                                <th>
+                                    <input type="text" id="txtInstApply" class="form-control" placeholder="Apply To Selected" onchange="applyHeaderToRows('txtInstApply', 'bulk-title');" />
+                                </th>
+                                @if (filterStatus == 1)
+                                {
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                }
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (result.Items.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="@(filterStatus == 1 ? 10 : 5)" class="text-center text-danger">
+                                        No Records Found
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @for (int i = 0; i < result.Items.Count; i++)
+                                {
+                                    var item = result.Items[i];
+                                    <tr class="rowtext" data-id="@item.IngredientId">
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" name="selectedIds" value="@item.IngredientId" class="row-checkbox" onchange="onRowCheckboxChange();" />
+                                            <input type="hidden" name="bulkTypeIds" value="@item.TypeId" />
+                                        </td>
+                                        @if (filterStatus == 1)
+                                        {
+                                            <td>
+                                                <input type="text" name="bulkIngredientGrps" class="form-control input-sm bulk-grp" value="@item.IngredientGrp" />
+                                            </td>
+                                            <td>
+                                                <input type="text" name="bulkIngredientCutTypes" class="form-control input-sm bulk-cut" value="@item.IngredientCutType" />
+                                            </td>
+                                        }
+                                        <td>
+                                            @if (filterStatus == 1)
+                                            {
+                                                <input type="text" name="bulkIngredients" class="form-control input-sm bulk-title" value="@item.Ingredient" />
+                                            }
+                                            else
+                                            {
+                                                <textarea name="bulkIngredients" class="form-control input-sm bulk-title" style="height: 60px;">@item.Ingredient</textarea>
+                                            }
+                                        </td>
+                                        @if (filterStatus == 1)
+                                        {
+                                            <td>@item.RecipeServing</td>
+                                            <td>
+                                                @(string.IsNullOrEmpty(item.GrpIngredientName) ? "-" : $"{item.GrpIngredientName} ({item.GrpMarking})")
+                                            </td>
+                                            <td>
+                                                <div style="display: flex; gap: 4px;">
+                                                    <input type="text" name="bulkUnitMls" class="form-control input-sm" value="@item.UnitMlPerServing" style="width: 60px;" />
+                                                    <select name="bulkUnitIds" class="form-control input-sm" style="width: 100px;">
+                                                        <option value="0">--Unit--</option>
+                                                        @foreach (var u in units)
+                                                        {
+                                                            var formattedTitle = u.Title + (u.Ml > 0 ? $" [{u.Ml}ml.]" : "");
+                                                            <option value="@u.UnitId" selected="@(item.UnitTypeId == u.UnitId ? "selected" : null)">@formattedTitle</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </td>
+                                            <td>@item.MeasureDet</td>
+                                        }
+                                        <td>
+                                            @item.BookName <br/>
+                                            &raquo; <a target="_blank" href="/managereceipe?ID=@item.RecipeId">@item.RecipeTitle</a>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <button type="button" class="btn btn-danger btn-xs" onclick="saveSingleRow(this, @item.IngredientId, @item.TypeId);">Save</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    @Html.Partial("~/Views/ManageIngredient/_Paging.cshtml")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Find and Replace Modal -->
+<div class="modal fade" id="Mymodal_category" tabindex="-1" role="dialog" style="display: none;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="closeFindReplaceModal();">&times;</button>
+                <h4 class="modal-title">Find and replace Ingredients</h4>
+            </div>
+            <form id="findReplaceForm" method="post" action="/manageingredient/findreplace">
+                <!-- Selected Ingredient IDs placeholder -->
+                <div id="modalSelectedIdsContainer"></div>
+
+                <div class="modal-body">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">From Text:</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="fromText" id="txtSourceUrl" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">To Text:</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="toText" id="txtDestinationUrl" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <label><input type="checkbox" name="replaceGrp" value="true" checked /> Replace in Ingredients Group</label><br/>
+                                <label><input type="checkbox" name="replaceCut" value="true" checked /> Replace in Cut Type</label><br/>
+                                <label><input type="checkbox" name="replaceIng" value="true" checked /> Replace in Instructions/Ingredient Name</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" onclick="closeFindReplaceModal();">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade" id="modalbg_category" style="display: none;"></div>
+
+<script>
+    var fuzzySearchList = @Html.Raw(ViewBag.FuzzySearchListJson);
+
+    // Apply header apply-to-selected input values to row textboxes
+    function applyHeaderToRows(headerId, targetClass) {
+        var val = document.getElementById(headerId).value;
+        var checkedRows = document.querySelectorAll(".row-checkbox:checked");
+        checkedRows.forEach(function (chk) {
+            var row = chk.closest("tr");
+            var input = row.querySelector("." + targetClass);
+            if (input && !input.disabled) {
+                input.value = val;
+            }
+        });
+    }
+
+    // Toggle Select All checkboxes
+    function toggleSelectAll(masterChk) {
+        var chks = document.querySelectorAll(".row-checkbox");
+        chks.forEach(function (chk) {
+            chk.checked = masterChk.checked;
+        });
+        onRowCheckboxChange();
+    }
+
+    // Handle single row selection changes
+    function onRowCheckboxChange() {
+        var checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
+        document.getElementById("spnfilterselected").innerText = checkedCount;
+    }
+
+    // Save a single row inline
+    function saveSingleRow(btn, id, typeId) {
+        var row = btn.closest("tr");
+        var formData = new FormData();
+        formData.append("id", id);
+        formData.append("typeId", typeId);
+
+        var titleInput = row.querySelector(".bulk-title");
+        formData.append("title", titleInput ? titleInput.value : "");
+
+        if (typeId === 1) {
+            var grpInput = row.querySelector(".bulk-grp");
+            var cutInput = row.querySelector(".bulk-cut");
+            var mlInput = row.querySelector("input[name='bulkUnitMls']");
+            var unitSelect = row.querySelector("select[name='bulkUnitIds']");
+
+            formData.append("grp", grpInput ? grpInput.value : "");
+            formData.append("cutType", cutInput ? cutInput.value : "");
+            formData.append("ml", mlInput ? mlInput.value : "0");
+            formData.append("unitId", unitSelect ? unitSelect.value : "0");
+        }
+
+        // Post using fetch
+        fetch("/manageingredient/save", {
+            method: "POST",
+            body: formData
+        }).then(function (res) {
+            if (res.ok) {
+                alert("Ingredient saved successfully!");
+                window.location.reload();
+            } else {
+                alert("Failed to save ingredient.");
+            }
+        }).catch(function (err) {
+            alert("Error: " + err);
+        });
+    }
+
+    // Submit bulk actions (update/delete)
+    function submitBulkAction(action) {
+        var checkedChks = document.querySelectorAll(".row-checkbox:checked");
+        if (checkedChks.length === 0) {
+            alert("Please select at least one item!");
+            return;
+        }
+
+        if (action === 'delete') {
+            if (!confirm("Are you sure you want to delete selected item(s)?")) {
+                return;
+            }
+        }
+
+        var form = document.getElementById("gridForm");
+        // Append action type
+        var actionInput = document.createElement("input");
+        actionInput.type = "hidden";
+        actionInput.name = "action";
+        actionInput.value = action;
+        form.appendChild(actionInput);
+
+        form.submit();
+    }
+
+    // Modal Control for Find and Replace
+    function openFindReplaceModal() {
+        var checkedChks = document.querySelectorAll(".row-checkbox:checked");
+        if (checkedChks.length === 0) {
+            alert("Please select at least one item!");
+            return;
+        }
+
+        // Apply grid headers' checkbox state to find/replace checkboxes if applicable
+        var chkgrp = document.getElementById("chkgrp");
+        var chkcut = document.getElementById("chkcutttupe");
+        var chking = document.getElementById("chkIng");
+
+        var form = document.getElementById("findReplaceForm");
+        if (chkgrp) form.querySelector("input[name='replaceGrp']").checked = chkgrp.checked;
+        if (chkcut) form.querySelector("input[name='replaceCut']").checked = chkcut.checked;
+        if (chking) form.querySelector("input[name='replaceIng']").checked = chking.checked;
+
+        // Build list of hidden inputs for checked ids
+        var container = document.getElementById("modalSelectedIdsContainer");
+        container.innerHTML = "";
+        checkedChks.forEach(function (chk) {
+            var hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = "selectedIds";
+            hidden.value = chk.value;
+            container.appendChild(hidden);
+        });
+
+        document.getElementById("Mymodal_category").style.display = "block";
+        document.getElementById("Mymodal_category").classList.add("in");
+        document.getElementById("modalbg_category").style.display = "block";
+        document.getElementById("modalbg_category").classList.add("in");
+        document.body.classList.add("modal-open");
+    }
+
+    function closeFindReplaceModal() {
+        document.getElementById("Mymodal_category").style.display = "none";
+        document.getElementById("Mymodal_category").classList.remove("in");
+        document.getElementById("modalbg_category").style.display = "none";
+        document.getElementById("modalbg_category").classList.remove("in");
+        document.body.classList.remove("modal-open");
+    }
+
+    // Tag management
+    function removeTag(anchor) {
+        var litag = anchor.closest(".litags");
+        litag.remove();
+        updateTagsValue();
+        document.getElementById("filterForm").submit();
+    }
+
+    function updateTagsValue() {
+        var tags = [];
+        document.querySelectorAll(".litags").forEach(function (el) {
+            tags.push(el.getAttribute("data-text"));
+        });
+        document.getElementById("hdnTags").value = tags.join(",");
+    }
+
+    // Auto-complete implementation for tagging using fuzzy search list
+    document.addEventListener("DOMContentLoaded", function () {
+        var txtInput = document.getElementById("txttag_having");
+        if (!txtInput) return;
+
+        // Create container for autocomplete options dropdown
+        var dropdown = document.createElement("div");
+        dropdown.className = "autocomplete-dropdown";
+        dropdown.style.position = "absolute";
+        dropdown.style.background = "#fff";
+        dropdown.style.border = "1px solid #ccc";
+        dropdown.style.maxHeight = "200px";
+        dropdown.style.overflowY = "auto";
+        dropdown.style.zIndex = "999";
+        dropdown.style.display = "none";
+        txtInput.parentNode.appendChild(dropdown);
+
+        txtInput.addEventListener("input", function () {
+            var query = this.value.toLowerCase().trim();
+            dropdown.innerHTML = "";
+            if (!query) {
+                dropdown.style.display = "none";
+                return;
+            }
+
+            var filtered = fuzzySearchList.filter(function (item) {
+                return item.Text.toLowerCase().indexOf(query) !== -1;
+            }).slice(0, 15);
+
+            if (filtered.length === 0) {
+                dropdown.style.display = "none";
+                return;
+            }
+
+            filtered.forEach(function (item) {
+                var div = document.createElement("div");
+                div.style.padding = "6px 12px";
+                div.style.cursor = "pointer";
+                div.className = "autocomplete-item";
+                div.innerText = item.Text;
+                div.addEventListener("click", function () {
+                    addTag(item.Text);
+                    txtInput.value = "";
+                    dropdown.style.display = "none";
+                    document.getElementById("filterForm").submit();
+                });
+                dropdown.appendChild(div);
+            });
+
+            dropdown.style.width = txtInput.offsetWidth + "px";
+            dropdown.style.left = txtInput.offsetLeft + "px";
+            dropdown.style.top = (txtInput.offsetTop + txtInput.offsetHeight) + "px";
+            dropdown.style.display = "block";
+        });
+
+        // Add item on Enter key
+        txtInput.addEventListener("keydown", function (e) {
+            if (e.keyCode === 13) {
+                e.preventDefault();
+                var text = this.value.trim();
+                if (text) {
+                    addTag(text);
+                    this.value = "";
+                    dropdown.style.display = "none";
+                    document.getElementById("filterForm").submit();
+                }
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+            if (e.target !== txtInput && e.target !== dropdown) {
+                dropdown.style.display = "none";
+            }
+        });
+    });
+
+    function addTag(text) {
+        var tagsStr = document.getElementById("hdnTags").value;
+        var tags = tagsStr ? tagsStr.split(",") : [];
+        if (tags.indexOf(text) === -1) {
+            tags.push(text);
+            document.getElementById("hdnTags").value = tags.join(",");
+        }
+    }
+</script>

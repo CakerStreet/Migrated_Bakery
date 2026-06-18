@@ -1,0 +1,89 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+@section Head {
+    <style type="text/css">
+        .dairyBox_outer {
+            display: table;
+            margin: 0px auto 20px;
+            width: 100%;
+            max-width: 600px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .dairyBox {
+            padding: 20px;
+        }
+        .headertext {
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 2px solid #df3f42;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .raln {
+            text-align: right;
+            font-weight: bold;
+        }
+        @@media (max-width: 767px) {
+            .raln {
+                text-align: left;
+            }
+        }
+    </style>
+}
+
+<div class="row top-margin">
+</div>
+<div class="clearfix">
+</div>
+
+<div class="section">
+    <div class="container">
+        <div class="dairyBox_outer">
+            <div class="dairyBox">
+                <div class="headertext">
+                    DAIRY
+                    <a href="/dailydairychecklists" class="pull-right btn btn-xs btn-black" style="color: #fff;">Back</a>
+                </div>
+                <div class="dairymain_form form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 raln control-label">NAME:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" value="Dev Baker" readonly />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 raln control-label">BUSINESS:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" value="Caker Street" readonly />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 raln control-label">ADDRESS:</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" rows="3" readonly>Unit 7, Barrett Industrial Park, Park Avenue, Southall - UB1 3AF, United Kingdom</textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 raln control-label">START DATE:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" value="@DateTime.Now.ToString("dd/MM/yyyy")" readonly />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 raln control-label">END DATE:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" value="@DateTime.Now.AddYears(1).ToString("dd/MM/yyyy")" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

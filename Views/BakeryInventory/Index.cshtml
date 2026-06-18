@@ -1,0 +1,776 @@
+@{
+    ViewData["Title"] = "Manage Inventory";
+    var products = ViewBag.Products as CakerStreet.Business.Services.InventoryListResult ?? new CakerStreet.Business.Services.InventoryListResult();
+    var categories = ViewBag.Categories as List<CakerStreet.Business.Services.CategoryItem> ?? new List<CakerStreet.Business.Services.CategoryItem>();
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Services.TemplateItem> ?? new List<CakerStreet.Business.Services.TemplateItem>();
+    var isBakeryTab = (bool)(ViewBag.IsBakeryTab ?? true);
+    var isCsBakery = (bool)(ViewBag.IsCsBakery ?? false);
+    var productType = (int)(ViewBag.ProductType ?? 1);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 0);
+    var search = ViewBag.Search as string ?? "";
+    var filterStatus = (int)(ViewBag.FilterStatus ?? -1);
+    var categoryId = (long)(ViewBag.CategoryId ?? 0L);
+    var templateId = (long)(ViewBag.TemplateId ?? 0L);
+    var sort = ViewBag.Sort as string ?? "";
+    var hasCutters = (bool)(ViewBag.HasCutters ?? false);
+    var typeId = (int)(ViewBag.TypeId ?? 0);
+    var userType = ViewBag.UserType as string ?? "";
+    var webshopId = ViewBag.WebshopId as string ?? "";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+
+    // Determine header text
+    var headerText = isBakeryTab ? "Bakery" : "Stock";
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .alert-msg { display: none; margin: 10px 0; }
+        #rdPrdType { background-color: #df3f42; }
+        .chkboxouter label { color: #fff; padding: 5px 10px; cursor: pointer; }
+        .chkboxouter input[type="radio"] { margin-right: 4px; }
+        .modalPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.5); }
+        .modalPopup .modal { display: block; }
+        .stockloc-panel { display: none; margin-top: 5px; }
+        .stockloc-panel .tblocation { width: 100%; }
+        .stockloc-panel .tblocation th, .stockloc-panel .tblocation td { padding: 3px 5px; font-size: 12px; }
+        .qtylog-entry { font-size: 11px; color: #666; }
+        .AddQtyTxtbox { display: inline-block; margin-left: 10px; }
+        .ancAddQty { color: #df3f42; cursor: pointer; font-weight: bold; }
+        .bggrey { background: #f5f5f5; padding: 5px; }
+        .txtprdname { width: 100%; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage @headerText Inventory</h2>
+
+        @* ─── Product Type Radio Tabs ─────────────────────────────────────── *@
+        <div id="rdPrdType" class="chkboxouter pull-right" style="background-color: #df3f42;">
+            @if (isBakeryTab)
+            {
+                <label><input type="radio" name="prdtype" value="1" @(productType == 1 ? "checked" : "") onchange="switchType(1);" /> Cakes</label>
+                <label><input type="radio" name="prdtype" value="6" @(productType == 6 ? "checked" : "") onchange="switchType(6);" /> Cupcakes</label>
+                <label><input type="radio" name="prdtype" value="3" @(productType == 3 ? "checked" : "") onchange="switchType(3);" /> Other Baking Items</label>
+                <label><input type="radio" name="prdtype" value="0" @(productType == 0 ? "checked" : "") onchange="switchType(0);" /> All</label>
+            }
+            else
+            {
+                <label><input type="radio" name="prdtype" value="2" @(productType == 2 ? "checked" : "") onchange="switchType(2);" /> Accessories</label>
+                <label><input type="radio" name="prdtype" value="4" @(productType == 4 ? "checked" : "") onchange="switchType(4);" /> Cake Toppers</label>
+                <label><input type="radio" name="prdtype" value="5" @(productType == 5 ? "checked" : "") onchange="switchType(5);" /> Cutters / Moulds</label>
+                <label><input type="radio" name="prdtype" value="7" @(productType == 7 ? "checked" : "") onchange="switchType(7);" /> Packaging</label>
+                <label><input type="radio" name="prdtype" value="8" @(productType == 8 ? "checked" : "") onchange="switchType(8);" /> Supplies</label>
+                <label><input type="radio" name="prdtype" value="9" @(productType == 9 ? "checked" : "") onchange="switchType(9);" /> Appliances &amp; Tools</label>
+                <label><input type="radio" name="prdtype" value="10" @(productType == 10 ? "checked" : "") onchange="switchType(10);" /> Shop Setup</label>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Filter Bar ──────────────────────────────────────────────── *@
+                <div class="col-md-12 form-group flush">
+                    @if (isCsBakery)
+                    {
+                        <div class="col-md-3">
+                            <div class="btn-group" id="actionbutton">
+                                <button class="btn btn-danger bg-red" type="button">
+                                    Action on <span id="spnfilterselected">0</span> selected
+                                </button>
+                                <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul role="menu" class="dropdown-menu">
+                                    <li><a href="javascript:void(0);" onclick="bulkSetInactive();">Set as Inactive</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkSetActive();">Set as Active</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkUpdateRecords();">Update Records</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkDelete();">Remove Item(s)</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkSetFranchise();">Set as Franchise</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkRemoveFranchise();">Remove Franchise</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-md-5">
+                        <ul class="filter-radio" style="list-style: none; padding: 0; margin: 0;">
+                            <li><label><input type="radio" name="filterstatus" value="-1" @(filterStatus == -1 ? "checked" : "") onchange="applyFilter();" /> All</label></li>
+                            <li><label><input type="radio" name="filterstatus" value="1" @(filterStatus == 1 ? "checked" : "") onchange="applyFilter();" /> Active</label></li>
+                            <li><label><input type="radio" name="filterstatus" value="0" @(filterStatus == 0 ? "checked" : "") onchange="applyFilter();" /> Inactive</label></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+                <div class="col-md-12 form-group flush">
+                    @* Category dropdown *@
+                    @if (categories.Count > 0)
+                    {
+                        <div class="col-md-3">
+                            <select id="drpCategories" class="form-control" onchange="applyFilter();">
+                                <option value="0">--All Categories--</option>
+                                <option value="-1" @(categoryId == -1 ? "selected" : "")>Uncategorized</option>
+                                @foreach (var cat in categories)
+                                {
+                                    <option value="@cat.CategoryId" @(categoryId == cat.CategoryId ? "selected" : "")>@cat.CategoryName</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    @* Type dropdown (for accessories/packaging sub-types) *@
+                    @if (productType == 2 || productType == 7 || productType == 8)
+                    {
+                        <div class="col-md-2">
+                            <select id="drpType" class="form-control" onchange="applyFilter();">
+                                <option value="0">--All Types--</option>
+                            </select>
+                        </div>
+                    }
+
+                    @* Template dropdown (for cakes/cupcakes) *@
+                    @if (templates.Count > 0)
+                    {
+                        <div class="col-md-2">
+                            <select id="drpTemplate" class="form-control" onchange="applyFilter();">
+                                <option value="0">--Select Template--</option>
+                                @foreach (var tmpl in templates)
+                                {
+                                    <option value="@tmpl.TemplateId" @(templateId == tmpl.TemplateId ? "selected" : "")>@tmpl.TemplateName</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    @* Search box *@
+                    <div class="col-md-3">
+                        <input type="text" id="txtsearch" class="form-contro input-sm" placeholder="Search keyword" value="@search" />
+                        <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doSearch();">Go</a>
+                        @if (!string.IsNullOrEmpty(search))
+                        {
+                            <a href="@GetPageUrl(1, clearSearch: true)" class="btn btn-danger btn-sm">X</a>
+                        }
+                        <a href="/manageproducttags" target="_blank" class="text-danger" style="margin-left:10px;">Manage Tags</a>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Date Filter Row (legacy parity) ─────────────────────────── *@
+                <div class="col-md-12 form-group flush">
+                    <div class="col-sm-6">
+                        <select class="orderdrpdate form-control" style="max-width:120px;display:inline-table;">
+                            <option value="1">Order Date</option>
+                        </select>
+                        <input type="text" id="txtStartDate" placeholder="Start Date" class="form-control" style="max-width:115px;display:inline-table;margin:0 0 0 7px;" />
+                        <input type="text" id="txtEndDate" placeholder="End Date" class="form-control" style="max-width:115px;display:inline-table;margin:0 0 0 7px;" />
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Add New Button (legacy parity) ──────────────────────────── *@
+                @{
+                    var addNewText = productType switch {
+                        2 => "Add New Accessory",
+                        4 => "Add New Cake Topper",
+                        5 => "Add New Cutter / Mould",
+                        7 => "Add New Packaging",
+                        8 => "Add New Supply Item",
+                        9 => "Add New Appliance",
+                        10 => "Add New Shop Setup Item",
+                        1 => "Add New Cake",
+                        6 => "Add New Cupcake",
+                        _ => "Add New Item"
+                    };
+                }
+                <div class="col-md-12 form-group flush">
+                    <a href="/addnewcake?type=@productType" class="btn btn-danger bg-red btn-lg square">@addNewText</a>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Product Table ───────────────────────────────────────────── *@
+                @if (products.Items.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    @if (isCsBakery)
+                                    {
+                                        <th class="chk headertext">
+                                            <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                        </th>
+                                    }
+                                    <th class="status">Status</th>
+                                    <th class="img">&nbsp;</th>
+                                    <th class="name">Title</th>
+                                    <th class="sku">#SKU</th>
+                                    <th class="price">
+                                        <div class="div_drp">
+                                            <div class="btn-group">
+                                                Price From
+                                                <button id="btn_sort_dropdown" aria-expanded="false" class="btn dropdown-toggle btnprice" data-toggle="dropdown" type="button">
+                                                    <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                                <ul class="dropdown-menu" role="menu">
+                                                    <li><a href="@GetSortUrl("")">Default sort</a></li>
+                                                    <li><a href="@GetSortUrl("1")">Price - Low To High</a></li>
+                                                    <li><a href="@GetSortUrl("2")">Price - High To Low</a></li>
+                                                    <li><a href="@GetSortUrl("3")">Newest Arrivals</a></li>
+                                                    <li><a href="@GetSortUrl("4")">Sold - Low To High</a></li>
+                                                    <li><a href="@GetSortUrl("5")">Sold - High To Low</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="sort">Sort</th>
+                                    <th class="sold">Sold</th>
+                                    <th class="action">Action</th>
+                                    <th class="qty">In-Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in products.Items)
+                                {
+                                    <tr class="rowtext" data-pid="@item.ProductId">
+                                        @if (isCsBakery)
+                                        {
+                                            <td class="chk">
+                                                <input type="checkbox" class="chkrow" data-id="@item.ProductId" onchange="chkuncheckHeadernRowbyrow();" />
+                                            </td>
+                                        }
+                                        <td class="status @(item.TotalStockQty <= 0 ? "outstock" : "")">
+                                            @(item.IsActive ? "Active" : "Inactive")<br />
+                                            @item.ModifiedOn.ToString("dd")<br />
+                                            @item.ModifiedOn.ToString("MMM,yy")<br />
+                                            <small>at @item.ModifiedOn.ToString("HH:mm")</small>
+                                            @if (item.IsFranchise)
+                                            {
+                                                <br /><span class="text-success">Franchise</span>
+                                            }
+                                        </td>
+                                        <td class="img">
+                                            @if (!string.IsNullOrEmpty(item.ProductImage))
+                                            {
+                                                <a target="_blank" href="@(item.SeoUrl != null ? "/" + item.SeoUrl + "-p-" + item.ProductId : "#")" class="ancPrdName">
+                                                    <img src="@(cdnBase)@(item.ProductImage)" style="border-width: 0px; max-width: 60px;" alt="@item.ProductName" />
+                                                </a>
+                                            }
+                                        </td>
+                                        <td class="name">
+                                            @if (userType == "1" || userType == "2")
+                                            {
+                                                <input type="text" class="txtprdname" data-id="@item.ProductId" value="@item.ProductName" style="width: 100%;" />
+                                            }
+                                            else
+                                            {
+                                                <span>@item.ProductName</span>
+                                            }
+                                            <br /><small class="text-muted">Product Type: @(productType switch { 2 => "Accessories", 4 => "Cake Toppers", 5 => "Cutters/Moulds", 7 => "Packaging", 8 => "Supplies", 9 => "Appliances", 10 => "Shop Setup", _ => "Cakes" })</small>
+
+                                            @* ─── Stock Location Panel ─── *@
+                                            <div class="col-sm-12 flush top-margin stockloc-wrapper">
+                                                <div class="form-group col-sm-12 headertext bggrey">
+                                                    <b>InStock: <span class="spQty">@item.TotalStockQty</span></b>
+                                                    @if (userType == "1" || userType == "2")
+                                                    {
+                                                        <div class="AddQtyTxtbox">
+                                                            <a class="ancAddQty" data-pid="@item.ProductId" data-prdcode="@item.ProductCode" href="javascript:void(0);" onclick="openAddQtyModal(@item.ProductId);">+ Add</a>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="clearfix"></div>
+                                                <div class="stockloc-panel" id="dvLocations_@item.ProductId">
+                                                    <div class="loc-tree"></div>
+                                                    <div class="qty-log"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="sku">@item.ProductCode</td>
+                                        <td class="price">&pound;@item.ProductPrice.ToString("0.00")</td>
+                                        <td class="sort">@item.SortOrder</td>
+                                        <td class="sold">@item.SoldCount</td>
+                                        <td class="action">
+                                            <a class="btn btn-danger btn-xs" href="javascript:void(0);" onclick="saveRow(@item.ProductId);">Save</a>
+                                            <div class="btn-group">
+                                                <button class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" type="button">
+                                                    Edit <span class="caret"></span>
+                                                </button>
+                                                <ul class="dropdown-menu" role="menu">
+                                                    <li><a href="/addnewcake?prdID=@item.ProductId">Edit Product</a></li>
+                                                    <li><a href="javascript:void(0);" onclick="toggleActive(@item.ProductId, @(item.IsActive ? "false" : "true"));">@(item.IsActive ? "Set Inactive" : "Set Active")</a></li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                        <td class="qty">
+                                            <span class="spTotalQty">@item.TotalStockQty</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @* ─── Pagination (sub-task 6.6) ───────────────────────────────── *@
+                    @if (totalPages > 1)
+                    {
+                        <div class="pagination pagination-right">
+                            <div class="paging_outer">
+                                <ul class="left">
+                                    <li><a href="@GetPageUrl(1)">First</a></li>
+                                    <li class="@(currentPage <= 1 ? "disabled" : "")">
+                                        @if (currentPage > 1)
+                                        {
+                                            <a href="@GetPageUrl(currentPage - 1)"><img src="/img/prev-arrow.png" alt="Previous" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/prev-arrow.png" alt="Previous" /></span>
+                                        }
+                                    </li>
+                                </ul>
+                                <ul class="numbering">
+                                    @{
+                                        int pageButtonCount = 3;
+                                        int min = currentPage - pageButtonCount;
+                                        int max = currentPage + pageButtonCount;
+                                        if (max > totalPages) min -= (max - totalPages);
+                                        if (min < 1) max += (1 - min);
+                                        bool needDiv = false;
+
+                                        for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            if (i <= 2 || i > totalPages - 2 || (min <= i && i <= max))
+                                            {
+                                                <li class="@(i == currentPage ? "active" : "")">
+                                                    <a href="@GetPageUrl(i)">@i</a>
+                                                </li>
+                                                needDiv = true;
+                                            }
+                                            else if (needDiv)
+                                            {
+                                                <li class="disabled"><span>...</span></li>
+                                                needDiv = false;
+                                            }
+                                        }
+                                    }
+                                </ul>
+                                <ul class="right">
+                                    <li class="@(currentPage >= totalPages ? "disabled" : "")">
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <a href="@GetPageUrl(currentPage + 1)"><img src="/img/nxt-arrow.png" alt="Next" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/nxt-arrow.png" alt="Next" /></span>
+                                        }
+                                    </li>
+                                    <li><a href="@GetPageUrl(totalPages)">Last</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-info">No products found.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ─── Add/Edit Qty Modal (sub-task 6.7) ──────────────────────────────────────── *@
+<div id="qtyModal" class="modalPopup">
+    <div class="modal" aria-hidden="true" aria-labelledby="qtyModalLabel" role="dialog" tabindex="-1" style="display: block">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="qtyModalLabel"><span id="qtyModalTitle">Add</span> Quantity</h4>
+                    <input type="hidden" id="hfQtyPid" value="0" />
+                    <input type="hidden" id="hfQtyMode" value="add" />
+                </div>
+                <div class="modal-body">
+                    <div class="form-horizontal" role="form">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Location: <span class="text-danger">*</span></label>
+                            <div class="col-sm-6">
+                                <select id="ddlStockLocation" class="form-control">
+                                    <option value="0">--Select Location--</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Qty: <span class="text-danger">*</span></label>
+                            <div class="col-sm-4">
+                                <input type="number" id="txtQtyInput" class="form-control" min="1" placeholder="Qty" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <button type="button" class="btn btn-primary" onclick="saveQty();">Save</button>
+                                <button type="button" class="btn btn-danger" onclick="closeQtyModal();">Close</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <p class="text-danger" id="lblQtyMsg"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber, bool clearSearch = false)
+    {
+        var prdtype = (int)(ViewBag.ProductType ?? 1);
+        var searchVal = clearSearch ? "" : (ViewBag.Search as string ?? "");
+        var fStatus = (int)(ViewBag.FilterStatus ?? -1);
+        var catId = (long)(ViewBag.CategoryId ?? 0L);
+        var tmplId = (long)(ViewBag.TemplateId ?? 0L);
+        var sortVal = ViewBag.Sort as string ?? "";
+        var cutters = (bool)(ViewBag.HasCutters ?? false);
+        var tId = (int)(ViewBag.TypeId ?? 0);
+
+        var url = "/mywebstore";
+        var queryParts = new List<string>();
+
+        if (prdtype != 1) queryParts.Add("prdtype=" + prdtype);
+        if (pageNumber > 1) queryParts.Add("pageno=" + pageNumber);
+        if (!string.IsNullOrEmpty(searchVal)) queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+        if (fStatus != -1) queryParts.Add("filterstatus=" + fStatus);
+        if (catId != 0) queryParts.Add("catid=" + catId);
+        if (tmplId > 0) queryParts.Add("templateid=" + tmplId);
+        if (!string.IsNullOrEmpty(sortVal)) queryParts.Add("sort=" + sortVal);
+        if (cutters) queryParts.Add("showcutteritems=true");
+        if (tId > 0) queryParts.Add("typeid=" + tId);
+
+        if (queryParts.Count > 0) url += "?" + string.Join("&", queryParts);
+        return url;
+    }
+
+    string GetSortUrl(string sortValue)
+    {
+        var prdtype = (int)(ViewBag.ProductType ?? 1);
+        var searchVal = ViewBag.Search as string ?? "";
+        var fStatus = (int)(ViewBag.FilterStatus ?? -1);
+        var catId = (long)(ViewBag.CategoryId ?? 0L);
+        var tmplId = (long)(ViewBag.TemplateId ?? 0L);
+        var cutters = (bool)(ViewBag.HasCutters ?? false);
+        var tId = (int)(ViewBag.TypeId ?? 0);
+
+        var url = "/mywebstore";
+        var queryParts = new List<string>();
+
+        if (prdtype != 1) queryParts.Add("prdtype=" + prdtype);
+        if (!string.IsNullOrEmpty(searchVal)) queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+        if (fStatus != -1) queryParts.Add("filterstatus=" + fStatus);
+        if (catId != 0) queryParts.Add("catid=" + catId);
+        if (tmplId > 0) queryParts.Add("templateid=" + tmplId);
+        if (!string.IsNullOrEmpty(sortValue)) queryParts.Add("sort=" + sortValue);
+        if (cutters) queryParts.Add("showcutteritems=true");
+        if (tId > 0) queryParts.Add("typeid=" + tId);
+
+        if (queryParts.Count > 0) url += "?" + string.Join("&", queryParts);
+        return url;
+    }
+}
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Product Type Switching ─────────────────────────────────────────────────
+
+    function switchType(typeVal) {
+        window.location.href = '/mywebstore?prdtype=' + typeVal;
+    }
+
+    // ─── Filter Application ─────────────────────────────────────────────────────
+
+    function applyFilter() {
+        var prdtype = @productType;
+        var status = $('input[name="filterstatus"]:checked').val() || '-1';
+        var catid = $('#drpCategories').length ? $('#drpCategories').val() : '0';
+        var templateid = $('#drpTemplate').length ? $('#drpTemplate').val() : '0';
+        var typeid = $('#drpType').length ? $('#drpType').val() : '0';
+        var searchVal = $.trim($('#txtsearch').val());
+
+        var url = '/mywebstore?prdtype=' + prdtype;
+        if (status !== '-1') url += '&filterstatus=' + status;
+        if (catid !== '0') url += '&catid=' + catid;
+        if (templateid !== '0') url += '&templateid=' + templateid;
+        if (typeid !== '0') url += '&typeid=' + typeid;
+        if (searchVal !== '') url += '&search=' + encodeURIComponent(searchVal);
+
+        window.location.href = url;
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+
+    function doSearch() {
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword === '') {
+            alert('Please enter search keyword');
+            return;
+        }
+        applyFilter();
+    }
+
+    $(document).ready(function () {
+        $('#txtsearch').on('keypress', function (e) {
+            if (e.which === 13) { doSearch(); return false; }
+        });
+    });
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+        updateSelectedCount();
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        $('#spnfilterselected').text($('.rowtext .chkrow:checked').length);
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            ids.push($(this).data('id'));
+        });
+        return ids;
+    }
+
+    function chkifchecked() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('please select any item!');
+            return false;
+        }
+        return true;
+    }
+
+    // ─── Bulk Actions ───────────────────────────────────────────────────────────
+
+    function bulkSetActive() {
+        if (!chkifchecked()) return;
+        var ids = getSelectedIds();
+        $.post('/mywebstore/bulkactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) { showMessage(r.message, true); setTimeout(function () { location.reload(); }, 1000); }
+            else { showMessage(r.message || 'Failed to update.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkSetInactive() {
+        if (!chkifchecked()) return;
+        var ids = getSelectedIds();
+        $.post('/mywebstore/bulkinactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) { showMessage(r.message, true); setTimeout(function () { location.reload(); }, 1000); }
+            else { showMessage(r.message || 'Failed to update.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkUpdateRecords() {
+        if (!chkifchecked()) return;
+        // Update Records = set active (same as legacy behavior)
+        bulkSetActive();
+    }
+
+    function bulkDelete() {
+        if (!chkifchecked()) return;
+        var ids = getSelectedIds();
+        if (!confirm('Are you sure to remove selected ' + ids.length + ' item(s)?')) return;
+        $.post('/mywebstore/bulkdelete', { ids: ids.join(',') }, function (r) {
+            if (r.success) { showMessage(r.message, true); setTimeout(function () { location.reload(); }, 1000); }
+            else { showMessage(r.message || 'Failed to delete.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkSetFranchise() {
+        if (!chkifchecked()) return;
+        var ids = getSelectedIds();
+        $.post('/mywebstore/bulkfranchise', { ids: ids.join(',') }, function (r) {
+            if (r.success) { showMessage(r.message, true); setTimeout(function () { location.reload(); }, 1000); }
+            else { showMessage(r.message || 'Failed to update.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkRemoveFranchise() {
+        if (!chkifchecked()) return;
+        var ids = getSelectedIds();
+        $.post('/mywebstore/bulkremovefranchise', { ids: ids.join(',') }, function (r) {
+            if (r.success) { showMessage(r.message, true); setTimeout(function () { location.reload(); }, 1000); }
+            else { showMessage(r.message || 'Failed to update.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    // ─── Stock Location Load (AJAX) ─────────────────────────────────────────────
+
+    function loadStockLocations(pid) {
+        var $panel = $('#dvLocations_' + pid);
+        if ($panel.is(':visible')) {
+            $panel.slideUp();
+            return;
+        }
+
+        $.get('/mywebstore/stocklocations', { pid: pid }, function (r) {
+            if (r.success) {
+                var html = '<div class="form-group col-sm-12"><table class="table tblocation"><thead><tr><th>Location Name</th><th>Qty</th><th></th></tr></thead><tbody>';
+                if (r.data && r.data.length > 0) {
+                    for (var i = 0; i < r.data.length; i++) {
+                        var loc = r.data[i];
+                        html += '<tr data-locationid="' + loc.locationId + '" data-location="' + loc.fullLocation + '">';
+                        html += '<td>' + loc.fullLocation + '</td>';
+                        html += '<td>' + loc.qty + '</td>';
+                        html += '<td><a href="javascript:void(0);" class="text-danger" onclick="openEditQtyModal(' + pid + ',' + loc.locationId + ',' + loc.qty + ');">Edit</a></td>';
+                        html += '</tr>';
+                    }
+                } else {
+                    html += '<tr><td colspan="3">No stock locations found</td></tr>';
+                }
+                html += '</tbody></table></div>';
+                $panel.find('.loc-tree').html(html);
+
+                // Load qty log
+                loadQtyLog(pid, $panel);
+                $panel.slideDown();
+            }
+        }).fail(function () { showMessage('Failed to load stock locations.', false); });
+    }
+
+    function loadQtyLog(pid, $panel) {
+        $.get('/mywebstore/qtylog', { pid: pid }, function (r) {
+            if (r.success && r.data && r.data.length > 0) {
+                var html = '<div class="col-sm-12" style="margin-top:5px;"><b>Recent Qty Log:</b><ul style="list-style:none;padding:0;">';
+                for (var i = 0; i < r.data.length; i++) {
+                    var entry = r.data[i];
+                    html += '<li class="qtylog-entry">' + entry.fullLocation + ' | Qty: ' + entry.qty + ' | ' + entry.staffName + ' | ' + new Date(entry.modifiedOn).toLocaleDateString() + '</li>';
+                }
+                html += '</ul></div>';
+                $panel.find('.qty-log').html(html);
+            }
+        });
+    }
+
+    // Toggle stock location panel on InStock click
+    $(document).ready(function () {
+        $('.stockloc-wrapper .bggrey').on('click', function () {
+            var pid = $(this).closest('tr').data('pid');
+            if (pid) loadStockLocations(pid);
+        });
+    });
+
+    // ─── Add/Edit Qty Modal ─────────────────────────────────────────────────────
+
+    function openAddQtyModal(pid) {
+        $('#hfQtyPid').val(pid);
+        $('#hfQtyMode').val('add');
+        $('#qtyModalTitle').text('Add');
+        $('#txtQtyInput').val('');
+        $('#lblQtyMsg').text('');
+        loadLocationDropdown(pid);
+        $('#qtyModal').show();
+    }
+
+    function openEditQtyModal(pid, locationId, currentQty) {
+        $('#hfQtyPid').val(pid);
+        $('#hfQtyMode').val('edit');
+        $('#qtyModalTitle').text('Edit');
+        $('#txtQtyInput').val(currentQty);
+        $('#lblQtyMsg').text('');
+        loadLocationDropdown(pid, locationId);
+        $('#qtyModal').show();
+    }
+
+    function loadLocationDropdown(pid, selectedLocationId) {
+        $.get('/mywebstore/stocklocations', { pid: pid }, function (r) {
+            var $ddl = $('#ddlStockLocation');
+            $ddl.empty().append('<option value="0">--Select Location--</option>');
+            if (r.success && r.data) {
+                for (var i = 0; i < r.data.length; i++) {
+                    var loc = r.data[i];
+                    var selected = (selectedLocationId && loc.locationId == selectedLocationId) ? ' selected' : '';
+                    $ddl.append('<option value="' + loc.locationId + '"' + selected + '>' + loc.fullLocation + '</option>');
+                }
+            }
+        });
+    }
+
+    function closeQtyModal() {
+        $('#qtyModal').hide();
+    }
+
+    function saveQty() {
+        var pid = $('#hfQtyPid').val();
+        var mode = $('#hfQtyMode').val();
+        var locationId = $('#ddlStockLocation').val();
+        var qty = $('#txtQtyInput').val();
+
+        if (!locationId || locationId === '0') {
+            $('#lblQtyMsg').text('Please select a location.');
+            return;
+        }
+        if (!qty || parseInt(qty) <= 0) {
+            $('#lblQtyMsg').text('Please enter a valid quantity.');
+            return;
+        }
+
+        var url = mode === 'edit' ? '/mywebstore/editqty' : '/mywebstore/addqty';
+        $.post(url, { pid: pid, locationId: locationId, qty: qty }, function (r) {
+            if (r.success) {
+                closeQtyModal();
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                $('#lblQtyMsg').text(r.message || 'Failed to save.');
+            }
+        }).fail(function () {
+            $('#lblQtyMsg').text('An error occurred while saving.');
+        });
+    }
+</script>
+}

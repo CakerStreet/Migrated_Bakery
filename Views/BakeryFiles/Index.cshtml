@@ -1,0 +1,1038 @@
+@using CakerStreet.Business.Services
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "CRM Manage Order - Bakery Files";
+    var info = ViewBag.OrderInfo as BakeryFilesOrderInfo;
+    var orderId = ViewBag.OrderId;
+    var orderDetailId = ViewBag.OrderDetailId;
+    var productId = ViewBag.ProductId;
+}
+
+@functions {
+    public string GetDocumentImgUrl(string productId, string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return "/img/icons/rar.png";
+        string fnLower = fileName.ToLower();
+        if (fnLower.EndsWith(".zip") || fnLower.EndsWith(".rar")) return "/img/icons/rar.png";
+        if (fnLower.EndsWith(".psd") || fnLower.EndsWith(".studio3") || fnLower.EndsWith(".ai")) return "/img/icons/psd.png";
+        if (fnLower.EndsWith(".otf") || fnLower.EndsWith(".ttf") || fnLower.EndsWith(".fnt")) return "/img/icons/font.png";
+        if (fnLower.EndsWith(".pdf")) return "/img/icons/pdf.png";
+        if (fnLower.EndsWith(".svg")) return "/img/icons/svg.png";
+        return "/upload/sku/" + productId + "/files/" + fileName;
+    }
+    public string GetPrdSmlImage(string image)
+    {
+        if (string.IsNullOrEmpty(image)) return "/images/blankImages/110x135.jpg";
+        return "/upload/Product_images/resized_80_80/" + image;
+    }
+}
+
+<link href="/bakery_content/css/sellcss.css?ver=1.14" rel="stylesheet" />
+<style type="text/css">
+    #dropzoneForm {
+        width: 50%;
+        margin: 0 auto;
+    }
+
+    .div_typewisefilter {
+        display: table;
+        z-index: 3;
+        font-size: 12px;
+    }
+
+    .div_typewisefilter.notop {
+        top: 0;
+    }
+
+    .div_typewisefilter .liupdateglobaldisplayorder > a {
+        background-color: #ccc;
+        float: left;
+        margin-left: 5px;
+        opacity: 1;
+        padding: 5px;
+    }
+
+    .liupdateglobaldisplayorder a img {
+        max-width: 18px;
+    }
+
+    .div_typewisefilter li {
+        display: table;
+        opacity: 0.9;
+        margin: 5px;
+        width: 50px;
+    }
+
+    .div_typewisefilter li.liheight {
+        height: 20px;
+    }
+
+    .div_typewisefilter li.liheight select {
+        left: 5px;
+        position: absolute;
+        top: 5px;
+    }
+
+    .div_typewisefilter a {
+        background-color: #fff;
+        display: inline;
+        font-size: 12px;
+        opacity: 0.5;
+    }
+
+    .div_typewisefilter a > img {
+        max-width: 22px;
+        max-height: 22px;
+    }
+
+    .div_typewisefilter a:hover, .div_typewisefilter a.stt {
+        opacity: 1;
+    }
+
+    .div_typewisefilter a.stt {
+        border-color: Green;
+    }
+
+    .div_typewisefilter .divinputprdtext_outer {
+        left: 0;
+        opacity: 0;
+        position: absolute;
+        top: -28px;
+        width: 250px;
+    }
+
+    .div_typewisefilter .divinputprdtext_outer:focus, .div_typewisefilter .divinputprdtext_outer:hover {
+        opacity: 1;
+    }
+
+    .div_typewisefilter a.ggl {
+        padding: 7px 12px;
+        background-color: #000;
+        color: #fff;
+        position: absolute;
+        top: 5px;
+    }
+
+    .table {
+        border: 1px solid #ccc;
+        margin: 0px 0 0 0;
+    }
+
+    .Toppertabl img {
+        padding: 0 5px 7px;
+    }
+
+    .table.Toppertabl {
+        margin: 0 0 20px 0;
+    }
+
+    .table.Toppertabl > thead {
+        background-color: #fff;
+    }
+
+    .btn-default {
+        background-color: #eee;
+    }
+
+    .table tbody tr {
+        background-color: #eee;
+    }
+
+    .table > tbody > tr > td {
+        border-top-width: 0;
+    }
+
+    .div_deliverydetail {
+        margin-bottom: 10px;
+        background-color: #aaa;
+        color: #fff;
+        line-height: 34px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    .div_backtotop {
+        right: auto;
+    }
+
+    .div_productfile {
+        margin-bottom: 10px;
+    }
+
+    .div_Documents {
+        display: table;
+        width: 100%;
+    }
+
+    .divfiles {
+        display: table;
+        width: 100%;
+    }
+    .divfiles ul {
+        width: 100%;
+        display: table;
+    }
+    .divfiles ul.sub_ul {
+        width: 100%;
+        display: table;
+    }
+    .divfiles li {
+        float: left;
+        line-height: 17px;
+        margin: 5px;
+        min-height: 34px;
+    }
+    .sub_ul li {
+        float: none;
+        font-weight: bold;
+        margin-left: 0;
+    }
+    .divfiles ul.sub_ul {
+        list-style-type: square;
+        padding-left: 14px;
+        margin-left: 14px;
+    }
+
+    .divfiles li.imgli {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        height: 34px;
+        margin: 5px 5px 5px 0;
+        position: relative;
+        width: 34px;
+        padding: 0;
+        overflow: auto;
+    }
+
+    .divfiles li.imgli > img {
+        max-height: 100%;
+        max-width: 100%;
+        padding: 1px;
+        position: static;
+    }
+
+    .divfiles li.lititle {
+        border-width: 0;
+        padding: 0;
+    }
+    .labelAddtoOrder { 
+        padding-left: 8px;
+        border: 1px solid #ccc;
+        margin-left: 15px;
+        line-height: 28px;
+        font-weight: normal;  
+    }
+    .labelAddtoOrder .glyphicon {
+        color: green;
+    }
+</style>
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse3" aria-expanded="true"><span class="glyphicon glyphicon-minus"></span></a>
+                </div>
+                <div class="col-md-11">
+                    <h2>
+                        <span id="ltBusinessName">Bakery Files (@(info?.ProductCode ?? ""))</span>
+                        <a class="normallink" style="float: right; color: #fff;" href="/businessorders">Back</a>
+                    </h2>
+                </div>
+            </div>
+            <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+                <input type="hidden" id="hfOrderID" value="@orderId" />
+                <input type="hidden" id="hfOrderDetailID" value="@orderDetailId" />
+                <input type="hidden" id="hfProductId" value="@productId" />
+                
+                <div class="form row-fluid">
+                    <div class="form-group col-md-12 caln">
+                        <a id="ancprdlink" href="/edititem?prdID=@productId" target="_blank">
+                            <img id="imgPrd" src="/upload/Product_images/resized_300_300/@(info?.ProductImage ?? "")" style="max-width: 150px; max-height: 150px;" onerror="this.src='/images/blankImages/110x135.jpg';" />
+                        </a>
+                        <br />
+                        <strong><span id="ltPrdName">@(info?.ProductName ?? "") (@(info?.ProductCode ?? ""))</span></strong>
+                    </div>
+                    <div class="form-group col-md-12 caln div_typewisefilter">
+                        <a id="ancAdword" class="btn btn-danger btn-xs" target="_blank" style="background-color: #aa041c; opacity: 1;" href="@(ViewBag.HdCRMGlobalUrl)/staff/default.aspx?id=@productId">Ad</a>
+                        
+                        <a id="lnkDownload" href="/bakeryfiles/download?file=upload/Product_images/resized_300_300/@(info?.ProductImage ?? "")">
+                            <img src="/img/download-icon.png" style="max-width: 22px;" />
+                        </a>
+                        <a id="ancUploadPrdPic" href="javascript:void(0);" onclick="UploadPicture('@productId', '@(info?.ProductName?.Replace("'", "\\'"))');">
+                            <img src="/img/upload-icon.png" style="max-width: 22px;" />
+                        </a>
+                        <a id="ancEdit" href="/edititem?prdID=@productId"><span class="glyphicon glyphicon-pencil"></span></a>
+                    </div>
+                    <div class="clearfix"></div>
+                    
+                    @if (orderId > 0)
+                    {
+                        <div id="dvOrder" class="form-group">
+                            <div class="col-sm-12">Order ID: <b>#<span id="litOrderID">@orderId</span></b></div>
+                        </div>
+                    }
+                    
+                    <div class="clearfix"></div>
+                    <div class="form-group col-md-12 div_deliverydetail top-margin">
+                        Designs Repository
+                        <a href="/manageproductdoc?id=@productId" target="_blank" class="btn btn-sm btn-danger pull-right">Manage files</a>
+                    </div>
+                    <div class="clearfix"></div>
+                    
+                    <div class="form-group col-sm-12 col-md-12">
+                        <div id="designheaderlit">
+                            @foreach (var svg in ViewBag.Svgs as List<Dictionary<string, object>>)
+                            {
+                                var svgId = svg["customCakeImg_ID"]?.ToString() ?? "";
+                                <div class='div_Documents'>
+                                    <div class='divfiles'>
+                                        <ul>
+                                            <li class='imgli'>
+                                                <img alt='SVG' src='/img/icons/svg.png'/> 
+                                                <a target='_blank' class='absolute-anchor' href='/bakeryfiles/download?file=upload/sku/@(productId)/svg/@(svgId).svg'></a>
+                                            </li>
+                                            <li class='lititle'>SVG File</li>
+                                            <li></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="div_Documents">
+                            @foreach (var doc in ViewBag.ProductFiles as List<ProductFileItem>)
+                            {
+                                <div class="divfiles">
+                                    <ul>
+                                        <li class="imgli">
+                                            <img alt="@doc.ProductFileTitle" src="@GetDocumentImgUrl(doc.ProductId.ToString(), doc.ProductFile)" />
+                                            <a href="/bakeryfiles/download?file=upload/sku/@(doc.ProductId)/files/@(doc.ProductFile)" target="_blank" class="absolute-anchor"></a>
+                                        </li>
+                                        <li class="lititle">
+                                            @doc.ProductFileTitle
+                                            <label class="labelAddtoOrder pull-right" style="@(doc.IsAddtoOrder ? "" : "display:none;")"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Added to Order</label>
+                                        </li>
+                                        <li>
+                                            <a class="btn btn-xs btn-danger addtoorder" data-tid="@doc.ProductFileId" style="@(doc.IsAddtoOrder ? "display:none;" : "")">
+                                                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add to Order
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    
+                                    @{
+                                        var sizeMap = ViewBag.SizeMap as Dictionary<long, List<CakeSizeForFileItem>>;
+                                        var sizes = sizeMap != null && sizeMap.ContainsKey(doc.ProductFileId) ? sizeMap[doc.ProductFileId] : new List<CakeSizeForFileItem>();
+                                    }
+                                    @if (sizes.Count > 0)
+                                    {
+                                        <ul class="sub_ul">
+                                            @foreach (var size in sizes)
+                                            {
+                                                <li>@size.SizeTitle</li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="clearfix"></div>
+                    
+                    <!-- Toppers Repository -->
+                    <div class="form-group col-md-12 div_deliverydetail top-margin">
+                        Toppers Repository
+                        <a href="/managetopper?id=@productId&type=4" target="_blank" class="btn btn-sm btn-danger pull-right">Manage Toppers</a>
+                    </div>
+                    <div class="clearfix"></div>
+                    <div class="form-group col-sm-12 col-md-12">
+                        @foreach (var topper in ViewBag.Toppers as List<Dictionary<string, object>>)
+                        {
+                            var topperId = Convert.ToInt64(topper["product_ID"]);
+                            var topperName = topper["product_Name"]?.ToString() ?? "";
+                            var topperImage = topper["product_image1"]?.ToString() ?? "";
+                            var topperQty = topper["product_quantity"]?.ToString() ?? "0";
+
+                            <div id="dvTopper_@topperId" data-id='@topperId' class="div_topper">
+                                <div class="div_Documents">
+                                    <table class="table top-margin">
+                                        <thead>
+                                            <tr>
+                                                <th width="50">Img</th>
+                                                <th>Title</th>
+                                                <th width="70">Instock</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                                <table class="table">
+                                    <tr>
+                                        <td width="50" style="padding-top: 0; padding-bottom: 0;">
+                                            <a target="_blank" href='/edititem?prdID=@topperId' class="ancPrdName">
+                                                <img alt="" src='@GetPrdSmlImage(topperImage)' style="border-width: 0px; max-width: 50px; max-height: 50px;" />
+                                            </a>
+                                        </td>
+                                        <td>@topperName</td>
+                                        <td width="70">@topperQty</td>
+                                    </tr>
+                                </table>
+                                
+                                @{
+                                    var locations = ViewBag.TopperLocations[topperId] as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+                                }
+                                @foreach (var loc in locations)
+                                {
+                                    var locId = Convert.ToInt64(loc["LocationID"]);
+                                    var fullLoc = loc["FullLocation"]?.ToString() ?? "";
+                                    var qty = Convert.ToInt32(loc["Qty"]);
+                                    <table id="tbLocation_@locId" data-pid='@topperId' class="table Toppertabl" data-id='@locId'>
+                                        <thead>
+                                            <tr>
+                                                <th style="text-align: left;">
+                                                    <img src='/images/icons/location-icon.png' /> @fullLoc (@qty)
+                                                </th>
+                                                <th width="150" class="caln">
+                                                    <a id="ancMinus" data-id='@locId' class="btn btn-default btn-sm">-</a>&nbsp;
+                                                    <input id="txtLocationQty" value='0' style="width: 50px; display: inline;" type="text" data-max='@qty' class="form-control input-sm LocationQty" />&nbsp;
+                                                    <a id="ancPlus" data-id='@locId' data-max='@qty' class="btn btn-default btn-sm">+</a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                }
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="clearfix"></div>
+                    @if (orderId > 0 && (ViewBag.Toppers as List<Dictionary<string, object>>)?.Count > 0)
+                    {
+                        <div id="dvSaveTopper" class="form-group col-md-12 top-margin">
+                            <a id="ancSaveTopperQty" class="btn btn-sm btn-danger">Save Changes</a>
+                        </div>
+                    }
+                    <div class="clearfix"></div>
+                    
+                    <!-- Accessory Repository -->
+                    <a name="Accessory" id="Accessory"></a>
+                    <div class="form-group col-md-12 div_deliverydetail top-margin">
+                        Accessory Repository
+                        <a href="/managetopper?id=@productId&type=3" target="_blank" class="btn btn-sm btn-danger pull-right">Manage Accessory</a>
+                    </div>
+                    <div class="clearfix"></div>
+                    <div class="form-group col-sm-12 col-md-12">
+                        @foreach (var acc in ViewBag.Accessories as List<Dictionary<string, object>>)
+                        {
+                            var accId = Convert.ToInt64(acc["product_ID"]);
+                            var accName = acc["product_Name"]?.ToString() ?? "";
+                            var accImage = acc["product_image1"]?.ToString() ?? "";
+                            var accQty = acc["product_quantity"]?.ToString() ?? "0";
+
+                            <div id="dvTopper_@accId" data-id='@accId' class="div_accessory">
+                                <div class="div_Documents">
+                                    <table class="table top-margin">
+                                        <thead>
+                                            <tr>
+                                                <th width="50">Img</th>
+                                                <th>Title</th>
+                                                <th width="70">Instock</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                                <table class="table">
+                                    <tr>
+                                        <td width="50" style="padding-top: 0; padding-bottom: 0;">
+                                            <a target="_blank" href='/edititem?prdID=@accId' class="ancPrdName">
+                                                <img alt="" src='@GetPrdSmlImage(accImage)' style="border-width: 0px; max-width: 50px; max-height: 50px;" />
+                                            </a>
+                                        </td>
+                                        <td>@accName</td>
+                                        <td width="70">@accQty</td>
+                                    </tr>
+                                </table>
+                                
+                                @{
+                                    var locations = ViewBag.AccessoryLocations[accId] as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+                                }
+                                @foreach (var loc in locations)
+                                {
+                                    var locId = Convert.ToInt64(loc["LocationID"]);
+                                    var fullLoc = loc["FullLocation"]?.ToString() ?? "";
+                                    var qty = Convert.ToInt32(loc["Qty"]);
+                                    <table id="tbLocation_@locId" data-pid='@accId' class="table Accessorytabl" data-id='@locId'>
+                                        <thead>
+                                            <tr>
+                                                <th style="text-align: left;">
+                                                    <img src='/images/icons/location-icon.png' /> @fullLoc (@qty)
+                                                </th>
+                                                <th width="150" class="caln">
+                                                    <a id="ancMinus" data-id='@locId' class="btn btn-default btn-sm">-</a>&nbsp;
+                                                    <input id="txtLocationQty" value='0' style="width: 50px; display: inline;" type="text" data-max='@qty' class="form-control input-sm LocationQty_Accessory" />&nbsp;
+                                                    <a id="ancPlus" data-id='@locId' data-max='@qty' class="btn btn-default btn-sm">+</a>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                }
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="clearfix"></div>
+                    @if (orderId > 0 && (ViewBag.Accessories as List<Dictionary<string, object>>)?.Count > 0)
+                    {
+                        <div id="dvSaveAccessory" class="form-group col-md-12 top-margin">
+                            <a id="ancSaveAccessory" class="btn btn-sm btn-danger">Save Changes</a>
+                        </div>
+                    }
+                    <div class="clearfix"></div>
+                </div>
+                
+                <!-- Cutters Repository -->
+                <div class="form row-fluid">
+                    <div class="form-group col-md-12 div_deliverydetail top-margin">
+                        Cutters Repository
+                        <a href="/managetopper?id=@productId&type=5" target="_blank" class="btn btn-sm btn-danger pull-right">Manage Cutters</a>
+                    </div>
+                    <div class="clearfix"></div>
+                    <div class="form-group col-sm-12 col-md-12">
+                        @foreach (var cutter in ViewBag.Cutters as List<Dictionary<string, object>>)
+                        {
+                            var cutterId = Convert.ToInt64(cutter["product_ID"]);
+                            var cutterName = cutter["product_Name"]?.ToString() ?? "";
+                            var cutterImage = cutter["product_image1"]?.ToString() ?? "";
+                            var cutterQty = cutter["product_quantity"]?.ToString() ?? "0";
+
+                            <div id="dvTopper_@cutterId" data-id='@cutterId' class="div_topper">
+                                <div class="div_Documents">
+                                    <table class="table top-margin">
+                                        <thead>
+                                            <tr>
+                                                <th width="50">Img</th>
+                                                <th>Title</th>
+                                                <th width="70">Instock</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                                <table class="table">
+                                    <tr>
+                                        <td width="50" style="padding-top: 0; padding-bottom: 0;">
+                                            <a target="_blank" href='/edititem?prdID=@cutterId' class="ancPrdName">
+                                                <img alt="" src='@GetPrdSmlImage(cutterImage)' style="border-width: 0px; max-width: 50px; max-height: 50px;" />
+                                            </a>
+                                        </td>
+                                        <td>@cutterName</td>
+                                        <td width="70">@cutterQty</td>
+                                    </tr>
+                                </table>
+                                
+                                @{
+                                    var locations = ViewBag.CutterLocations[cutterId] as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+                                }
+                                @foreach (var loc in locations)
+                                {
+                                    var locId = Convert.ToInt64(loc["LocationID"]);
+                                    var fullLoc = loc["FullLocation"]?.ToString() ?? "";
+                                    var qty = Convert.ToInt32(loc["Qty"]);
+                                    <table id="tbLocation_@locId" data-pid='@cutterId' class="table Toppertabl" data-id='@locId'>
+                                        <thead>
+                                            <tr>
+                                                <th style="text-align: left;">
+                                                    <img src='/images/icons/location-icon.png' /> @fullLoc (@qty)
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                
+                @if (orderId > 0)
+                {
+                    <div id="dvOrderFiles" class="form row-fluid">
+                        <div class="clearfix"></div>
+                        <div class="form-group col-md-12 div_deliverydetail">
+                            Order Files (#<span id="litOrderNo">@orderId</span>)
+                        </div>
+                        <div class="form-group col-sm-12 col-md-12">
+                            <div class="col-md-12 row-height div_header">
+                                <div class="form-group">
+                                    <div class="col-sm-3 unbold labelleft">
+                                        <label>Document Title*</label>
+                                    </div>
+                                    <div class="col-sm-5 caln">
+                                        <label>Select File*</label>
+                                    </div>
+                                    <div class="col-sm-4 caln">
+                                        <label>Action</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <br clear="all" />
+                            <div id="dvProductDocOuter">
+                                @Html.Raw(ViewBag.ProductDocumentRowsHtml)
+                            </div>
+                            <div class="clearfix"></div>
+                            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                                <a id="ancPrdDocRow" class="btn btn-black btn-xs">+ Add More</a>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <div class="col-lg-12 col-sm-12 top-margin">
+                            <a class="saveshippingtemplate btn btn-danger" style="float: none" id="saveproductdocuments">Save Documents</a>
+                            <a style="margin-top: 10px;" class="normallink" href="/businessorders">Back</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="dvPicModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="prdTitle"></h4>
+            </div>
+            <div class="modal-body" style="width: 100%">
+                <div role="form" class="form-horizontal box-body">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <div class="dropzone" id="dropzoneForm">
+                                <div class="fallback">
+                                    <input name="file" type="file" />
+                                    <input type="submit" value="Upload" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-3 col-sm-4">
+                            <input id="btnUpload" class="btn btn-danger btn-block btn-flat btn-sign-in" onclick="UploadFiles();" type="button" value="Upload" />
+                            <input id="hdPrdID" type="hidden" />
+                            <input id="hdApiType" type="hidden" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+    <input type="hidden" id="hdGlobalUrl" value="" />
+    <script src="/js/owl.carousel.min.js"></script>
+    <script src="/js/dropzone.min.js?version=1.02"></script>
+    <script src="/Scripts/custom/AjaxFileupload.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('body').on('click', '#ancPlus', function () {
+                var $qty = $(this).prev();
+                var max = parseInt($qty.attr('data-max'));
+                var currentVal = parseInt($qty.val());
+                if (!isNaN(currentVal)) {
+                    if (currentVal + 1 <= max) {
+                        $qty.val(currentVal + 1);
+                    }
+                }
+                else { $qty.val('0'); }
+            });
+
+            $('body').on('click', '#ancMinus', function () {
+                var $qty = $(this).next();
+                var currentVal = parseInt($qty.val());
+                if (!isNaN(currentVal)) {
+                    if (currentVal - 1 >= 0) {
+                        $qty.val(currentVal - 1);
+                    }
+                }
+                else { $qty.val('0'); }
+            });
+
+            $('body').on('click', '#ancSaveTopperQty', function () {
+                if ($('.LocationQty').filter(function () {
+                    return parseInt(this.value, 10) > 0;
+                }).length === 0) {
+                    alert('All products have zero quantity! Please enter quantity greater than 0.')
+                }
+                else {
+                    var msg = '';
+                    $(".div_topper").each(function () {
+                        var $div_topper = $(this);
+                        $div_topper.find("table.Toppertabl").each(function () {
+                            var $txtLocationQty = $(this).find('#txtLocationQty');
+                            if ($txtLocationQty.val() != "") {
+                                if (!isNaN($txtLocationQty.val())) {
+                                    if (parseInt($txtLocationQty.val()) > parseInt($txtLocationQty.attr('data-max'))) {
+                                        msg += "Order quantity cant be greater than " + $txtLocationQty.attr('data-max') + ".\n\r";
+                                        $txtLocationQty.addClass("redcolored");
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    if (msg != '') {
+                        alert(msg);
+                    }
+                    else {
+                        var ot = new Array();
+                        var counter = 0;
+                        $(".div_topper").each(function () {
+                            var $div_topper = $(this);
+                            $div_topper.find("table.Toppertabl").each(function () {
+                                var $txtLocationQty = $(this).find('#txtLocationQty');
+                                if ($txtLocationQty.val() != "") {
+                                    if (!isNaN($txtLocationQty.val())) {
+                                        if (parseInt($txtLocationQty.val()) > 0) {
+                                            var item = {};
+                                            item.orderTopper_orderID = parseInt($('#hfOrderID').val());
+                                            item.orderTopper_orderdetailID = parseInt($('#hfOrderDetailID').val() || '0');
+                                            item.orderTopper_prdID = parseInt($div_topper.attr('data-id'));
+                                            item.orderTopper_LocID = parseInt($(this).attr('data-id'));
+                                            item.orderTopper_qty = parseInt($txtLocationQty.val());
+                                            ot[counter] = item;
+                                            counter += 1;
+                                        }
+                                    }
+                                }
+                            });
+                        });
+
+                        $.ajax({
+                            type: "POST",
+                            url: "/bakeryfiles/SaveTopperQuantity",
+                            data: JSON.stringify({ orderTopper: ot }),
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (msg) {
+                                alert('Topper/Cutter quantity have been saved successfully.');
+                                location.reload();
+                            },
+                            error: function (x, e) {
+                                alert("The call to the server side failed. " + x.responseText);
+                            }
+                        });
+                    }
+                }
+            });
+
+            $('body').on('click', '#ancSaveAccessory', function () {
+                if ($('.LocationQty_Accessory').filter(function () {
+                    return parseInt(this.value, 10) > 0;
+                }).length === 0) {
+                    alert('All products have zero quantity! Please enter quantity greater than 0.')
+                }
+                else {
+                    var msg = '';
+                    $(".div_accessory").each(function () {
+                        var $div_accessory = $(this);
+                        $div_accessory.find("table.Accessorytabl").each(function () {
+                            var $txtLocationQty = $(this).find('#txtLocationQty');
+                            if ($txtLocationQty.val() != "") {
+                                if (!isNaN($txtLocationQty.val())) {
+                                    if (parseInt($txtLocationQty.val()) > parseInt($txtLocationQty.attr('data-max'))) {
+                                        msg += "Order quantity cant be greater than " + $txtLocationQty.attr('data-max') + ".\n\r";
+                                        $txtLocationQty.addClass("redcolored");
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    if (msg != '') {
+                        alert(msg);
+                    }
+                    else {
+                        var ot = new Array();
+                        var counter = 0;
+                        $(".div_accessory").each(function () {
+                            var $div_accessory = $(this);
+                            $div_accessory.find("table.Accessorytabl").each(function () {
+                                var $txtLocationQty = $(this).find('#txtLocationQty');
+                                if ($txtLocationQty.val() != "") {
+                                    if (!isNaN($txtLocationQty.val())) {
+                                        if (parseInt($txtLocationQty.val()) > 0) {
+                                            var item = {};
+                                            item.orderTopper_orderID = parseInt($('#hfOrderID').val());
+                                            item.orderTopper_orderdetailID = parseInt($('#hfOrderDetailID').val() || '0');
+                                            item.orderTopper_prdID = parseInt($div_accessory.attr('data-id'));
+                                            item.orderTopper_LocID = parseInt($(this).attr('data-id'));
+                                            item.orderTopper_qty = parseInt($txtLocationQty.val());
+                                            ot[counter] = item;
+                                            counter += 1;
+                                        }
+                                    }
+                                }
+                            });
+                        });
+
+                        $.ajax({
+                            type: "POST",
+                            url: "/bakeryfiles/SaveAccessoryQuantity",
+                            data: JSON.stringify({ orderTopper: ot }),
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (msg) {
+                                alert('Accessory quantity have been saved successfully.');
+                                location.reload();
+                            },
+                            error: function (x, e) {
+                                alert("The call to the server side failed. " + x.responseText);
+                            }
+                        });
+                    }
+                }
+            });
+
+            $('body').on('click', '.addtoorder', function () {
+                var productfileid = $(this).attr('data-tid');
+                var rownumber = parseInt($('div.div_productfile').length) + 1;
+
+                var dataObject = JSON.stringify({
+                    'rownumber': rownumber,
+                    'productfileId': parseInt($(this).attr('data-tid')),
+                });
+
+                $.ajax({
+                    type: "POST",
+                    url: "/bakeryfiles/GetAddtoOrder",
+                    data: dataObject,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        $('#dvProductDocOuter').append(msg.d);
+                    }
+                });
+            });
+
+            $('#dvProductDocOuter').on('click', '#ancEditFile', function () {
+                var id = $(this).attr('data-tid');
+                ResetFileUpload(id);
+            });
+
+            $('#dvProductDocOuter').on('click', '#ancRemoveFile', function () {
+                if (confirm('Are you sure to delete this item?')) {
+                    var id = $(this).attr('data-tid');
+                    ResetFileUpload(id);
+                }
+            });
+
+            $('#dvProductDocOuter').on('click', '#ancUploadFile', function () {
+                var id = $(this).attr('data-tid');
+                var fu = $('#dvPrdFile_' + id).find('input#fuPrdFile');
+                var filename = getNameFromPath(fu.val());
+
+                if (fu.val() == '') {
+                    alert('Please browse file');
+                }
+                else if (checkFileExtension(filename)) {
+                    $('#imgLoader_' + id).show();
+                    var formdata = new FormData();
+                    var fileUpload = $(fu).get(0);
+                    var files = fileUpload.files;
+                    for (var i = 0; i < files.length; i++) {
+                        formdata.append(files[i].name, files[i]);
+                    }
+                    formdata.append("prdid", $('#hfProductId').val());
+                    $.ajax({
+                        url: "/FileUploadHandler.ashx",
+                        type: 'POST',
+                        data: formdata,
+                        contentType: false,
+                        processData: false,
+                        success: function (data) {
+                            $('#dvPrdFile_' + id).find('#hfProductFileName').val(data.name);
+                            $('#dvPrdFile_' + id).find('#ancEditFile').show();
+                            $('#dvPrdFile_' + id).find('#ancRemoveFile').show();
+                            $('#dvPrdFile_' + id).find('#ancViewFile').show();
+                            $('#dvPrdFile_' + id).find('#ancUploadFile').hide();
+                            $(fu).val('');
+                            $(fu).hide();
+                            $('#imgLoader_' + id).hide();
+                        },
+                        error: function () {
+                            alert("Error while uploading file");
+                            $('#imgLoader_' + id).hide();
+                        }
+                    });
+                }
+                else {
+                    alert('Only Images, zip and psd file are allowed.');
+                }
+            });
+
+            $('body').on('keypress', 'input.redcolored', function () {
+                $(this).removeClass("redcolored");
+            });
+
+            $('body').on('click', '#saveproductdocuments', function () {
+                var alerttext = "";
+                $(".div_productfile").each(function () {
+                    if ($(this).is(':visible')) {
+                        if ($(this).find('input#txtProductFileTitle').val() == '') {
+                            alerttext += "Please Enter Document Title.\n\r";
+                            $(this).find('input#txtProductFileTitle').addClass("redcolored");
+                        }
+                        if ($(this).find('input#hfProductFileName').val() == '') {
+                            alerttext += "Please Upload Document.\n\r";
+                            $(this).find('input#fuPrdFile').addClass("redcolored");
+                        }
+                    }
+                });
+
+                if (alerttext != "") {
+                    alert(alerttext);
+                }
+                else {
+                    var intcountertiming = 0;
+                    var lstPM = new Array();
+
+                    $(".div_productfile").each(function () {
+                        var var_prddoc = {};
+                        var_prddoc.RecNo = 1;
+                        var_prddoc.ProductFileID = parseInt($(this).find('#hfProductFileID').val() || '0');
+                        var_prddoc.OrderId = parseInt($('#hfOrderID').val() || '0');
+                        var_prddoc.OrderDetailID = parseInt($('#hfOrderDetailID').val() || '0');
+                        var_prddoc.ProductId = parseInt($('#hfProductId').val() || '0');
+                        var_prddoc.ProductFileTitle = $(this).find('#txtProductFileTitle').val();
+                        var_prddoc.IsDeleted = parseInt($(this).find('#hfPrfFileDeleted').val() || '0');
+                        var_prddoc.ProductFile = $(this).find('#hfProductFileName').val();
+                        lstPM[intcountertiming] = var_prddoc;
+                        intcountertiming += 1;
+                    });
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/bakeryfiles/SaveBakeryDocument",
+                        data: JSON.stringify({ lstPM: lstPM }),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function (msg) {
+                            var city = msg.d;
+                            if (city.data_ID == 1) {
+                                alert('Bakery document(s) have been uploaded successfully!');
+                                location.reload();
+                            }
+                            else {
+                                alert(city.data_optionalstr);
+                            }
+                        },
+                        error: function (x, e) {
+                            alert("The call to the server side failed. " + x.responseText);
+                        }
+                    });
+                }
+            });
+
+            $('body').on('click', '#ancDeletePrfFile', function () {
+                if (confirm('Are you sure to delete this item?')) {
+                    var id = $(this).attr('data-tid');
+                    $('#dvPrdFile_' + id).find('input#hfPrfFileDeleted').val('1');
+                    $('#dvPrdFile_' + id).fadeOut('slow');
+                }
+            });
+
+            $('body').on('click', '#ancSortOrder', function () {
+                var id = $(this).attr('data-tid');
+                var e = $("#dvPrdFile_" + id);
+                if (e.prev().length) {
+                    e.prev().insertAfter(e);
+                }
+            });
+
+            $('body').on('click', '#ancPrdDocRow', function () {
+                var numItems = parseInt($('div.div_productfile').length) + 1;
+                var pm = {};
+                pm.RecNo = numItems;
+                pm.ProductFileID = 0;
+                pm.ProductId = parseInt($('#hfProductId').val() || '0');
+                pm.ProductFileTitle = '';
+                pm.ProductFile = '';
+                pm.IsDeleted = 0;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/bakeryfiles/GetProductFileRow",
+                    data: JSON.stringify({ pm: pm }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        $('#dvProductDocOuter').append(msg.d);
+                    }
+                });
+            });
+        });
+
+        function ResetFileUpload(id) {
+            $('#dvPrdFile_' + id).find('#hfProductFileName').val('');
+            $('#dvPrdFile_' + id).find('#ancEditFile').hide();
+            $('#dvPrdFile_' + id).find('#ancRemoveFile').hide();
+            $('#dvPrdFile_' + id).find('#ancViewFile').hide();
+            $('#dvPrdFile_' + id).find('#ancUploadFile').show();
+            $('#dvPrdFile_' + id).find('input#fuPrdFile').show();
+        }
+
+        function checkFileExtension(file) {
+            var flag = true;
+            var extension = file.substr((file.lastIndexOf('.') + 1));
+            switch (extension.toLowerCase()) {
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                case 'rar':
+                case 'zip':
+                case 'cdr':
+                case 'ai':
+                case 'studio3':
+                case 'psd':
+                case 'pdf':
+                case 'svg':
+                case 'doc':
+                case 'docx':
+                case 'xls':
+                case 'xlsb':
+                case 'xlsm':
+                case 'xlsx':
+                case 'dcd':
+                case 'otf':
+                case 'ttf':
+                case 'fnt':
+                    flag = true;
+                    break;
+                default:
+                    flag = false;
+            }
+            return flag;
+        }
+
+        function getNameFromPath(strFilepath) {
+            var objRE = new RegExp(/([^\/\\]+)$/);
+            var strName = objRE.exec(strFilepath);
+            if (strName == null) {
+                return null;
+            }
+            else {
+                return strName[0];
+            }
+        }
+
+        function UploadPicture(pid, pname) {
+            $("#prdTitle").text(pname);
+            $("#hdPrdID").val(pid);
+            $("#hdApiType").val("0");
+            $("#dvPicModal").modal('show');
+        }
+    </script>
+}

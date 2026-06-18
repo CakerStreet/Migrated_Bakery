@@ -1,0 +1,1407 @@
+@{
+    ViewData["Title"] = (bool)(ViewBag.IsEdit ?? false) ? "Edit Product" : "Add New Product";
+    var product = ViewBag.Product as CakerStreet.Business.Controllers.AddNewCakeController.ProductEditModel;
+    var prdType = (int)(ViewBag.ProductType ?? 1);
+    var isEdit = (bool)(ViewBag.IsEdit ?? false);
+    var cakeShapes = ViewBag.CakeShapes as List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>
+        ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>();
+    var cakeTypes = ViewBag.CakeTypes as List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>
+        ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>();
+    var deliverySettings = ViewBag.DeliverySettings as CakerStreet.Business.Controllers.AddNewCakeController.ProductDeliverySettings
+        ?? new CakerStreet.Business.Controllers.AddNewCakeController.ProductDeliverySettings();
+    var selectedShapeId = (int)(ViewBag.SelectedShapeId ?? 0);
+    var selectedTypeId = (int)(ViewBag.SelectedTypeId ?? 0);
+    var maxDeliveryMiles = (int)(ViewBag.MaxDeliveryMiles ?? 20);
+    var cdnBase = ViewBag.CdnBase as string ?? "";
+}
+
+@section Head {
+    <link href="https://cakerstreet1.s3.amazonaws.com/bakery_content/css/sellcss.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal { font-weight: normal; }
+        div.div_LocationQty { margin-bottom: 3px; }
+        .flush { padding-left: 0; padding-right: 0; }
+        .no-left-padding { padding-left: 0; }
+        .table { margin-bottom: 0; }
+        .dvProductSuppliers > .table { border: 1px solid #ccc; }
+        .collapsed .icon-class:before { content: '>'; }
+        .icon-class:before { content: 'v'; }
+        td.icon-class { cursor: pointer; }
+        .AddQtyTxtbox { position: absolute; bottom: 0; line-height: 34px; text-align: right; width: 100%; padding-right: 20px; z-index: 1; }
+        div.color-swatch { float: right; width: 30px; height: 25px; }
+        .chkStoreCategory_outer { display: inline; }
+        .chkStoreCategory_outer label { display: inline-block; margin-right: 8px; font-weight: normal; }
+        .div_catdrps_ListingOuter select { margin-bottom: 5px; display: inline-block; width: auto; margin-right: 10px; }
+        .prd-img-main { display: inline-block; margin-right: 8px; vertical-align: top; }
+        /* Legacy photo box styles */
+        .divPrdImg_outer { display: table; width: 100%; padding-bottom: 10px; }
+        .prdImgbox_outer { display: table; float: left; height: 120px; margin: 0 1% 0 0; overflow: hidden; width: 13.2%; }
+        .prdImgbox_outer .prdImgbox { border: 1px solid #ccc; border-radius: 5px; display: table; height: 100px; width: 100%; position: relative; box-sizing: border-box; }
+        .prdImgbox_outer.addnewctrl { background-color: #eee; cursor: pointer; height: auto; }
+        .prdImgbox_outer .prdImgbox .addPrdImg { background: rgba(0,0,0,0) url('https://cakerstreet1.s3.amazonaws.com/bakery_content/images/camerabig.png') no-repeat scroll center center; border-bottom: 2px solid #aaa; border-radius: 5px; height: 100px; overflow: hidden; position: relative; width: 100%; }
+        .prdImgbox_outer .prdImgbox .addPrdImg.addnewctrl { background: rgba(0,0,0,0) none repeat scroll 0 0; }
+        .prdImgbox_outer .prdImgbox .addPrdImg > input[type='file'] { border: 0 none; cursor: pointer; height: 100%; left: 0; opacity: 0; position: absolute; right: 0; top: 0; width: 100%; z-index: 1; }
+        .prdImgbox_outer .prdImgbox .addPrdImg > span { color: #1a646d; display: block; font-size: 16px; font-weight: 500; line-height: 30px; position: absolute; text-align: center; top: 55%; width: 100%; }
+        .prdImgbox_outer .prdImgbox .addPrdImg.addnewctrl > span { color: #aaa; font-size: 50px; line-height: 50px; top: 25%; }
+        .prdImgbox_outer .prdImgbox .PrdImg { background-position: center center; background-repeat: no-repeat; background-size: 100% auto; border-radius: 5px; bottom: 1px; box-sizing: border-box; left: 1px; padding: 1px; position: absolute; right: 1px; top: 1px; display: none; }
+        .prdImgbox_outer .prdImgbox .edit { background: #eee url('https://cakerstreet1.s3.amazonaws.com/images/icons/pencil-icon.png') no-repeat scroll center center / 18px auto; border: 1px solid #ccc; border-radius: 5px; height: 30px; position: absolute; right: 3px; top: 3px; width: 30px; z-index: 2; display: none; }
+        .prdImgbox_outer .prdImgbox .remove { background: #eee url('https://cakerstreet1.s3.amazonaws.com/images/icons/cross-small-icon.png') no-repeat scroll center center / 18px auto; border: 1px solid #ccc; border-radius: 5px; height: 30px; position: absolute; left: 3px; top: 3px; width: 30px; z-index: 2; display: none; }
+        .prdImgbox_outer .prdImgbox .spn_radioouter { display: none; position: absolute; bottom: 3px; left: 0; width: 100%; text-align: center; font-size: 11px; z-index: 2; }
+        .prdImgbox_outer .prdImgbox .loading { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; }
+        .bggrey { background-color: #f5f5f5; padding: 8px; }
+        .displaynone { display: none; }
+        .div_sizeportion { display: none; position: absolute; top: 24px; width: 200px; z-index: 1; background: #fff; border: 1px solid #ccc; padding: 5px; }
+        .div_FlavorsizePrice { display: none; position: absolute; top: 24px; width: 220px; z-index: 1; background: #fff; border: 1px solid #ccc; padding: 5px; }
+        .div_SelectionExclist { display: none; position: absolute; top: 24px; width: 200px; z-index: 1; background: #fff; border: 1px solid #ccc; padding: 5px; }
+        .btn.black-rounded { background-color: #333; color: #fff; border-radius: 50%; width: 30px; height: 30px; padding: 0; line-height: 30px; text-align: center; font-size: 18px; }
+        .btn.black-rounded:hover { background-color: #555; }
+        .div_portionouter { background-color: #eee; cursor: pointer; float: left; height: 24px; width: 85px; position: relative; text-align: center; font-size: 12px; line-height: 24px; }
+        .div_portionouter .selectdrop { float: right; width: 20px; text-align: center; }
+        .Div_sizelitingouter { display: table; padding-bottom: 10px; width: 100%; }
+        .divsizebox { clear: both; margin-bottom: 10px; position: relative; }
+        .divsizebox:first-child .upward { display: none; }
+        .divsizebox .upward, .divsizebox .remouter { position: absolute; right: 16px; top: 0; cursor: pointer; }
+        .divsizebox .remouter { line-height: 24px; right: 0; }
+        .form-control.gray-input.inputprice { display: inline; max-width: 50px; }
+        .Div_flavourPrice, .div_FlavorExclude, .div_SelectionMain { position: relative; display: inline-block; cursor: pointer; }
+        .div_flavourmainouter { margin-bottom: 15px; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .div_flavourchildbox { margin-bottom: 5px; position: relative; }
+        .div_flavourchildbox .upward, .div_flavourchildbox .remouter { position: absolute; right: 16px; top: 0; cursor: pointer; }
+        .div_flavourchildbox .remouter { line-height: 24px; right: 0; }
+        .div_addnewFlavourouter { padding: 10px 0; clear: both; }
+        .addbutouter { padding: 5px 0; clear: both; }
+        .no-right-padding { padding-right: 0; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.ckeditor.com/4.25.1-lts/standard/ckeditor.js"></script>
+    <script src="https://cdn.ckeditor.com/4.25.1-lts/standard/adapters/jquery.js"></script>
+}
+
+<input type="hidden" id="hfPrdID" value="@(product?.ProductId ?? 0)" />
+<input type="hidden" id="hfPrdtype" value="@prdType" />
+<input type="hidden" id="hfPrdgroupID" value="0" />
+<input type="hidden" id="hfTradetype" value="1" />
+<input type="hidden" id="hfMaxMilesDelivery" value="@maxDeliveryMiles" />
+<input type="hidden" id="hfColorNames" value="" />
+<input type="hidden" id="hfColorCodes" value="" />
+
+<div class="row">
+    @* ═══ CATEGORIES SECTION (hidden for stock types 4,5 — visible for 1,2,6) ═══ *@
+    @if (prdType == 1 || prdType == 6 || prdType == 2 || prdType == 3)
+    {
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-7">
+                    <h2>Categories where your listing will appear</h2>
+                </div>
+                <div class="col-md-5">
+                    <a href="/mywebstore" class="btn btn-default margin pull-right">Back</a>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <p><strong>Website categories</strong></p>
+                <div class="form-group form-inline div_catdrps_ListingOuter" id="div_catdrps_ListingOuter">
+                    @Html.Raw(ViewBag.CategoryDropdownHtml)
+                </div>
+                <input type="hidden" id="hfCatIDs" value="@(ViewBag.ProductCatId ?? 0)" />
+            </div>
+        </div>
+    </div>
+    }
+
+    @* ═══ DESCRIBE YOUR ITEM SECTION ═════════════════════════════════════════ *@
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-10">
+                    <h2>Describe your item</h2>
+                </div>
+                <div class="col-md-2">
+                    <a href="/mywebstore" class="btn btn-default margin pull-right">Back</a>
+                </div>
+            </div>
+            <div class="col-md-12 panel-collapse collapse in" id="collapse2" aria-expanded="true">
+                @* ─── Photos (legacy camera-icon boxes) ─── *@
+                <div class="col-md-8">
+                    <p>
+                        <strong>Photos</strong>
+                        @if (prdType == 1 || prdType == 6)
+                        {
+                            <br /><small>Add at least one photo. Use all five photos to show off your item's finest features.</small>
+                        }
+                    </p>
+                </div>
+                <div class="clearfix"></div>
+                <input type="hidden" id="hdn_Product_Images" value="" />
+                <div class="col-md-12">
+                    <div class="divPrdImg_outer" id="ul_uploadImages">
+                        @{
+                            int imgCount = (prdType >= 5 && prdType != 6) ? 1 : 4;
+                        }
+                        @for (int imgIdx = 1; imgIdx <= imgCount; imgIdx++)
+                        {
+                            var imgVal = "";
+                            if (imgIdx == 1) imgVal = product?.Image1 ?? "";
+                            var hasImage = !string.IsNullOrEmpty(imgVal);
+                            var boxGuid = Guid.NewGuid().ToString("N");
+                            <div class="prdImgbox_outer imgboxouter" data-id="@imgIdx">
+                                <div data-bid="0" data-tid="@(hasImage ? imgVal : "0")" class="prdImgbox">
+                                    <div class="PrdImg" style="@(hasImage ? $"background-image:url('{cdnBase}{imgVal}');display:block;" : "")">&nbsp;</div>
+                                    <div class="addPrdImg" style="@(hasImage ? "display:none;" : "")">
+                                        <input type="file" accept="image/*" id="@boxGuid" name="@boxGuid" />
+                                        <img class="loading" src="https://cakerstreet1.s3.amazonaws.com/images/loading_wall.gif" alt="loading" />
+                                    </div>
+                                    <a data-bid="0" class="edit" style="@(hasImage ? "display:block;" : "")">&nbsp;</a>
+                                    <a data-bid="0" class="remove" style="@(hasImage ? "display:block;" : "")">&nbsp;</a>
+                                    <span class="spn_radioouter" style="@(hasImage ? "display:block;" : "")">
+                                        <input type="radio" value="@boxGuid" name="grp_prdImage" id="rd_@boxGuid" @(imgIdx == 1 && hasImage ? "checked" : "") />
+                                        <label for="rd_@boxGuid">Main Image</label>
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                        @if (imgCount < 10)
+                        {
+                            <div data-id="0" class="prdImgbox_outer addnewctrl">
+                                <div class="prdImgbox" data-tid="0" data-bid="0">
+                                    <div class="addPrdImg addnewctrl"><span>+</span></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                @if (prdType != 1 && prdType != 6 && !isEdit)
+                {
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>Or Paste Image Url</label>
+                            <input type="text" id="txtImageUrl" class="form-control" placeholder="e.g https://www.amazon.co.uk/Patrol-346170-3D-Figurine-Candle-Blue/dp/B01LZEWSNI" />
+                        </div>
+                    </div>
+                }
+
+                <div class="col-md-12">
+                    @* ─── Title ─── *@
+                    <div class="form-group">
+                        <label for="">Title *</label>
+                        <input type="text" id="txtPrdTitle" class="form-control" placeholder="Title" value="@(product?.ProductName ?? "")" />
+                    </div>
+
+                    @* ─── Short Description ─── *@
+                    <div class="form-group col-md-12 row">
+                        <div class="col-md-12 row"><label>Short Description</label></div>
+                        <div class="col-md-12 row">
+                            <textarea id="txtDescription" class="form-control" rows="3" placeholder="Short Description">@(product?.ShortDescription ?? "")</textarea>
+                        </div>
+                    </div>
+
+                    @* ─── Shape / Type (legacy: divshapeouter with col-md-3 / col-md-4) ─── *@
+                    @if (prdType == 1 || prdType == 6)
+                    {
+                        <div id="divshapeouter">
+                            <div class="form-group col-md-3 no-left-padding">
+                                <label for="">Cake Shape *</label>
+                                <select id="drpcakeshape" class="form-control">
+                                    <option value="-1">--Select Shape--</option>
+                                    @foreach (var shape in cakeShapes)
+                                    {
+                                        <option value="@shape.Id" @(selectedShapeId == shape.Id ? "selected" : "")>@shape.Title</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group col-md-4 no-left-padding">
+                                <label for="">Cake Type *</label>
+                                <select id="drpCaketype" class="form-control">
+                                    <option value="-1">--Select Type--</option>
+                                    @foreach (var ctype in cakeTypes)
+                                    {
+                                        <option value="@ctype.Id" @(selectedTypeId == ctype.Id ? "selected" : "")>@ctype.Title</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        @* ─── Preparation Day (legacy: separate div_preparationouter) ─── *@
+                        <div id="div_preparationouter" class="form-group col-md-4 no-left-padding">
+                            <label>Preparation Day *</label>
+                            <select id="drpPreparationday" class="form-control">
+                                <option value="-2" @(product?.PreparationDay == -2 ? "selected" : "")>Same day (+ 2 hours)</option>
+                                <option value="-4" @(product?.PreparationDay == -4 ? "selected" : "")>Same day (+ 4 hours)</option>
+                                <option value="-6" @(product?.PreparationDay == -6 ? "selected" : "")>Same day (+ 6 hours)</option>
+                                <option value="1" @(product?.PreparationDay == 1 ? "selected" : "")>+1 day</option>
+                                <option value="2" @(product?.PreparationDay == 2 ? "selected" : "")>+2 days</option>
+                                <option value="3" @(product?.PreparationDay == 3 ? "selected" : "")>+3 days</option>
+                                <option value="4" @(product?.PreparationDay == 4 ? "selected" : "")>+4 days</option>
+                                <option value="5" @(product?.PreparationDay == 5 ? "selected" : "")>+5 days</option>
+                                <option value="6" @(product?.PreparationDay == 6 ? "selected" : "")>+6 days</option>
+                                <option value="7" @(product?.PreparationDay == 7 ? "selected" : "")>+7 days</option>
+                            </select>
+                        </div>
+                    }
+                    @if (prdType == 1 || prdType == 6 || prdType == 2)
+                    {
+                        <br class="clearfix" />
+                        @* ─── Collection (legacy: div_collectionouter with icon — visible for types 1,6,2) ─── *@
+                        <div id="div_collectionouter" class="form-group">
+                            <label class="control-label">Collection</label>
+                            <div class="clearfix"></div>
+                            <div class="col-md-3">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" id="chkCollection" @(deliverySettings.IsCollectable ? "checked" : "") />
+                                    <img src="https://cakerstreet1.s3.amazonaws.com/bakery_content/images/collections.png" alt="" />
+                                    Collection
+                                </label>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Non-cake: SKU + Prep Day *@
+                        <div class="form-group col-md-4 no-left-padding">
+                            <label for="">SKU *</label>
+                            <input type="text" id="txtSKU" class="form-control" maxlength="70" value="@(product?.ProductCode ?? "")" />
+                        </div>
+                    }
+
+                    <div class="clearfix"></div>
+
+                    @* ─── Delivery (legacy: div_deliveryouter — visible for types 1,6,2) ─── *@
+                    @if (prdType == 1 || prdType == 6 || prdType == 2)
+                    {
+                        <br class="clearfix" />
+                        <div id="div_deliveryouter" class="form-group">
+                            <label class="control-label">Delivery</label>
+                            <div class="clearfix"></div>
+                            <div class="col-md-3">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" id="chkdelivery" @(deliverySettings.IsDeliverable ? "checked" : "") />
+                                    <img src="https://cakerstreet1.s3.amazonaws.com/bakery_content/images/deliverynew.png" alt="" />
+                                    Delivery
+                                </label>
+                            </div>
+                            <div class="divdeliverytype" id="divdeliverytype">
+                                <div class="col-md-9">
+                                    <div id="divdeliverytype1">
+                                        <div class="col-sm-2 raln">Upto</div>
+                                        <div class="col-sm-2">
+                                            <input type="text" id="txtdeliverymiles" class="form-control gray-input" maxlength="5"
+                                                   placeholder="20" value="@(deliverySettings.DeliveryMiles > 0 ? deliverySettings.DeliveryMiles.ToString("0") : "0")" />
+                                        </div>
+                                        <div class="col-sm-7">
+                                            Miles from @(ViewBag.BakeryPostcode ?? "bakery")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="clearfix"></div>
+                            <div class="col-md-3">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" id="chkpostaldelivery" @(deliverySettings.IsPostalDelivery ? "checked" : "") />
+                                    <img src="https://cakerstreet1.s3.amazonaws.com/bakery_content/images/deliverynew.png" alt="" />
+                                    Postal Delivery
+                                </label>
+                            </div>
+                        </div>
+                    }
+
+                    @* ─── Supplier section (legacy: dvSupplier — visible for stock types 2,4,5) ─── *@
+                    @if (prdType >= 4 || prdType == 2)
+                    {
+                        <div id="dvSupplier" class="col-lg-12 col-md-12 col-sm-12 top-margin flush">
+                            <div class="form-group col-sm-12 headertext bggrey">
+                                <b>Supplier</b>
+                            </div>
+                            <div class="form-group">
+                                <div id="div_supplier"></div>
+                                <br clear="all" />
+                                <div class="col-sm-12 form-group" style="margin-top: 10px;">
+                                    <a id="ancShowAddSupplier" class="text-danger">+ Add Supplier</a>
+                                </div>
+                                <br clear="all" />
+                                <div id="dvAddSupplier" class="col-sm-12 form-group" style="display: none;">
+                                    <div class="form-group col-sm-4 no-left-padding">
+                                        <input id="txtSearchSupplier" class="form-control" type="text" placeholder="Enter Keyword To Search" />
+                                    </div>
+                                    <div class="form-group col-sm-1 no-left-padding">Or</div>
+                                    <div class="form-group col-sm-2 no-left-padding">
+                                        <a id="ancShowNewSupplierPopUp" class="text-danger">Create New Supplier</a>
+                                    </div>
+                                    <div class="form-group col-sm-1 no-left-padding">
+                                        <a id="ancHideAddSupplier" class="text-danger">X</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <br class="clearfix" />
+
+                    @* ─── Wholesale Price (stock types) ─── *@
+                    @if (prdType >= 4 || prdType == 2)
+                    {
+                        var wsPrice = (decimal)(ViewBag.WholesalePrice ?? 0m);
+                        var prdQty = (int)(ViewBag.ProductQuantity ?? 0);
+                        var pkgUnitId = (int)(ViewBag.PackagingUnitId ?? 0);
+                        var pkgUnits = ViewBag.PackagingUnits as List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>
+                            ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>();
+
+                        <div id="dvWSPrice" class="form-group col-md-3 no-left-padding">
+                            <label>Wholesale Price *</label>
+                            <div class="divinputprice">
+                                £<input type="text" id="txtWSPrice" class="form-control" value="@(wsPrice > 0 ? wsPrice.ToString("0.00") : "")" />
+                            </div>
+                        </div>
+                    }
+
+                    @* ─── Retail / Sale Price (visible for all, hidden for cake types via style) ─── *@
+                    <div id="divPriceouter" class="form-group col-md-3 no-left-padding" @(prdType == 1 || prdType == 6 ? "style=display:none;" : "")>
+                        <label>Retail | Sale Price *</label>
+                        <div class="divinputprice">
+                            £<input type="text" id="txtPrice" class="form-control" value="@(product?.Price.ToString("0.00") ?? "0.00")" />
+                        </div>
+                    </div>
+
+                    @* ─── Quantity (type 2 only) ─── *@
+                    @if (prdType == 2)
+                    {
+                        var prdQty2 = (int)(ViewBag.ProductQuantity ?? 0);
+                        <div id="divQuantityeouter" class="form-group col-md-3 no-left-padding">
+                            <label>Quantity *</label>
+                            <input type="text" id="txtQuantity" placeholder="e.g. 12" class="form-control" value="@(prdQty2 > 0 ? prdQty2.ToString() : "")" />
+                        </div>
+                    }
+
+                    @* ─── Packaging Unit (stock types) ─── *@
+                    @if (prdType >= 4 || prdType == 2)
+                    {
+                        var pkgUnitId2 = (int)(ViewBag.PackagingUnitId ?? 0);
+                        var pkgUnits2 = ViewBag.PackagingUnits as List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>
+                            ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>();
+                        <div id="divUnitTypeouter" class="form-group col-md-3 no-left-padding">
+                            <label>Packaging Unit *</label>
+                            <select id="drpPackagingUnit" class="form-control">
+                                <option value="0">--Select Unit--</option>
+                                @foreach (var u in pkgUnits2)
+                                {
+                                    <option value="@u.Id" @(pkgUnitId2 == u.Id ? "selected" : "")>@u.Title</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    <div class="clearfix"></div>
+
+                    @* ─── Accessory Type + Bakery Themes (type 2 only) ─── *@
+                    @if (prdType == 2)
+                    {
+                        var accTypes = ViewBag.AccessoryTypes as List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>
+                            ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>();
+                        var accTypeId = (int)(ViewBag.AccessoryTypeId ?? 0);
+                        var themes = ViewBag.BakeryThemes as List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>
+                            ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.DropdownItem>();
+
+                        <div id="divAccesorydrpouter" class="form-group col-md-4 no-left-padding">
+                            <label>Accessory Type *</label>
+                            <select id="drpAccesorytype" class="form-control">
+                                <option value="-1">--Select Type--</option>
+                                @foreach (var at in accTypes)
+                                {
+                                    <option value="@at.Id" @(accTypeId == at.Id ? "selected" : "")>@at.Title</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="clearfix"></div>
+                        <div id="divAccesorytheme" class="form-group col-md-12 no-left-padding">
+                            <label>Bakery Theme(s)</label>
+                            <div class="clearfix"></div>
+                            <div id="dvThemes">
+                                @foreach (var theme in themes)
+                                {
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox" value="@theme.Id" class="chkBakeryTheme" />
+                                        @theme.Title
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                    }
+
+                    @* ─── Minimum Quantity Alert (types 2, 4) ─── *@
+                    @if (prdType == 2 || prdType == 4)
+                    {
+                        var mqQty = ViewBag.MinQtyAlertQty as string ?? "";
+                        var mqEmail = ViewBag.MinQtyAlertEmail as string ?? "";
+                        <div id="dMinQtyAlert" class="col-sm-12 flush top-margin">
+                            <div class="form-group col-sm-12 headertext bggrey">
+                                <b>Minimum Quantity Alert</b>
+                            </div>
+                            <div class="col-sm-12">
+                                <div class="form-group col-md-3 no-left-padding">
+                                    <label>Min. Quantity*</label>
+                                    <input type="text" id="txtMinQuantityAlert" style="width:100px" placeholder="e.g. 12" class="form-control" value="@mqQty" />
+                                </div>
+                                <div class="form-group col-sm-6 no-left-padding">
+                                    <label>Email ID*</label>
+                                    <input type="text" id="txtMinQtyEmailId" placeholder="Email Id" class="form-control" value="@mqEmail" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                    }
+
+                    <div id="dvProductSuppliers" class="dvProductSuppliers hide"></div>
+                    <div class="clearfix"></div>
+
+                    @* ─── Large Description / Stock Remarks ─── *@
+                    <div class="form-group col-md-12 row">
+                        <label>@(prdType == 1 || prdType == 6 ? "Large Description" : "Stock Remarks")</label>
+                        <div class="clearfix"></div>
+                        <textarea id="txtlrgDesc" class="form-control" rows="5" placeholder="@(prdType == 1 || prdType == 6 ? "Large Description" : "Stock Remarks")">@(product?.LongDescription ?? "")</textarea>
+                        <a id="ancCopyDesc" class="btn btn-lg pull-right" title="Copy description to clipboard"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></a>
+                    </div>
+
+                    @* ─── Ingredients / Allergens / Storage / Delivery Details / Disclaimer (cake types only) ─── *@
+                    @{
+                        var specs = ViewBag.Specs as Dictionary<int, string> ?? new Dictionary<int, string>();
+                    }
+                    @if (prdType == 1 || prdType == 6)
+                    {
+                    <div id="div_Ingredients">
+                        <div class="form-group col-md-12 row">
+                            <label>Ingredients <span class="text-muted font-weight-normal" style="font-weight:normal">(optional)</span></label>
+                            <textarea id="txtIngredients" class="form-control" style="height:100px" placeholder="Ingredients">@(specs.ContainsKey(1) ? specs[1] : "")</textarea>
+                        </div>
+                        <div class="form-group col-md-12 row">
+                            <label>Allergens <span class="text-muted font-weight-normal" style="font-weight:normal">(optional)</span></label>
+                            <textarea id="txtAllergens" class="form-control" style="height:100px" placeholder="Allergens">@(specs.ContainsKey(2) ? specs[2] : "")</textarea>
+                        </div>
+                        <div class="form-group col-md-12 row">
+                            <label>Storage <span class="text-muted font-weight-normal" style="font-weight:normal">(optional)</span></label>
+                            <textarea id="txtStorage" class="form-control" style="height:100px" placeholder="Storage">@(specs.ContainsKey(5) ? specs[5] : "")</textarea>
+                        </div>
+                        <div class="form-group col-md-12 row">
+                            <label>Delivery Details <span class="text-muted font-weight-normal" style="font-weight:normal">(optional)</span></label>
+                            <textarea id="txtdeliverydetail" class="form-control" style="height:100px" placeholder="Delivery Details">@(specs.ContainsKey(4) ? specs[4] : "")</textarea>
+                        </div>
+                        <div class="form-group col-md-12 row">
+                            <label>Disclaimer <span class="text-muted font-weight-normal" style="font-weight:normal">(optional)</span></label>
+                            <textarea id="txtAdvice" class="form-control" style="height:100px" placeholder="Advice">@(specs.ContainsKey(3) ? specs[3] : "")</textarea>
+                        </div>
+                    </div>
+                    }
+
+                    @* ─── Stock Location / Quantity (visible for stock product types) ─── *@
+                    @if (prdType >= 4 || prdType == 2)
+                    {
+                        var stockQty = (int)(ViewBag.StockQty ?? 0);
+                        var stockLocations = ViewBag.StockLocations as List<CakerStreet.Business.Controllers.AddNewCakeController.StockLocationRow>
+                            ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.StockLocationRow>();
+                        <div id="dvStockLocation">
+                            <div class="col-sm-12 flush top-margin">
+                                <div class="form-group col-sm-12 headertext bggrey" style="position:relative;">
+                                    <b>InStock: <span id="spQty">@stockQty</span></b>
+                                    <div class="AddQtyTxtbox">
+                                        <a id="ancAddQty" class="text-danger" data-toggle="modal" data-target="#dvManageQtyModal">+ Add</a>
+                                    </div>
+                                </div>
+                                <div class="clearfix"></div>
+                                <div id="dvToppers_location">
+                                    @if (stockLocations.Count > 0)
+                                    {
+                                        <div class="form-group col-sm-12">
+                                            <table id="tbToppers_location" class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th>Location Name</th>
+                                                        <th>Qty</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var loc in stockLocations)
+                                                    {
+                                                        <tr>
+                                                            <td></td>
+                                                            <td>@loc.FullLocation</td>
+                                                            <td>@loc.Qty</td>
+                                                            <td></td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-md-12">
+                        <a class="saveonly_basic saveonly btn btn-danger btn-sm" onclick="saveProduct();">Save Only</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ═══ ITEM SPECIFICATION SECTION ═════════════════════════════════════════ *@
+    @if (prdType == 1 || prdType == 6)
+    {
+        var sizes = ViewBag.Sizes as List<CakerStreet.Business.Controllers.AddNewCakeController.SizeRow>
+            ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.SizeRow>();
+
+        <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+            <div class="orderWrappernew">
+                <div class="innerhead">
+                    <div class="col-md-1">
+                        <a data-toggle="collapse" href="#collapse3" aria-expanded="true"><span class="glyphicon glyphicon-minus"></span></a>
+                    </div>
+                    <div class="col-md-11">
+                        <h2>Item Specification</h2>
+                    </div>
+                </div>
+                <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+                    <div class="form-group">
+                        <div class="col-md-12 caln">
+                            <span class="headertext">Create New Specification Template</span>
+                            &nbsp;&nbsp;&nbsp;<span>OR</span>&nbsp;&nbsp;&nbsp;
+                            <select id="drpShippingTemplate" class="form-control max250" style="display:inline;max-width:250px;">
+                                <option value="0">--Select from saved Templates--</option>
+                                @{
+                                    var specTemplates = ViewBag.SpecTemplates as List<CakerStreet.Business.Controllers.AddNewCakeController.SpecTemplateItem>
+                                        ?? new List<CakerStreet.Business.Controllers.AddNewCakeController.SpecTemplateItem>();
+                                    foreach (var t in specTemplates)
+                                    {
+                                        <option value="@t.Id">@t.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="div_optionOuter size_outer" id="div_sizeOuter">
+                        <div class="col-md-8">
+                            <div class="form-group"><label class="label-inline"><u>Size</u></label></div>
+                        </div>
+                        <div class="col-md-8">
+                            <p><small>Please select all the values which are applicable to your listing.</small></p>
+                        </div>
+                        <input type="text" value="8" class="displaynone" />
+
+                        @* ─── Size boxes container (legacy: Div_sizelitingouter) ─── *@
+                        <div id="Div_sizelitingouter" class="Div_sizelitingouter">
+                            @if (sizes.Count > 0)
+                            {
+                                var sizeIdx = 0;
+                                foreach (var s in sizes)
+                                {
+                                    var sizeGuid = Guid.NewGuid().ToString("N");
+                                    <div data-tid="@sizeGuid" class="col-md-6 divsizebox">
+                                        <div class="col-sm-8 gray-bg">
+                                            <label class="checkbox-inline">
+                                                <input type="checkbox" checked="checked" class="chkbox" />
+                                                <input type="text" value="@s.SizeTitle" data-text="@s.SizeTitle"
+                                                       class="form-control gray-input csssizetitle" />
+                                            </label>
+                                            <div class="div_portionouter">
+                                                <span>@s.MinPortion - @s.MaxPortion</span>
+                                                <div class="selectdrop"><b class="caret"></b></div>
+                                                <div class="div_sizeportion">
+                                                    <div class="divrow">
+                                                        <ul>
+                                                            <li><label>Min. Portion</label></li>
+                                                            <li class="liprice">
+                                                                <input type="text" value="@s.MinPortion" placeholder="1"
+                                                                       class="form-control gray-input inputminportion" />
+                                                            </li>
+                                                        </ul>
+                                                        <ul>
+                                                            <li><label>Max. Portion</label></li>
+                                                            <li class="liprice">
+                                                                <input type="text" value="@s.MaxPortion" placeholder="10"
+                                                                       class="form-control gray-input inputmaxportion" />
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            £<input type="text" value="@s.Price.ToString("0.00")" placeholder="0.00"
+                                                    class="form-control gray-input inputprice" />
+                                        </div>
+                                        <small class="upward" @(sizeIdx == 0 ? "style=display:none;" : "")><a>&nbsp;</a></small>
+                                        <small class="remouter"><a class="text-danger">X</a></small>
+                                    </div>
+                                    sizeIdx++;
+                                }
+                            }
+                        </div>
+
+                        @* ─── Add size input (legacy: txtaddnewsize_template + btn_addsize) ─── *@
+                        <div class="col-md-6">
+                            <div class="col-sm-8 no-left-padding no-right-padding">
+                                <input type="text" id="txtaddnewsize_template" placeholder="Add more"
+                                       class="form-control gray-input inputSizeAdd" />
+                            </div>
+                            <div class="col-sm-4">
+                                <button type="button" class="btn black-rounded btn_addsize">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* ═══ FLAVOUR/ATTRIBUTE SECTION ════════════════════════════════════════ *@
+                    <div class="div_optionOuter additional_features_outer" id="div_additional_features_outer">
+                        <div id="Div_Flavourlistingouter" class="Div_Flavourlistingouter">
+                            @* Flavour groups rendered dynamically by JS *@
+                        </div>
+                    </div>
+
+                    @* ─── Add Flavour input (legacy: inputFlavourparentAdd + drpAddFlavourType) ─── *@
+                    <div class="div_addnewFlavourouter">
+                        <div class="col-md-10">
+                            <div class="col-sm-4">
+                                <input type="text" placeholder="Add more"
+                                       class="form-control gray-input inputFlavourparentAdd" />
+                            </div>
+                            <div class="col-sm-3 no-left-padding no-right-padding">
+                                <select id="drpAddFlavourType" class="form-control gray-input drpAddFlavourType">
+                                    <option value="1">Normal View</option>
+                                    <option value="3">Message View</option>
+                                    <option value="2">Upload View</option>
+                                    <option value="4">Quantity View</option>
+                                    <option value="6">Selection View</option>
+                                    <option value="7">Colour Selection View</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <button type="button" class="btn black-rounded btn_addnewflavourbox">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="clearfix"></div>
+                    @* ─── Save / Update Template buttons (legacy: saveshippingtemplate / updateshippingtemplate) ─── *@
+                    <a class="saveshippingtemplate btn btn-danger" id="saveshippingtemplate">Save Template</a>
+                    <a class="updateshippingtemplate btn btn-primary" id="updateshippingtemplate" style="display:none;">Save Template</a>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ═══ SUBMIT / CANCEL ═══════════════════════════════════════════════════ *@
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <a class="btn btn-danger BtnSave_shipping" id="btnSave_selling" onclick="saveProduct();">Submit</a>
+        <a href="/mywebstore" class="backbtn1">Cancel</a>
+    </div>
+</div>
+
+@* ═══ MANAGE QUANTITY MODAL ═══════════════════════════════════════════════ *@
+<div id="dvManageQtyModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" style="color: #fff;" id="myModalLabel">Manage Quantity</h4>
+            </div>
+            <div class="modal-body">
+                <div id="dvManageQty" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" style="font-weight: normal">Buying Price:</label>
+                        <div class="col-sm-3">
+                            <div class="divinputprice">
+                                <input id="txtSupPrice" type="text" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" style="font-weight: normal">
+                            Select Supplier:<br />
+                            (<a href="/managesupplier" target="_blank" class="text-danger">Manage Supplier</a>
+                            <a id="ancLoadSupplier" class="text-danger" onclick="loadSuppliers();"><span class="glyphicon glyphicon-refresh"></span></a>)
+                        </label>
+                        <div class="col-sm-8">
+                            <select id="ddlSupplier" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" style="font-weight: normal">
+                            Select Location:<br />
+                            (<a href="/managelocation" target="_blank" class="text-danger">Manage Location</a>
+                            <a id="ancLoadLocation" class="text-danger" onclick="loadLocations();"><span class="glyphicon glyphicon-refresh"></span></a>)
+                        </label>
+                        <div class="col-sm-8">
+                            <select id="ddlStockLocation" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div id="dvLocationQty" class="form-group"></div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" style="font-weight: normal">Total Buying Quantity:</label>
+                        <div class="col-sm-3">
+                            <input id="txtSupQty" type="text" class="form-control" disabled="disabled" value="0" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" style="font-weight: normal">Purchase Order:</label>
+                        <div class="col-sm-3">
+                            <input id="txtPurchaseOrder" type="text" placeholder="PO Invoice" class="form-control input-sm" />
+                        </div>
+                        <div class="col-sm-5">
+                            <input id="txtPODate" type="text" style="max-width: 96px; display: inline;" placeholder="dd/mm/yy" class="form-control input-sm" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label" style="font-weight: normal">Order Received:</label>
+                        <div class="col-sm-3">
+                            <input id="txtOrderReceived" type="text" placeholder="Order Invoice" class="form-control input-sm" />
+                        </div>
+                        <div class="col-sm-5">
+                            <input id="txtORDate" type="text" style="max-width: 96px; display: inline;" placeholder="dd/mm/yy" class="form-control input-sm" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-4 col-sm-8">
+                            <a id="ancSaveQty" class="btn btn-danger updt-acnt" onclick="saveQuantity();">Save</a>
+                            <a id="ancClose" class="btn btn-danger updt-acnt" data-dismiss="modal">Close</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#chkdelivery').on('click', function () { ManageDeliveryVisibility(); });
+    ManageDeliveryVisibility();
+
+    // Initialize CKEditor on Short Description and Large Description (matches legacy behavior)
+    if (typeof CKEDITOR !== 'undefined') {
+        CKEDITOR.replace('txtDescription', {
+            removeDialogTabs: 'link:upload;image:upload',
+            height: 55
+        });
+        CKEDITOR.replace('txtlrgDesc', {
+            removeDialogTabs: 'link:upload;image:upload',
+            height: 100
+        });
+    }
+
+    // Copy Description feature (legacy ancCopyDesc)
+    $("body").on("click", "#ancCopyDesc", function () {
+        var descText = (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['txtlrgDesc']) ? CKEDITOR.instances['txtlrgDesc'].getData() : $("#txtlrgDesc").val();
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(descText).then(function() {
+                showMessage('Description copied to clipboard.', true);
+            });
+        } else {
+            $("#txtlrgDesc").select();
+            document.execCommand('copy');
+            showMessage('Description copied to clipboard.', true);
+        }
+    });
+
+    // Initialize date pickers if jQuery UI is available
+    if ($.fn.datepicker) {
+        $('#txtPODate, #txtORDate').datepicker({ dateFormat: 'dd/mm/yy' });
+    }
+});
+
+function ManageDeliveryVisibility() {
+    $("#txtdeliverymiles").prop("disabled", !$('#chkdelivery').is(':checked'));
+    if ($('#chkdelivery').is(':disabled')) { $("#txtdeliverymiles").prop("disabled", true); }
+    if ($.trim($("#txtdeliverymiles").val()) == '') { $("#txtdeliverymiles").val('0'); }
+}
+
+function showMessage(msg, ok) {
+    var $d = $('#divMessage');
+    if ($d.length === 0) { $('body').prepend('<div id="divMessage" class="alert" style="position:fixed;top:10px;right:10px;z-index:9999;"></div>'); $d = $('#divMessage'); }
+    $d.removeClass('alert-danger alert-success').addClass(ok ? 'alert alert-success' : 'alert alert-danger').text(msg).fadeIn();
+    setTimeout(function () { $d.fadeOut(); }, 4000);
+}
+
+function saveProduct() {
+    var name = $.trim($('#txtPrdTitle').val());
+    if (!name) { alert('Product name is required.'); return; }
+    var categoryId = parseInt($('#hfCatIDs').val()) || 0;
+    var prdType = parseInt($('#hfPrdtype').val()) || 1;
+    var data = {
+        productId: parseInt($('#hfPrdID').val()) || 0,
+        productName: name,
+        shortDescription: (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['txtDescription']) ? CKEDITOR.instances['txtDescription'].getData() : $('#txtDescription').val(),
+        longDescription: (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['txtlrgDesc']) ? CKEDITOR.instances['txtlrgDesc'].getData() : $('#txtlrgDesc').val(),
+        productCode: $('#txtSKU').val() || '',
+        productType: prdType,
+        isActive: true,
+        price: parseFloat($('#txtPrice').val()) || 0,
+        preparationDay: parseInt($('#drpPreparationday').val()) || 0,
+        categoryId: categoryId,
+        categoryIds: [],
+        cakeShapeId: parseInt($('#drpcakeshape').val()) || 0,
+        cakeTypeId: parseInt($('#drpCaketype').val()) || 0,
+        isCollectable: $('#chkCollection').is(':checked'),
+        isDeliverable: $('#chkdelivery').is(':checked'),
+        isPostalDelivery: $('#chkpostaldelivery').is(':checked'),
+        deliveryMiles: parseFloat($('#txtdeliverymiles').val()) || 0
+    };
+    $.ajax({
+        url: '/addnewcake/savebasic', type: 'POST', contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function (r) {
+            if (r.success) { showMessage(r.message, true); if (r.productId && data.productId === 0) { setTimeout(function () { window.location.href = '/addnewcake?prdID=' + r.productId; }, 1500); } }
+            else { showMessage(r.message || 'Save failed.', false); }
+        },
+        error: function () { showMessage('An error occurred.', false); }
+    });
+}
+
+// ─── Cascading Category Dropdowns ─────────────────────────────────────────────
+$('.div_catdrps_ListingOuter').on('change', 'select.form-control', function () {
+    showCategoriesbyCatID($(this).val(), parseInt($(this).attr('data-tid').toString()));
+});
+
+function showCategoriesbyCatID(catId, intlevel) {
+    $('#hfCatIDs').val('0');
+    // Remove all selects with data-tid > current level
+    $('.div_catdrps_ListingOuter select.form-control').each(function () {
+        if (parseInt($(this).attr('data-tid').toString()) > intlevel) { $(this).remove(); }
+    });
+    // AJAX call to get child categories
+    $.ajax({
+        type: 'POST', url: '/addnewcake/getcategories',
+        data: JSON.stringify({ catId: catId, intLevel: intlevel }),
+        contentType: 'application/json; charset=utf-8', dataType: 'json',
+        success: function (msg) {
+            if (msg.dataId == 1) {
+                // Children exist - append new select
+                $('.div_catdrps_ListingOuter').append(msg.dataStr);
+            } else {
+                // Leaf category - store ID
+                $('#hfCatIDs').val(catId == '-1' ? '0' : catId);
+            }
+        }
+    });
+}
+
+// Generate GUID (legacy: guid())
+function guid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    }).replace(/-/g, '');
+}
+
+// ─── Add Size Box (legacy: addnewsize_clicked) ────────────────────────────────
+$(document).on('click', '.btn_addsize', function () {
+    var sizeTitle = $.trim($('#txtaddnewsize_template').val());
+    if (!sizeTitle) { alert('Enter a size name first.'); return; }
+    // Check for duplicate
+    var isDuplicate = false;
+    $('#Div_sizelitingouter .csssizetitle').each(function() {
+        if ($.trim($(this).val()).toLowerCase() === sizeTitle.toLowerCase()) { isDuplicate = true; return false; }
+    });
+    if (isDuplicate) { alert('Size already exists.'); return; }
+    var newGuid = guid();
+    var html = '<div data-tid="' + newGuid + '" class="col-md-6 divsizebox">' +
+        '<div class="col-sm-8 gray-bg"><label class="checkbox-inline">' +
+        '<input type="checkbox" checked="checked" class="chkbox" />' +
+        '<input type="text" value="' + sizeTitle + '" data-text="' + sizeTitle + '" class="form-control gray-input csssizetitle" />' +
+        '</label>' +
+        '<div class="div_portionouter"><span>1 - 10</span><div class="selectdrop"><b class="caret"></b></div>' +
+        '<div class="div_sizeportion"><div class="divrow">' +
+        '<ul><li><label>Min. Portion</label></li><li class="liprice"><input type="text" value="1" placeholder="1" class="form-control gray-input inputminportion" /></li></ul>' +
+        '<ul><li><label>Max. Portion</label></li><li class="liprice"><input type="text" value="10" placeholder="10" class="form-control gray-input inputmaxportion" /></li></ul>' +
+        '</div></div></div></div>' +
+        '<div class="col-sm-4">£<input type="text" value="0" placeholder="0.00" class="form-control gray-input inputprice" /></div>' +
+        '<small class="upward"><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>' +
+        '</div>';
+    $('#Div_sizelitingouter').append(html);
+    $('#txtaddnewsize_template').val('');
+    updateflavourSizePrice();
+});
+
+// ─── Size box portion hover toggle ────────────────────────────────────────────
+$(document).on('mouseenter', '.div_portionouter', function () {
+    $(this).find('.div_sizeportion').show();
+}).on('mouseleave', '.div_portionouter', function () {
+    $(this).find('.div_sizeportion').hide();
+});
+
+// ─── Update portion span text when min/max changes ────────────────────────────
+$(document).on('change', '.inputminportion, .inputmaxportion', function () {
+    var $row = $(this).closest('.div_portionouter');
+    var min = $row.find('.inputminportion').val() || '1';
+    var max = $row.find('.inputmaxportion').val() || '10';
+    $row.find('> span').text(min + ' - ' + max);
+});
+
+// ─── Remove size box ──────────────────────────────────────────────────────────
+$(document).on('click', '#Div_sizelitingouter .divsizebox small.remouter a', function () {
+    var $box = $(this).closest('.divsizebox');
+    var tid = $box.data('tid');
+    $box.remove();
+    removeflavourSizePrice(tid);
+    // Show/hide first upward
+    $('#Div_sizelitingouter .divsizebox').each(function(i) {
+        $(this).find('.upward').toggle(i !== 0);
+    });
+});
+
+// ─── Move size box up ─────────────────────────────────────────────────────────
+$(document).on('click', '#Div_sizelitingouter .divsizebox small.upward a', function () {
+    var $box = $(this).closest('.divsizebox');
+    $box.prev('.divsizebox').before($box);
+    // Update upward visibility
+    $('#Div_sizelitingouter .divsizebox').each(function(i) {
+        $(this).find('.upward').toggle(i !== 0);
+    });
+});
+
+// ─── Add Flavour Box (legacy: addnewflavourbox_clicked) ───────────────────────
+$(document).on('click', '.btn_addnewflavourbox', function () {
+    var title = $.trim($('.inputFlavourparentAdd').val());
+    if (!title) { alert('Enter a flavour/option name first.'); return; }
+    var viewType = parseInt($('#drpAddFlavourType').val()) || 1;
+    // Types 2,3,4 can only have ONE instance
+    if (viewType == 2 || viewType == 3 || viewType == 4) {
+        if ($('.div_flavourmainouter[data-typeid="' + viewType + '"]').length > 0) {
+            alert('Only one instance of this view type is allowed.'); return;
+        }
+    }
+    var parentGuid = guid();
+    var html = '<div data-typeid="' + viewType + '" data-tid="' + parentGuid + '" class="div_flavourmainouter">';
+    html += '<div class="div_flavourParent_outer"><div class="col-md-8"><div class="form-group">';
+    html += '<label class="label-inline"><input type="checkbox" value="" checked="checked" class="chkbox_flavourparent" data-tid="' + parentGuid + '" />';
+    html += '<input type="text" value="' + title + '" class="form-control white-input" /></label>';
+    // Selection View parent controls (type 6)
+    if (viewType == 6) {
+        html += '<div class="div_SelectionMain div_Mandatory">&nbsp;<div class="selectdrop"><b class="caret"></b></div>';
+        html += '<div class="div_SelectionExclist"><div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkMandatory checkbox" /><label class="lblForcheck">Mandatory</label></li></ul></div>';
+        html += '<div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkSelectSingle checkbox" /><label class="lblForcheck">Single Selection</label></li></ul></div></div></div>';
+    }
+    html += '<small class="upward"><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>';
+    html += '</div></div>';
+    // Info text for types that have children
+    if (viewType == 1 || viewType == 6 || viewType == 7) {
+        html += '<div class="col-md-8"><p><small>Please select all the values which are applicable.</small></p></div>';
+    }
+    html += '</div>';
+    html += '<div class="div_flavourchild_outer"></div>';
+    // Add option button for types that support children (1, 6)
+    if (viewType == 1 || viewType == 6) {
+        html += '<div class="col-md-5 addbutouter"><div class="col-sm-8 no-left-padding no-right-padding">';
+        html += '<input type="text" class="form-control gray-input addoption_input" />';
+        html += '</div><div class="col-sm-4"><button class="btn black-rounded addoption_btn" type="button">+</button></div></div>';
+    }
+    // Color Selection View (type 7): auto-populate children from hfColorNames/hfColorCodes
+    if (viewType == 7) {
+        var colorNames = ($('#hfColorNames').val() || '').split(',');
+        var colorCodes = ($('#hfColorCodes').val() || '').split(',');
+        var childHtml = '';
+        for (var i = 0; i < colorNames.length; i++) {
+            if (!colorNames[i]) continue;
+            var childGuid = guid();
+            var colorCode = colorCodes[i] || '#000';
+            childHtml += '<div class="col-md-5 div_flavourchildbox" data-tid="' + childGuid + '">';
+            childHtml += '<div class="col-sm-8 gray-bg"><label class="checkbox-inline">';
+            childHtml += '<input type="checkbox" checked="checked" class="chkbox_flavour" />';
+            childHtml += '<input type="text" value="' + colorNames[i] + '" data-text="' + colorNames[i] + '" data-shortname="' + colorCode + '" class="form-control gray-input input_flavourchild" disabled="disabled" />';
+            childHtml += '</label><div class="color-swatch" style="background-color:' + colorCode + ';"></div></div>';
+            childHtml += '<div class="col-sm-4"></div>';
+            childHtml += '<small class="upward"><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>';
+            childHtml += '</div>';
+        }
+        // Inject directly
+        html = html.replace('<div class="div_flavourchild_outer"></div>', '<div class="div_flavourchild_outer">' + childHtml + '</div>');
+    }
+    html += '</div>';
+    $('#Div_Flavourlistingouter').append(html);
+    $('.inputFlavourparentAdd').val('');
+});
+
+// ─── Add child option to flavour group ────────────────────────────────────────
+$(document).on('click', '.addoption_btn', function () {
+    var $parent = $(this).closest('.div_flavourmainouter');
+    var title = $.trim($parent.find('.addoption_input').val());
+    if (!title) { alert('Enter an option name first.'); return; }
+    var childGuid = guid();
+    var viewType = parseInt($parent.data('typeid')) || 1;
+    var childHtml = '<div class="col-md-5 div_flavourchildbox" data-tid="' + childGuid + '">';
+    childHtml += '<div class="col-sm-8 gray-bg"><label class="checkbox-inline">';
+    childHtml += '<input type="checkbox" checked="checked" class="chkbox_flavour" />';
+    childHtml += '<input type="text" value="' + title + '" data-text="' + title + '" class="form-control gray-input input_flavourchild" /></label></div>';
+    childHtml += '<div class="col-sm-4">';
+    // Size-price dropdown for child
+    childHtml += buildFlavourSizePriceHtml(childGuid);
+    // Selection View (type 6): child mandatory controls
+    if (viewType == 6) {
+        childHtml += '<div class="div_SelectionMain div_mandatory2">&nbsp;<div class="selectdrop"><b class="caret"></b></div>';
+        childHtml += '<div class="div_SelectionExclist">';
+        childHtml += '<div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkAlreadyIncluded checkbox" /><label class="lblForcheck">Already Included</label></li></ul></div>';
+        childHtml += '<div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkMandatory checkbox" /><label class="lblForcheck">Mandatory</label></li></ul></div>';
+        childHtml += '<div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkCanReplace checkbox" /><label class="lblForcheck">Can Replace</label></li></ul></div>';
+        childHtml += '</div></div>';
+    }
+    childHtml += '<small class="upward"><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>';
+    childHtml += '</div></div>';
+    $parent.find('.div_flavourchild_outer').append(childHtml);
+    $parent.find('.addoption_input').val('');
+});
+
+// ─── Build size-price dropdown HTML for a flavour child ───────────────────────
+function buildFlavourSizePriceHtml(childGuid) {
+    var html = '<div class="Div_flavourPrice"><span class="flavourPrice_div">+£0</span>';
+    html += '<div class="selectdrop"><b class="caret"></b></div>';
+    html += '<div class="div_FlavorsizePrice">';
+    // Add a row per size
+    $('#Div_sizelitingouter .divsizebox').each(function () {
+        var sGuid = $(this).data('tid');
+        var sTitle = $.trim($(this).find('.csssizetitle').val());
+        if (!sTitle) return;
+        var chkId = guid();
+        html += '<div class="divrow" data-for="' + sGuid + '"><ul>';
+        html += '<li class="lichk"><input type="checkbox" checked="checked" class="chkbox_flavoursizeprice checkbox" id="' + chkId + '" />';
+        html += '<label class="lblForcheck" for="' + chkId + '">' + sTitle + '</label></li>';
+        html += '<li class="liprice">+£<input type="text" class="form-control gray-input inputPrice" placeholder="0.00" value="0" /></li>';
+        html += '</ul></div>';
+    });
+    html += '</div></div>';
+    return html;
+}
+
+// ─── Update all flavour children size-price dropdowns ─────────────────────────
+function updateflavourSizePrice() {
+    $('.div_flavourchildbox').each(function () {
+        var $child = $(this);
+        var $priceDiv = $child.find('.div_FlavorsizePrice');
+        if ($priceDiv.length === 0) return;
+        var existing = {};
+        $priceDiv.find('.divrow').each(function () {
+            existing[$(this).data('for')] = {
+                checked: $(this).find('.chkbox_flavoursizeprice').is(':checked'),
+                price: $(this).find('.inputPrice').val() || '0'
+            };
+        });
+        $priceDiv.empty();
+        $('#Div_sizelitingouter .divsizebox').each(function () {
+            var sGuid = $(this).data('tid');
+            var sTitle = $.trim($(this).find('.csssizetitle').val());
+            if (!sTitle) return;
+            var chkId = guid();
+            var prev = existing[sGuid] || { checked: true, price: '0' };
+            var row = '<div class="divrow" data-for="' + sGuid + '"><ul>';
+            row += '<li class="lichk"><input type="checkbox" ' + (prev.checked ? 'checked="checked"' : '') + ' class="chkbox_flavoursizeprice checkbox" id="' + chkId + '" />';
+            row += '<label class="lblForcheck" for="' + chkId + '">' + sTitle + '</label></li>';
+            row += '<li class="liprice">+£<input type="text" class="form-control gray-input inputPrice" placeholder="0.00" value="' + prev.price + '" /></li>';
+            row += '</ul></div>';
+            $priceDiv.append(row);
+        });
+    });
+}
+
+function removeflavourSizePrice(sizeGuid) {
+    $('.div_FlavorsizePrice .divrow[data-for="' + sizeGuid + '"]').remove();
+}
+
+// ─── Hover toggles for flavour dropdowns ──────────────────────────────────────
+$(document).on('mouseenter', '.Div_flavourPrice', function () {
+    $(this).find('.div_FlavorsizePrice').show();
+}).on('mouseleave', '.Div_flavourPrice', function () {
+    $(this).find('.div_FlavorsizePrice').hide();
+});
+$(document).on('mouseenter', '.div_SelectionMain', function () {
+    $(this).find('.div_SelectionExclist').show();
+}).on('mouseleave', '.div_SelectionMain', function () {
+    $(this).find('.div_SelectionExclist').hide();
+});
+
+// ─── Remove flavour child ─────────────────────────────────────────────────────
+$(document).on('click', '.div_flavourchildbox small.remouter a', function () {
+    $(this).closest('.div_flavourchildbox').remove();
+});
+$(document).on('click', '.div_flavourmainouter > .div_flavourParent_outer small.remouter a', function () {
+    $(this).closest('.div_flavourmainouter').remove();
+});
+
+// ─── Specification Template Dropdown Handler ──────────────────────────────────
+$('#drpShippingTemplate').change(function () {
+    $('.updateshippingtemplate').hide();
+    var templateId = $(this).val();
+    if (templateId == '0') {
+        $('.saveshippingtemplate').show();
+        return;
+    }
+    $.ajax({
+        type: 'POST', url: '/addnewcake/gettemplatedetails',
+        data: JSON.stringify({ templateId: templateId }),
+        contentType: 'application/json; charset=utf-8', dataType: 'json',
+        success: function (msg) {
+            if (msg.dataId == 1) {
+                // Toggle save/update buttons (legacy behavior)
+                $('.saveshippingtemplate').hide();
+                $('.updateshippingtemplate').show();
+
+                // Auto-fill form fields from template settings
+                if (msg.shapeId > 0) $('#drpcakeshape').val(msg.shapeId);
+                if (msg.typeId > 0) $('#drpCaketype').val(msg.typeId);
+                if (msg.preparationDay > 0) $('#drpPreparationday').val(msg.preparationDay);
+                $('#chkCollection').prop('checked', msg.isCollection);
+                $('#chkdelivery').prop('checked', msg.isDelivery);
+                $('#chkpostaldelivery').prop('checked', msg.isPostal);
+                if (msg.miles) $('#txtdeliverymiles').val(msg.miles);
+
+                // Load sizes from template
+                if (msg.sizes && msg.sizes.length > 0) {
+                    $('#Div_sizelitingouter').empty();
+                    $.each(msg.sizes, function(i, s) {
+                        var newGuid = guid();
+                        var sHtml = '<div data-tid="' + newGuid + '" class="col-md-6 divsizebox">' +
+                            '<div class="col-sm-8 gray-bg"><label class="checkbox-inline">' +
+                            '<input type="checkbox" checked="checked" class="chkbox" />' +
+                            '<input type="text" value="' + s.sizeTitle + '" data-text="' + s.sizeTitle + '" class="form-control gray-input csssizetitle" />' +
+                            '</label><div class="div_portionouter"><span>' + (s.minPortion||1) + ' - ' + (s.maxPortion||10) + '</span><div class="selectdrop"><b class="caret"></b></div>' +
+                            '<div class="div_sizeportion"><div class="divrow">' +
+                            '<ul><li><label>Min. Portion</label></li><li class="liprice"><input type="text" value="' + (s.minPortion||1) + '" placeholder="1" class="form-control gray-input inputminportion" /></li></ul>' +
+                            '<ul><li><label>Max. Portion</label></li><li class="liprice"><input type="text" value="' + (s.maxPortion||10) + '" placeholder="10" class="form-control gray-input inputmaxportion" /></li></ul>' +
+                            '</div></div></div></div>' +
+                            '<div class="col-sm-4">£<input type="text" value="' + (s.price||0) + '" placeholder="0.00" class="form-control gray-input inputprice" /></div>' +
+                            '<small class="upward"' + (i == 0 ? ' style="display:none;"' : '') + '><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>' +
+                            '</div>';
+                        $('#Div_sizelitingouter').append(sHtml);
+                    });
+                    updateflavourSizePrice();
+                }
+
+                // Load flavours from template
+                if (msg.flavours && msg.flavours.length > 0) {
+                    $('#Div_Flavourlistingouter').empty();
+                    $.each(msg.flavours, function(fi, flv) {
+                        var parentGuid = guid();
+                        var viewType = flv.viewType || 1;
+                        var fHtml = '<div class="div_flavourmainouter" data-tid="' + parentGuid + '" data-typeid="' + viewType + '">';
+                        fHtml += '<div class="col-md-12 div_flavourParent_outer">';
+                        fHtml += '<div class="col-sm-8 gray-bg"><label class="checkbox-inline">';
+                        fHtml += '<input type="checkbox" checked="checked" class="chkbox_flavour" />';
+                        fHtml += '<input type="text" value="' + flv.title + '" class="form-control white-input" /></label>';
+                        // Selection View controls for type 6
+                        if (viewType == 6) {
+                            fHtml += '<div class="div_SelectionMain div_Mandatory">&nbsp;<div class="selectdrop"><b class="caret"></b></div>';
+                            fHtml += '<div class="div_SelectionExclist"><div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkMandatory checkbox" /><label class="lblForcheck">Mandatory</label></li></ul></div>';
+                            fHtml += '<div class="divrow"><ul><li class="lichk"><input type="checkbox" class="chkSelectSingle checkbox" /><label class="lblForcheck">Single Selection</label></li></ul></div></div></div>';
+                        }
+                        fHtml += '<small class="upward"><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>';
+                        fHtml += '</div></div>';
+                        if (viewType == 1 || viewType == 6 || viewType == 7) {
+                            fHtml += '<div class="col-md-8"><p><small>Please select all the values which are applicable.</small></p></div>';
+                        }
+                        fHtml += '<div class="div_flavourchild_outer">';
+                        // Add children
+                        if (flv.children && flv.children.length > 0) {
+                            $.each(flv.children, function(ci, child) {
+                                var childGuid = guid();
+                                fHtml += '<div class="col-md-5 div_flavourchildbox" data-tid="' + childGuid + '">';
+                                fHtml += '<div class="col-sm-8 gray-bg"><label class="checkbox-inline">';
+                                fHtml += '<input type="checkbox" checked="checked" class="chkbox_flavour" />';
+                                fHtml += '<input type="text" value="' + child.title + '" data-text="' + child.title + '" class="form-control gray-input input_flavourchild" /></label></div>';
+                                fHtml += '<div class="col-sm-4">' + buildFlavourSizePriceHtml(childGuid) + '</div>';
+                                fHtml += '<small class="upward"><a>&nbsp;</a></small><small class="remouter"><a class="text-danger">X</a></small>';
+                                fHtml += '</div>';
+                            });
+                        }
+                        fHtml += '</div>';
+                        // Add option button for types 1, 6
+                        if (viewType == 1 || viewType == 6) {
+                            fHtml += '<div class="col-md-5 addbutouter"><div class="col-sm-8 no-left-padding no-right-padding">';
+                            fHtml += '<input type="text" class="form-control gray-input addoption_input" />';
+                            fHtml += '</div><div class="col-sm-4"><button class="btn black-rounded addoption_btn" type="button">+</button></div></div>';
+                        }
+                        fHtml += '</div>';
+                        $('#Div_Flavourlistingouter').append(fHtml);
+                    });
+                    if (typeof updateflavourExclude === 'function') updateflavourExclude();
+                }
+            } else {
+                alert(msg.message || 'Template not found.');
+                $('#drpShippingTemplate').val('0');
+            }
+        },
+        error: function (x) { alert('Error loading template: ' + x.responseText); }
+    });
+});
+
+// ─── Save Template (matches legacy: saveshippingtemplate click) ────────────────
+$(document).on('click', '#saveshippingtemplate', function () {
+    saveSpecsAndSizes();
+});
+$(document).on('click', '#updateshippingtemplate', function () {
+    saveSpecsAndSizes();
+});
+
+function saveSpecsAndSizes() {
+    var pid = parseInt($('#hfPrdID').val()) || 0;
+    if (pid === 0) { alert('Save the product first before adding specs/sizes.'); return; }
+    var specData = { productId: pid, ingredients: $('#txtIngredients').val(), allergens: $('#txtAllergens').val(), advice: $('#txtAdvice').val(), deliveryDetails: $('#txtdeliverydetail').val(), storage: $('#txtStorage').val() };
+    var sizes = [];
+    $('#Div_sizelitingouter .divsizebox').each(function () {
+        var $box = $(this);
+        if (!$box.find('.chkbox').is(':checked')) return;
+        var title = $.trim($box.find('.csssizetitle').val());
+        if (!title) return;
+        sizes.push({
+            sizeTitle: title,
+            price: parseFloat($box.find('.inputprice').val()) || 0,
+            minPortion: parseInt($box.find('.inputminportion').val()) || 0,
+            maxPortion: parseInt($box.find('.inputmaxportion').val()) || 0
+        });
+    });
+    var sizeData = { productId: pid, typeId: parseInt($('#drpCaketype').val()) || 0, shapeId: parseInt($('#drpcakeshape').val()) || 0, sizes: sizes };
+    $.ajax({ url: '/addnewcake/savespec', type: 'POST', contentType: 'application/json', data: JSON.stringify(specData),
+        success: function (r1) { if (!r1.success) { showMessage('Spec save failed: ' + r1.message, false); return; } if (sizes.length === 0) { showMessage('Specifications saved.', true); return; }
+            $.ajax({ url: '/addnewcake/savesizes', type: 'POST', contentType: 'application/json', data: JSON.stringify(sizeData),
+                success: function (r2) { showMessage(r2.success ? 'Specifications and sizes saved.' : 'Size save failed: ' + r2.message, r2.success); },
+                error: function () { showMessage('Size save error.', false); } }); },
+        error: function () { showMessage('Spec save error.', false); } });
+}
+
+// ─── Image Upload (legacy-style with camera icon boxes) ───────────────────────
+// '+' button — add new image box
+$('.prdImgbox_outer.addnewctrl').click(function () {
+    var data_id = ($('.prdImgbox_outer.imgboxouter').length + 1).toString();
+    if (data_id <= 10) {
+        var newidchk = guid().replace(/-/g, '');
+        var newidinput = guid().replace(/-/g, '');
+        $(this).before("<div class='prdImgbox_outer imgboxouter' data-id='" + data_id + "'></div>");
+        $(".prdImgbox_outer.imgboxouter[data-id='" + data_id + "']").prepend("<div data-bid='0' data-tid='0' class='prdImgbox'></div>");
+        $(".prdImgbox_outer.imgboxouter[data-id='" + data_id + "'] .prdImgbox").append(
+            "<div class='PrdImg'>&nbsp;</div>" +
+            "<div class='addPrdImg'><input type='file' accept='image/*' id='" + newidinput + "' name='" + newidinput + "'>" +
+            "<img class='loading' src='https://cakerstreet1.s3.amazonaws.com/images/loading_wall.gif' alt='loading'></div>" +
+            "<a data-bid='0' class='edit'>&nbsp;</a>" +
+            "<a data-bid='0' class='remove'>&nbsp;</a>" +
+            "<span class='spn_radioouter'>" +
+            "<input type='radio' value='" + newidchk + "' name='grp_prdImage' id='" + newidchk + "'>" +
+            "<label for='" + newidchk + "'>Main Image</label></span>"
+        );
+    }
+    if (data_id >= 10) { $(this).hide(); }
+});
+
+// File change handler — upload to server
+$('#ul_uploadImages').on('change', '.addPrdImg input[type="file"]', function () {
+    var $prdImgbox = $(this).closest('.prdImgbox');
+    var input = this;
+    var file = input.files[0];
+    if (!file) return;
+    var pid = parseInt($('#hfPrdID').val()) || 0;
+    if (pid === 0) { alert('Save the product first before uploading images.'); return; }
+    var $imgBoxOuter = $(this).closest('.prdImgbox_outer');
+    var imageIndex = $imgBoxOuter.data('id') || 1;
+    var formData = new FormData();
+    formData.append('file', file);
+    formData.append('productId', pid);
+    formData.append('imageIndex', imageIndex);
+    // Show loading
+    $prdImgbox.find('.loading').show();
+    $.ajax({
+        url: '/addnewcake/uploadimage', type: 'POST',
+        data: formData, processData: false, contentType: false,
+        success: function (r) {
+            $prdImgbox.find('.loading').hide();
+            if (r.success) {
+                showMessage('Image uploaded.', true);
+                $prdImgbox.find('.PrdImg').css({'background-image': "url('" + r.imageUrl + "')", 'display': 'block'});
+                $prdImgbox.find('.addPrdImg').hide();
+                $prdImgbox.find('.edit').show();
+                $prdImgbox.find('.remove').show();
+                $prdImgbox.find('.spn_radioouter').show();
+                $prdImgbox.attr('data-tid', r.imagePath || '');
+                updateImageval();
+            } else { showMessage(r.message || 'Upload failed.', false); }
+        },
+        error: function () { $prdImgbox.find('.loading').hide(); showMessage('Upload error.', false); }
+    });
+});
+
+// Edit button — show file input again
+$('#ul_uploadImages').on('click', '.prdImgbox .edit', function () {
+    var $prdImgbox = $(this).closest('.prdImgbox');
+    $prdImgbox.find('.PrdImg').css('display', 'none');
+    $prdImgbox.find('.addPrdImg').show();
+    $(this).hide();
+    $prdImgbox.find('.remove').hide();
+});
+
+// Remove button — reset image
+$('#ul_uploadImages').on('click', '.prdImgbox .remove', function () {
+    var $prdImgbox = $(this).closest('.prdImgbox');
+    $prdImgbox.find('.PrdImg').css({'background-image': '', 'display': 'none'});
+    $prdImgbox.find('.addPrdImg').show();
+    $prdImgbox.find('.edit').hide();
+    $(this).hide();
+    $prdImgbox.find('.spn_radioouter').hide();
+    $prdImgbox.attr('data-tid', '0');
+    // Reset file input
+    var $fileInput = $prdImgbox.find('.addPrdImg input[type="file"]');
+    $fileInput.val('');
+    updateImageval();
+});
+
+// Update hidden image val field
+function updateImageval() {
+    var imgs = [];
+    $('#ul_uploadImages .prdImgbox_outer.imgboxouter').each(function () {
+        var tid = $(this).find('.prdImgbox').attr('data-tid');
+        if (tid && tid !== '0') imgs.push(tid);
+    });
+    $('#hdn_Product_Images').val(imgs.join(','));
+}
+
+
+// ─── Manage Quantity Modal Helpers ────────────────────────────────────────────
+function loadSuppliers() {
+    $.getJSON('/addnewcake/getsuppliers', function(data) {
+        var $dd = $('#ddlSupplier').empty();
+        $.each(data, function(i, s) { $dd.append('<option value="' + s.id + '">' + s.name + '</option>'); });
+    });
+}
+function loadLocations() {
+    $.getJSON('/addnewcake/getlocations', function(data) {
+        var $dd = $('#ddlStockLocation').empty();
+        $.each(data, function(i, l) { $dd.append('<option value="' + l.id + '">' + l.name + '</option>'); });
+    });
+}
+function saveQuantity() {
+    var pid = parseInt($('#hfPrdID').val()) || 0;
+    if (pid === 0) { alert('Save the product first.'); return; }
+    var data = {
+        productId: pid,
+        buyingPrice: parseFloat($('#txtSupPrice').val()) || 0,
+        supplierId: parseInt($('#ddlSupplier').val()) || 0,
+        locationId: parseInt($('#ddlStockLocation').val()) || 0,
+        quantity: parseInt($('#txtSupQty').val()) || 0,
+        purchaseOrder: $('#txtPurchaseOrder').val(),
+        poDate: $('#txtPODate').val(),
+        orderReceived: $('#txtOrderReceived').val(),
+        orDate: $('#txtORDate').val()
+    };
+    $.ajax({
+        url: '/addnewcake/savequantity', type: 'POST', contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function (r) {
+            if (r.success) {
+                showMessage('Quantity saved.', true);
+                $('#dvManageQtyModal').modal('hide');
+                if (r.totalQty !== undefined) { $('#spQty').text(r.totalQty); }
+            } else { showMessage(r.message || 'Save failed.', false); }
+        },
+        error: function () { showMessage('Save error.', false); }
+    });
+}
+</script>
+}

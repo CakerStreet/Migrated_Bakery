@@ -1,0 +1,1249 @@
+@using CakerStreet.Business.Services
+@{
+    ViewData["Title"] = "Manage Recipes";
+    var result = ViewBag.Result as RecipeListResult ?? new RecipeListResult();
+    var books = ViewBag.RecipeBooks as List<BookItem> ?? new List<BookItem>();
+    var categories = ViewBag.RecipeCategories as List<RecipeCategoryItem2> ?? new List<RecipeCategoryItem2>();
+    var tags = ViewBag.RecipeTags as List<RecipeCategoryItem2> ?? new List<RecipeCategoryItem2>();
+    var units = ViewBag.MeasuringUnits as List<MeasuringUnitItem> ?? new List<MeasuringUnitItem>();
+    var ingredientGroups = ViewBag.IngredientGroups as List<IngredientGroupDropdownItem> ?? new List<IngredientGroupDropdownItem>();
+    var cdnBase = ViewBag.CdnBase as string ?? "";
+}
+
+@section Head {
+    <link href="@(cdnBase)bakery_content/bakery_content/css/sellcss.css" rel="stylesheet" />
+    <link href="@(cdnBase)bakery_content/autocomplete/jquery-ui.min.css" rel="stylesheet" />
+    <link href="/js/fuzzy/horsey.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .filter-radio {
+            display: inline-flex;
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+            margin-top: 6px;
+        }
+        .filter-radio li {
+            margin-right: 15px;
+            display: inline-block;
+        }
+        .filter-radio input[type="radio"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .filter-radio label {
+            font-weight: normal;
+            vertical-align: middle;
+            margin-bottom: 0;
+        }
+        .input-group {
+            position: relative;
+            display: table;
+            border-collapse: separate;
+        }
+        .div_txtTag_outer {
+            position: relative;
+        }
+        .litags .input-group-addon {
+            border: medium none;
+            padding: 0;
+            position: relative;
+            width: 30px;
+        }
+        .litags.input-group {
+            background-color: #fff;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            float: left;
+            line-height: 34px;
+            margin: 5px;
+            padding-left: 5px;
+        }
+        .litags .input-group-addon a {
+            background-color: #ffaaaa;
+            height: 100%;
+            left: 0;
+            line-height: 34px;
+            margin-left: 5px;
+            position: absolute;
+            top: 0;
+            width: 25px;
+            cursor: pointer;
+        }
+        .middleSection {
+            width: 100%;
+        }
+        .txtReceipeTitle {
+            color: #df3f42;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .divIngredientlistOuter ul {
+            width: 100%;
+            padding-left: 10px;
+            float: left;
+            position: relative;
+            list-style: none;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 0;
+            padding: 8px 0;
+        }
+        .divIngredient h4 {
+            color: #df3f42;
+            margin-top: 15px;
+            border-bottom: 1px solid #df3f42;
+            padding-bottom: 5px;
+        }
+        .divIngredientlistOuter ul li {
+            display: inline-block;
+            vertical-align: middle;
+            padding: 5px;
+        }
+        .divIngredientlistOuter ul li.ligrp {
+            width: 20%;
+        }
+        .divIngredientlistOuter ul li.ligrp.cuttype1 {
+            width: 20%;
+        }
+        .divIngredientlistOuter ul li.ligrp1.ins {
+            width: 25%;
+        }
+        .divIngredientlistOuter ul li.ligrp2.ing {
+            width: 20%;
+        }
+        .divIngredientlistOuter ul li.ligrp3 {
+            width: 15%;
+        }
+        .divIngredientlistOuter ul.nact li, font.nact {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .drpIngredienUnit.form-control {
+            float: left;
+            max-width: 110px;
+            margin-left: 5px;
+        }
+        .divIngredientlistOuter .input-group {
+            float: left;
+        }
+        .divIngredientlistOuter ul li.ligrp4 {
+            width: 5%;
+        }
+        .divIngredientlistOuter ul::before {
+            content: "-";
+            position: absolute;
+            left: -10px;
+            font-weight: bold;
+            color: #df3f42;
+        }
+        .div_reciepe h3 {
+            color: #df3f42;
+            margin-top: 10px;
+        }
+        .divIngredientlistOuter .form-control {
+            padding: 5px;
+        }
+        .div_taglist {
+            display: table;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .div_taglist a {
+            cursor: pointer;
+            text-decoration: none;
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            width: 20px;
+            background: #ff5555;
+            color: #fff;
+            text-align: center;
+        }
+        .div_taglist .headertext {
+            float: left;
+            width: 100%;
+            font-size: 12px;
+            color: #333;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        .div_taglist .itemli {
+            float: left;
+            font-size: 12px;
+            color: #df3f42;
+            padding: 5px 30px 5px 5px;
+            border: 1px solid #ffaaaa;
+            position: relative;
+            margin: 0 10px 10px 0;
+            background-color: #fff5f5;
+        }
+        .img_outer input.stt {
+            display: none;
+        }
+        .img_outer:hover input.stt {
+            display: block;
+        }
+        .bg-black {
+            background-color: #000 !important;
+            color: #fff !important;
+            border-color: #000 !important;
+        }
+        .bg-red {
+            background-color: #DF3F42 !important;
+            color: #fff !important;
+            border-color: #DF3F42 !important;
+        }
+        .yellobg {
+            background-color: #ffffcc !important;
+        }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Receipes</h2>
+        <div class="btn-group pull-right" style="margin-right:14px; margin-top: -4px;">
+            <button class="btn btn-danger bg-black" type="button" style="padding: 6px;">Manage</button>
+            <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button" aria-expanded="false" style="padding: 6px 12px;">
+                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul role="menu" class="dropdown-menu">
+                <li><a href="/manageingredient">Manage Ingredients</a></li>
+                <li><a href="/managereceipecategory">Manage Ingredients Category</a></li>
+                <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                <li><a href="/managereceipematrix">Receipe Matrix</a></li>
+                <li><a href="/managereceipe-findandreplace">Replace Ingredients</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        @if (!string.IsNullOrEmpty(Context.Request.Query["msg"]))
+        {
+            <div id="div_topmessagepnl" class="alert alert-success">
+                @Context.Request.Query["msg"]
+            </div>
+        }
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <!-- Top Filters -->
+                <div class="col-md-12 form-group flush" style="margin-bottom: 15px;">
+                    <!-- Action Dropdown -->
+                    <div class="col-md-3">
+                        <div class="btn-group" id="actionbutton">
+                            <button class="btn btn-danger bg-red" type="button">
+                                Action on <span id="spnfilterselected">0</span> selected
+                            </button>
+                            <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false" style="padding: 6px 12px;">
+                                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul role="menu" class="dropdown-menu">
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('inactive');">Set as Inactive</a></li>
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('active');">Set as Active</a></li>
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('update');">Update Records</a></li>
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('delete');">Remove Item(s)</a></li>
+                                <li><a href="javascript:void(0);" onclick="assignThemesToMultiplePrds(1);">Manage Categories</a></li>
+                                <li><a href="javascript:void(0);" onclick="assignThemesToMultiplePrds(2);">Manage Tags</a></li>
+                                <li><a href="javascript:void(0);" onclick="printSelectedRecipes();">Print Receipe</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Status Radio Buttons -->
+                    <div class="col-md-4">
+                        <ul class="filter-radio" id="rdBtnFilterstatus">
+                            <li>
+                                <input type="radio" name="statusFilter" id="statusAll" value="0" @(ViewBag.FilterStatus == 0 ? "checked" : "") onchange="onRadioFilterChange();" />
+                                <label for="statusAll">All</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="statusFilter" id="statusActive" value="1" @(ViewBag.FilterStatus == 1 ? "checked" : "") onchange="onRadioFilterChange();" />
+                                <label for="statusActive">Active</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="statusFilter" id="statusInactive" value="2" @(ViewBag.FilterStatus == 2 ? "checked" : "") onchange="onRadioFilterChange();" />
+                                <label for="statusInactive">Inactive</label>
+                            </li>
+                        </ul>
+                        <ul class="filter-radio" id="rdBtncookingtatus">
+                            <li>
+                                <input type="radio" name="cookingFilter" id="cookingAll" value="0" @(ViewBag.CookingStatus == 0 ? "checked" : "") onchange="onRadioFilterChange();" />
+                                <label for="cookingAll">All</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="cookingFilter" id="cookingCooking" value="1" @(ViewBag.CookingStatus == 1 ? "checked" : "") onchange="onRadioFilterChange();" />
+                                <label for="cookingCooking">Cooking</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="cookingFilter" id="cookingNonCooking" value="2" @(ViewBag.CookingStatus == 2 ? "checked" : "") onchange="onRadioFilterChange();" />
+                                <label for="cookingNonCooking">Non-Cooking</label>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Books Dropdown -->
+                    <div class="col-md-2" id="div_cat">
+                        <select class="form-control" id="drpcategories" onchange="onDropdownFilterChange();">
+                            <option value="0">--All Books--</option>
+                            @foreach (var book in books)
+                            {
+                                <!option value="@book.BookId" @(ViewBag.CatId == book.BookId ? "selected" : "")>@book.BookName</!option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Keyword Search -->
+                    <div class="col-md-3">
+                        <div style="display: flex;">
+                            <input type="text" id="txtsearch" class="form-control input-sm" placeholder="Search keyword" value="@ViewBag.SearchKeyword" />
+                            <button id="btnSearch" class="btn btn-danger btn-sm" style="margin-left: 5px;" onclick="onSearchClick();">Go</button>
+                            <button id="btnviewall" class="btn btn-danger btn-sm @(string.IsNullOrEmpty(ViewBag.SearchKeyword) ? "hide" : "")" style="margin-left: 5px;" onclick="clearSearch();">X</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <!-- Categories & Tags Dropdowns -->
+                <div class="col-md-12 form-group flush" style="margin-bottom: 15px;">
+                    <div class="col-md-4">
+                        <select class="form-control" id="drpReceipeCategory" onchange="onDropdownFilterChange();">
+                            <option value="0">--All Receipe Categories--</option>
+                            @foreach (var cat in categories)
+                            {
+                                <!option value="@cat.CategoryId" @(ViewBag.RecipeCatId == cat.CategoryId ? "selected" : "")>@cat.CategoryName</!option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-control" id="drpReceipeTag" onchange="onDropdownFilterChange();">
+                            <option value="0">--All Receipe Tags--</option>
+                            @foreach (var tag in tags)
+                            {
+                                <!option value="@tag.CategoryId" @(ViewBag.RecipeTagId == tag.CategoryId ? "selected" : "")>@tag.CategoryName</!option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <!-- Autocomplete Tags Filter -->
+                <div class="col-md-12 form-group flush" style="margin-bottom: 15px;">
+                    <div class="col-md-12">
+                        <div class="taglinks" id="taglinks_having">
+                            <div class="div_txtTag_outer">
+                                <input type="text" id="txttag_having" placeholder="having.." autocomplete="off" class="txttag form-control" />
+                                <input type="hidden" id="hdnTags" value="@ViewBag.SearchTags" />
+                            </div>
+                            <div class="clearfix"></div>
+                            <div id="litTagsContainer" style="margin-top: 5px;"></div>
+                            <button id="lnkSubmitTag" class="btn btn-danger btn-sm hide" onclick="onDropdownFilterChange();">Submit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <!-- Records Info and Print All -->
+                <div class="col-md-12 form-group flush" style="margin-bottom: 10px;">
+                    <div class="col-md-12">
+                        <span id="litcountrec" style="font-weight: bold;">@result.TotalCount Records found</span>
+                        <a href="javascript:void(0);" onclick="printAllRecipes();" style="float:right;">Print All</a>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <!-- Add New Button -->
+                <div class="col-md-12 form-group flush">
+                    <a id="hpAddNewItemTop" href="/managereceipe/addnewreceipe" target="_blank" class="btn btn-danger bg-red btn-lg square">Add New Receipe</a>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <!-- Main Recipe List Table -->
+                <form id="frmBulkAction" action="/managereceipe/bulkaction" method="post">
+                    <input type="hidden" name="action" id="hidBulkAction" value="" />
+                    <div class="table prdlstouter" id="our_products" style="display: @(result.Items.Count > 0 ? "block" : "none"); margin-top: 15px;">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="chk headertext" style="text-align: center; width: 40px;">
+                                        <input type="checkbox" onchange="chkuncheckbyheader();" id="chk" />
+                                    </th>
+                                    <th class="status">Status</th>
+                                    <th class="status">Cooking</th>
+                                    <th class="status">Serving</th>
+                                    <th class="status" style="width: 100px;"></th>
+                                    <th class="name">Title</th>
+                                    <th class="status" style="min-width: 100px;">Sale Price</th>
+                                    <th class="action">Section</th>
+                                    <th class="status">Modified</th>
+                                    <th class="action" style="min-width: 160px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int idx = 0; idx < result.Items.Count; idx++)
+                                {
+                                    var item = result.Items[idx];
+                                    <tr class="rowtext" id="row_@item.RecipeId">
+                                        <td class="chk" style="text-align: center;">
+                                            <input type="checkbox" name="selectedIds" value="@item.RecipeId" data-id="@item.RecipeId" onchange="onRowCheckChange();" />
+                                        </td>
+                                        <td class="status">
+                                            @(item.IsActive ? "Active" : "Inactive")
+                                        </td>
+                                        <td class="status">
+                                            @(item.IsCooking ? "Cooking" : "Non-Cooking")
+                                        </td>
+                                        <td class="status">
+                                            @item.Serving
+                                        </td>
+                                        <td class="status img_outer" style="position: relative;">
+                                            @if (!string.IsNullOrEmpty(item.Image))
+                                            {
+                                                <img alt="" class="imgReceipe" style="max-height: 60px; max-width: 60px;" src="@(ViewBag.CdnBase)upload/receipeImages/resized_80_80/@item.Image" />
+                                            }
+                                            <input type="file" style="width: 80px;" class="FUimage1 @(string.IsNullOrEmpty(item.Image) ? "" : "stt")" onchange="ajaxFileUploadRecipe(this, @item.RecipeId);" />
+                                        </td>
+                                        <td class="name">
+                                            <input type="hidden" name="bulkIds" value="@item.RecipeId" />
+                                            <input type="text" name="bulkTitles" class="form-control" value="@item.Title" />
+                                            
+                                            <!-- Recipe Category Tags Linked List -->
+                                            <div class="div_taglist">
+                                                @if (!string.IsNullOrEmpty(item.RecipeCatIds))
+                                                {
+                                                    var splitIds = item.RecipeCatIds.Split(',');
+                                                    var catsList = categories.Where(c => splitIds.Contains(c.CategoryId.ToString())).ToList();
+                                                    var tagsList = tags.Where(t => splitIds.Contains(t.CategoryId.ToString())).ToList();
+                                                    
+                                                    if (catsList.Count > 0)
+                                                    {
+                                                        <div class="headertext">Categories</div>
+                                                        @foreach (var c in catsList)
+                                                        {
+                                                            <div data-id="@c.CategoryId" class="itemli">@c.CategoryName<a onclick="removeCatLinkingFromRecipe(@c.CategoryId, @item.RecipeId, this);">X</a></div>
+                                                        }
+                                                    }
+                                                    if (tagsList.Count > 0)
+                                                    {
+                                                        <div class="headertext">Tags</div>
+                                                        @foreach (var t in tagsList)
+                                                        {
+                                                            <div data-id="@t.CategoryId" class="itemli">@t.CategoryName<a onclick="removeCatLinkingFromRecipe(@t.CategoryId, @item.RecipeId, this);">X</a></div>
+                                                        }
+                                                    }
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="status">
+                                            <input type="text" name="bulkPrices" class="form-control" value="@item.Price" style="max-width: 80px;" />
+                                        </td>
+                                        <td class="action">
+                                            @item.BookName @(!string.IsNullOrEmpty(item.ChapterName) ? $">> {item.ChapterName}" : "")
+                                        </td>
+                                        <td class="status">
+                                            @item.ModifiedOn.ToString("dd/MM/yy")
+                                        </td>
+                                        <td class="action">
+                                            <button type="button" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="saveInlineRow(@item.RecipeId);">Save</button>
+                                            <div class="btn-group">
+                                                <a onclick="toggleRecipeDetails(@item.RecipeId);" class="btn edtBtn smalledit" style="cursor: pointer;">Show | Hide</a>
+                                                <button type="button" onclick="toggleRecipeDetails(@item.RecipeId);" class="btn dropdown-toggle btnedit">
+                                                    <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                            </div>
+                                            
+                                            <button type="button" class="btn btn-xs btn-danger @(item.ProductId == 0 ? "" : "hide")" onclick="cloneRecipeRow(@item.RecipeId);">P</button>
+                                            @if (item.ProductId != 0)
+                                            {
+                                                <a href="/edititem?prdID=@item.ProductId" target="_blank" class="btn btn-xs btn-success">P</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr id="details_row_@item.RecipeId" style="display: none;">
+                                        <td colspan="10" style="border: 1px solid #ccc" class="details-container yellobg">
+                                            <!-- Details loaded dynamically here -->
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Bottom Buttons -->
+                    <div class="divbtnmain_outer" id="divbtnmain_outer" style="margin-top: 15px;">
+                        <button type="button" onclick="submitBulkAction('update');" class="btn btn-lg btn-black square" style="display: @(result.Items.Count > 0 ? "inline-block" : "none");">Save</button>
+                        <div class="btn-group">
+                            <a id="hpAddNewItem" href="/managereceipe/addnewreceipe" class="btn btn-danger bg-red btn-lg square">Add New Receipe</a>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Paging -->
+                @if (result.TotalPages > 1)
+                {
+                    <div class="pagination pagination-right" id="pnlPaging" style="margin-top: 20px;">
+                        <div class="paging_outer">
+                            <ul class="left">
+                                <li><a href="@GetPagingUrl(1)">First</a></li>
+                                <li><a href="@GetPagingUrl(Math.Max(1, ViewBag.CurrentPage - 1))">&laquo; Prev</a></li>
+                            </ul>
+                            <ul class="numbering">
+                                @for (int i = 1; i <= result.TotalPages; i++)
+                                {
+                                    <li class="@(i == ViewBag.CurrentPage ? "active" : "")">
+                                        <a href="@GetPagingUrl(i)">@i</a>
+                                    </li>
+                                }
+                            </ul>
+                            <ul class="right">
+                                <li><a href="@GetPagingUrl(Math.Min(result.TotalPages, ViewBag.CurrentPage + 1))">Next &raquo;</a></li>
+                                <li><a href="@GetPagingUrl(result.TotalPages)">Last</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                @if (result.Items.Count == 0)
+                {
+                    <div id="dvMsg" class="alert alert-error" style="margin-top: 15px;">
+                        No Products Found
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Dialog Category/Tag linking -->
+<div class="modal theme fade hide" id="Mymodal_theme" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" style="display: none; z-index: 1050;">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" onclick="hideModalTheme();" class="close" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">Assign <span class="spnClsName">Category</span></h4>
+            </div>
+            <div class="modal-body responsive">
+                <div role="form" class="form-horizontal box-body">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <!-- Category items check list -->
+                            <div id="div_chkTheme_outer" class="chkStoreCategory_outer chktheme_outer" style="max-height: 250px; overflow-y: auto;">
+                                @foreach (var cat in categories)
+                                {
+                                    <div class="li_chkouter"><input type="checkbox" id="chkbx_theme_@cat.CategoryId" value="@cat.CategoryId"><label for="chkbx_theme_@cat.CategoryId">@cat.CategoryName</label></div>
+                                }
+                            </div>
+                            <!-- Tag items check list -->
+                            <div id="div_chkTag_outer" class="chkStoreCategory_outer chktag_outer" style="max-height: 250px; overflow-y: auto;">
+                                @foreach (var tag in tags)
+                                {
+                                    <div class="li_chkouter"><input type="checkbox" id="chkbx_tag_@tag.CategoryId" value="@tag.CategoryId"><label for="chkbx_tag_@tag.CategoryId">@tag.CategoryName</label></div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-12 col-xs-12 caln" style="padding: 0px 10px;">
+                            <a id="btnSubmittheme" class="btn btn-danger" onclick="assignCatToRecipeSubmit();">Submit</a>
+                            <input type="hidden" id="hdnAssignCat" value="1" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade hide" id="modalbg_category" style="display: none; z-index: 1040;"></div>
+
+<!-- Hidden dropdowns parsed by JS dynamic instruction row appends -->
+<div style="display: none;">
+    <select id="drpMeasuringUnit">
+        <option value="0">--Select Unit--</option>
+        @foreach (var u in units)
+        {
+            <option value="@u.UnitId">@u.Title</option>
+        }
+    </select>
+    <select id="drpingredientGrp">
+        <option value="0">--Select Ingredient Tag--</option>
+        @foreach (var g in ingredientGroups)
+        {
+            <option value="@g.Value">@g.Text</option>
+        }
+    </select>
+</div>
+
+<!-- Load Global Helpers url variables -->
+<input type="hidden" id="hdGlobalUrl" value="http://localhost:5202" />
+
+@section FooterScripts {
+    <script type="text/javascript" src="/js/fuzzy/horsey.min.js"></script>
+    <script type="text/javascript" src="/Scripts/custom/AjaxFileupload.js"></script>
+    <script type="text/javascript">
+        var fuzzySearchList = @Html.Raw(ViewBag.FuzzySearchListJson);
+
+        $(document).ready(function () {
+            initFuzzySearch();
+            renderFuzzyTagsFromHiddenInput();
+        });
+
+        // ─── Filter Events ─────────────────────────────────────────────────────────
+
+        function onRadioFilterChange() {
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function onDropdownFilterChange() {
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function onSearchClick() {
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function clearSearch() {
+            $('#txtsearch').val('');
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function buildFilterUrl(pageNo) {
+            var url = '/managereceipe';
+            if (pageNo > 1) {
+                url += '/page-' + pageNo;
+            }
+
+            var queryParams = [];
+
+            var search = $('#txtsearch').val();
+            if (search) {
+                // Escape query character replacements as per legacy behavior
+                var escaped = search.replace(/#/g, '$').replace(/\//g, '').replace(/&/g, '').replace(/,/g, '').replace(/:/g, '').replace(/\?/g, '').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '').replace(/"/g, '').replace(/ /g, '+').toLowerCase();
+                queryParams.push('search=' + escaped);
+            }
+
+            var filterStatus = $('input[name="statusFilter"]:checked').val() || '0';
+            if (filterStatus !== '0') {
+                queryParams.push('filterstatus=' + filterStatus);
+            }
+
+            var cookingStatus = $('input[name="cookingFilter"]:checked').val() || '0';
+            if (cookingStatus !== '0') {
+                queryParams.push('cookingstatus=' + cookingStatus);
+            }
+
+            var bookId = $('#drpcategories').val() || '0';
+            if (bookId !== '0') {
+                queryParams.push('catid=' + bookId);
+            }
+
+            var recCatId = $('#drpReceipeCategory').val() || '0';
+            if (recCatId !== '0') {
+                queryParams.push('receipecatid=' + recCatId);
+            }
+
+            var recTagId = $('#drpReceipeTag').val() || '0';
+            if (recTagId !== '0') {
+                queryParams.push('receipetagid=' + recTagId);
+            }
+
+            var tagsStr = $('#hdnTags').val();
+            if (tagsStr) {
+                queryParams.push('searchtags=' + tagsStr.replace(/ /g, '+'));
+            }
+
+            if (queryParams.length > 0) {
+                url += '?' + queryParams.join('&');
+            }
+
+            return url;
+        }
+
+        // ─── Tags Autocomplete Logic ───────────────────────────────────────────────
+
+        function initFuzzySearch() {
+            // Apply jquery-ui autocomplete to tags filter input txttag_having
+            // We use simple autocomplete or standard horsey fuzzy parsing
+            // Let's bind autocomplete on txttag_having
+            var sourceList = [];
+            if (fuzzySearchList) {
+                $.each(fuzzySearchList, function (i, item) {
+                    sourceList.push({ label: item.Text, value: item.Value });
+                });
+            }
+
+            // Fallback jquery-ui autocomplete
+            if ($.ui && $.ui.autocomplete) {
+                $('#txttag_having').autocomplete({
+                    source: sourceList,
+                    select: function (event, ui) {
+                        event.preventDefault();
+                        linkNewTagWithRecipeOnPop(ui.item.label, ui.item.value);
+                    }
+                });
+            }
+        }
+
+        function linkNewTagWithRecipeOnPop(text, value) {
+            // Check if tag already selected
+            var existing = $('#hdnTags').val() ? $('#hdnTags').val().split(',') : [];
+            var tagId = value.match(/\(([^)]+)\)/)[1]; // parses #tag(marking) or similar
+            if (value.indexOf('~') !== -1) {
+                tagId = value.split('~')[1].replace('(', '').replace(')', '').trim();
+            }
+
+            if (existing.indexOf(tagId) !== -1) {
+                $('#txttag_having').val('');
+                return;
+            }
+
+            existing.push(tagId);
+            $('#hdnTags').val(existing.join(','));
+
+            renderTagChip(text, tagId);
+            $('#txttag_having').val('');
+            $('#lnkSubmitTag').removeClass('hide');
+        }
+
+        function renderTagChip(text, tagId) {
+            $('#litTagsContainer').append(
+                "<div data-text='" + tagId + "' class='litags input-group'>" +
+                text +
+                "<div class='input-group-addon'><a onclick='deleteTagChip(this);' class='text-danger'>X</a></div>" +
+                "</div>"
+            );
+        }
+
+        function renderFuzzyTagsFromHiddenInput() {
+            var selectedIds = $('#hdnTags').val() ? $('#hdnTags').val().split(',') : [];
+            if (selectedIds.length > 0 && fuzzySearchList) {
+                $.each(selectedIds, function (idx, sId) {
+                    // Try to locate text name in autocomplete list
+                    var label = "";
+                    $.each(fuzzySearchList, function (i, item) {
+                        var tagId = item.Value.match(/\(([^)]+)\)/);
+                        if (tagId && tagId[1] == sId) {
+                            label = item.Text;
+                            return false;
+                        }
+                    });
+                    if (label) {
+                        renderTagChip(label, sId);
+                    }
+                });
+            }
+        }
+
+        function deleteTagChip(anchor) {
+            var $chip = $(anchor).closest('.litags');
+            var tagId = $chip.attr('data-text');
+            var existing = $('#hdnTags').val() ? $('#hdnTags').val().split(',') : [];
+            var index = existing.indexOf(tagId);
+            if (index !== -1) {
+                existing.splice(index, 1);
+            }
+            $('#hdnTags').val(existing.join(','));
+            $chip.remove();
+            
+            // Auto reload filter page as per legacy
+            window.location.href = buildFilterUrl(1);
+        }
+
+        // ─── Checkbox Grid Logic ───────────────────────────────────────────────────
+
+        function chkuncheckbyheader() {
+            var checked = $('#chk').is(':checked');
+            $('.rowtext .chk input[type="checkbox"]').prop('checked', checked);
+            onRowCheckChange();
+        }
+
+        function onRowCheckChange() {
+            var count = $('.rowtext .chk input[type="checkbox"]:checked').length;
+            $('#spnfilterselected').text(count);
+        }
+
+        // ─── Details Panel Show / Edit (AJAX) ──────────────────────────────────────
+
+        function showpop_modalpop() {
+            // Loader overlay stub matching legacy
+        }
+
+        function hidepop_modalpop() {
+            // Loader overlay stub matching legacy
+        }
+
+        function toggleRecipeDetails(id) {
+            var $row = $('#details_row_' + id);
+            var $container = $row.find('.details-container');
+
+            if ($row.is(':visible')) {
+                $row.hide();
+            } else {
+                $row.show();
+                if ($container.is(':empty')) {
+                    loadRecipeDetails(id);
+                }
+            }
+        }
+
+        function loadRecipeDetails(id) {
+            var $row = $('#details_row_' + id);
+            var $container = $row.find('.details-container');
+            $container.html('Loading details...');
+
+            $.ajax({
+                type: 'POST',
+                url: '/managereceipe/ShowReceipeByID',
+                data: { id: id },
+                success: function (r) {
+                    $container.html(r.d);
+                },
+                error: function (x) {
+                    $container.html('Failed to load recipe details. ' + x.responseText);
+                }
+            });
+        }
+
+        function ShowReceipeByID_EditMode(id) {
+            var $row = $('#details_row_' + id);
+            var $container = $row.find('.details-container');
+
+            $.ajax({
+                type: 'POST',
+                url: '/managereceipe/ShowReceipeByID_EditMode',
+                data: { id: id },
+                success: function (r) {
+                    $container.html(r.d.rettext);
+                    BindFuzzy(r.d.listmain);
+                },
+                error: function (x) {
+                    alert('Failed to enter edit mode: ' + x.responseText);
+                }
+            });
+        }
+
+        function ShowReceipeByID(id, mode) {
+            // Simple wrapper to refresh display details back to read-only
+            loadRecipeDetails(id);
+            RemoveFuzzy();
+        }
+
+        function removeIngredient(anchor, mode) {
+            $(anchor).closest('ul').remove();
+        }
+
+        function addInstructionsRow(anchor) {
+            var $container = $(anchor).closest('.divIngredient').find('.divIngredientlistOuter');
+            var measuringHtml = $('#drpMeasuringUnit').html();
+            var ingGrpHtml = $('#drpingredientGrp').html();
+
+            var rowHtml = "<ul data-id='0'>" +
+                "<li class='ligrp2 ing'><select class='drpIngredienGRP form-control'>" + ingGrpHtml + "</select></li>" +
+                "<li class='ligrp1 ins'><input class='txtIngredient form-control' placeholder='Instructions' /></li>" +
+                "<li class='ligrp2 ing'><input class='txtIngredientgrp form-control' placeholder='Ingredients' /></li>" +
+                "<li class='ligrp cuttype'><input class='txtIngredientcuttype form-control' placeholder='Cut-Type' /></li>" +
+                "<li class='ligrp2 ing'>" +
+                "<div class='input-group' style='max-width:100px;'><input class='txtIngredientmlperserving form-control' value='0' /><span class='input-group-addon'>ml.</span></div>" +
+                "<select class='drpIngredienUnit form-control'>" + measuringHtml + "</select>" +
+                "</li>" +
+                "<li class='ligrp4 liclose'><a class='pull-left btn btn-xs btn-danger' onclick='removeIngredient(this, 1);'>X</a></li>" +
+                "</ul>";
+
+            $container.append(rowHtml);
+
+            // Bind dynamic change handler matching legacy behaviour
+            var $newRow = $container.find('ul:last');
+            $newRow.find('select.drpIngredienGRP').change(function () {
+                var val = $(this).val();
+                if (val && val !== '0') {
+                    var parts = val.split(',');
+                    var grpId = parts[0];
+                    var cutType = parts.length > 1 ? parts[1] : '';
+                    var nameText = $(this).find('option:selected').text();
+
+                    $newRow.find('input.txtIngredient').val(nameText);
+                    $newRow.find('input.txtIngredientgrp').val(nameText);
+                    $newRow.find('input.txtIngredientcuttype').val(cutType);
+                }
+            });
+        }
+
+        function addDirectionRow(recipeId, anchor) {
+            var $container = $(anchor).closest('.divIngredient').find('.divIngredientlistOuter');
+            $container.append(
+                "<ul data-id='0'>" +
+                "<li><textarea class='txtDirection fuzzy form-control' placeholder='Direction' autocomplete='off'></textarea></li>" +
+                "<li class='liclose'><a class='pull-left btn btn-xs btn-danger' onclick='removeIngredient(this, 2);'>X</a></li>" +
+                "</ul>"
+            );
+
+            // Fetch autocomplete source list for horsey fuzzy
+            $.ajax({
+                type: 'POST',
+                url: '/managereceipe/ShowReceipeByID_EditMode',
+                data: { id: recipeId },
+                success: function (r) {
+                    BindFuzzy(r.d.listmain);
+                }
+            });
+        }
+
+        function addNutritionRow(anchor) {
+            var $container = $(anchor).closest('.divIngredient').find('.divIngredientlistOuter');
+            $container.append(
+                "<ul data-id='0'>" +
+                "<li><input class='txtNutrition form-control' placeholder='Nutrition' /></li>" +
+                "<li class='liclose'><a class='pull-left btn btn-xs btn-danger' onclick='removeIngredient(this, 3);'>X</a></li>" +
+                "</ul>"
+            );
+        }
+
+        function updatereceipeByID(anchor, id) {
+            var $editOuter = $(anchor).closest('.divreceipe_Editouter');
+            
+            var payload = {
+                title: $editOuter.find('input.txtReceipeTitle').val(),
+                servingDet: $editOuter.find('input.txtServing').val(),
+                lstingredients: [],
+                direction: [],
+                nutrition_Information: []
+            };
+
+            // Parse ingredients rows
+            $editOuter.find('#dvInstruction ul').each(function () {
+                var $ul = $(this);
+                var ing = {
+                    id: parseInt($ul.attr('data-id')),
+                    ingredient: $ul.find('input.txtIngredient').val(),
+                    ingredientGRP: $ul.find('input.txtIngredientgrp').val(),
+                    ingredientcuttype: $ul.find('input.txtIngredientcuttype').val(),
+                    ingredientmlperserving: $ul.find('input.txtIngredientmlperserving').val(),
+                    ingredientunit: $ul.find('select.drpIngredienUnit').val(),
+                    ingredientGRPID: 0
+                };
+
+                var grpSelect = $ul.find('select.drpIngredienGRP');
+                if (grpSelect.length > 0 && grpSelect.val()) {
+                    ing.ingredientGRPID = parseInt(grpSelect.val().split(',')[0]);
+                }
+                payload.lstingredients.push(ing);
+            });
+
+            // Parse directions
+            $editOuter.find('#dvDirection textarea.txtDirection').each(function () {
+                payload.direction.push($(this).val());
+            });
+
+            // Parse nutritions
+            $editOuter.find('#dvNutrition input.txtNutrition').each(function () {
+                payload.nutrition_Information.push($(this).val());
+            });
+
+            $.ajax({
+                type: 'POST',
+                url: '/managereceipe/updatereceipeByID?id=' + id,
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (r) {
+                    if (r.d === "1") {
+                        // Refresh to read only
+                        ShowReceipeByID(id, 1);
+                    } else {
+                        alert('Failed to save recipe updates.');
+                    }
+                },
+                error: function (x) {
+                    alert('Error saving recipe updates: ' + x.responseText);
+                }
+            });
+
+            RemoveFuzzy();
+        }
+
+        // ─── Horsey Fuzzy Tags Auto-complete Helper ─────────────────────────────────
+
+        function RemoveFuzzy() {
+            var lstfuzzy = document.querySelectorAll('.fuzzy');
+            for (var i = 0, element; element = lstfuzzy[i]; i++) {
+                if (typeof horsey !== 'undefined') {
+                    horsey(element).destroy();
+                }
+            }
+        }
+
+        function BindFuzzy(varlist) {
+            'use strict';
+            if (typeof horsey === 'undefined') return;
+
+            var lstfuzzy = document.querySelectorAll('.fuzzy');
+            for (var i = 0, element; element = lstfuzzy[i]; i++) {
+                horsey(element, {
+                    source: [{ list: varlist }],
+                    getText: 'text',
+                    getValue: 'value',
+                    anchor: '#',
+                    blankSearch: 'false',
+                    limit: 10
+                });
+            }
+        }
+
+        // ─── Row Commands ──────────────────────────────────────────────────────────
+
+        function saveInlineRow(id) {
+            var $row = $('#row_' + id);
+            var title = $row.find('input[name="bulkTitles"]').val();
+            var price = $row.find('input[name="bulkPrices"]').val();
+
+            if (!title) {
+                alert('Title is required!');
+                return;
+            }
+
+            var form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/managereceipe/savenormitem';
+            
+            // Append parameters
+            form.appendChild(createHiddenField('id', id));
+            form.appendChild(createHiddenField('title', title));
+            form.appendChild(createHiddenField('price', price));
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function cloneRecipeRow(id) {
+            if (!confirm('Are you sure you want to clone this recipe to product list?')) return;
+
+            var form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/managereceipe/clone';
+            form.appendChild(createHiddenField('id', id));
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function createHiddenField(name, value) {
+            var hid = document.createElement('input');
+            hid.type = 'hidden';
+            hid.name = name;
+            hid.value = value;
+            return hid;
+        }
+
+        // ─── Category Mapping Modal ────────────────────────────────────────────────
+
+        function assignThemesToMultiplePrds(typeId) {
+            var selectedCount = $('.rowtext .chk input[type="checkbox"]:checked').length;
+            if (selectedCount === 0) {
+                alert('please select any item');
+                return;
+            }
+
+            $('body').addClass('modal-open');
+            $('#Mymodal_theme').show().addClass('in').removeClass('hide');
+            $('#modalbg_category').show().addClass('in').removeClass('hide');
+
+            $('.chkStoreCategory_outer input:checkbox').prop('checked', false);
+
+            if (typeId == 1) {
+                $('.chktag_outer').hide();
+                $('.chktheme_outer').show();
+                $('.spnClsName').html('Categories');
+            } else {
+                $('.chktag_outer').show();
+                $('.chktheme_outer').hide();
+                $('.spnClsName').html('Tags');
+            }
+
+            $('#hdnAssignCat').val(typeId);
+        }
+
+        function hideModalTheme() {
+            $('body').removeClass('modal-open');
+            $('#Mymodal_theme').hide().removeClass('in').addClass('hide');
+            $('#modalbg_category').hide().removeClass('in').addClass('hide');
+        }
+
+        function assignCatToRecipeSubmit() {
+            var typeId = $('#hdnAssignCat').val();
+            var payload = {
+                lnkPrdStoreCat: [],
+                cattypeID: parseInt(typeId)
+            };
+
+            var checkedCats = [];
+            var selector = typeId == "1" ? '.chktheme_outer input:checkbox:checked' : '.chktag_outer input:checkbox:checked';
+            $(selector).each(function () {
+                checkedCats.push(parseInt($(this).val()));
+            });
+
+            if (checkedCats.length === 0) {
+                alert('please select any mapping item!');
+                return;
+            }
+
+            $('.rowtext .chk input[type="checkbox"]:checked').each(function () {
+                var recipeId = parseInt($(this).val());
+                $.each(checkedCats, function (i, catId) {
+                    payload.lnkPrdStoreCat.push({
+                        LnkPrdStoreCat_ID: 0,
+                        LnkPrdStoreCat_PrdId: recipeId,
+                        LnkPrdStoreCat_CatId: catId
+                    });
+                });
+            });
+
+            $.ajax({
+                type: 'POST',
+                url: '/managereceipe/assignCattoReceipe',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (r) {
+                    if (r.d && r.d.data_ID === 1) {
+                        hideModalTheme();
+                        alert('Record(s) assigned successfully');
+                        location.reload();
+                    } else {
+                        alert('Failed to assign category mappings.');
+                    }
+                },
+                error: function (x) {
+                    alert('Error assigning category: ' + x.responseText);
+                }
+            });
+        }
+
+        function removeCatLinkingFromRecipe(catId, recipeId, anchor) {
+            $(anchor).closest('.itemli').remove();
+            
+            $.ajax({
+                type: 'POST',
+                url: '/managereceipe/UnAssignCattoReceipe',
+                contentType: 'application/json',
+                data: JSON.stringify({ receipeID: recipeId, catID: catId }),
+                success: function (r) {
+                    // Mappings removed successfully
+                }
+            });
+        }
+
+        // ─── Bulk Action Handles ───────────────────────────────────────────────────
+
+        function submitBulkAction(actionType) {
+            var selectedCount = $('.rowtext .chk input[type="checkbox"]:checked').length;
+            if (selectedCount === 0) {
+                alert('please select any item!');
+                return;
+            }
+
+            if (actionType === 'delete') {
+                if (!confirm('Are you sure you want to remove selected ' + selectedCount + ' item(s)?')) return;
+            }
+
+            $('#hidBulkAction').val(actionType);
+            $('#frmBulkAction').submit();
+        }
+
+        // ─── Print Actions ─────────────────────────────────────────────────────────
+
+        function printSelectedRecipes() {
+            var selectedIds = [];
+            $('.rowtext .chk input[type="checkbox"]:checked').each(function () {
+                selectedIds.push($(this).val());
+            });
+
+            if (selectedIds.length === 0) {
+                alert('please select any item!');
+                return;
+            }
+
+            var url = '/ManageReceipe_Print.aspx?strIDs=' + selectedIds.join(',');
+            window.open(url, '_blank');
+        }
+
+        function printAllRecipes() {
+            var url = '/ManageReceipe_Print.aspx';
+            // Append current filter query string
+            var filterString = buildFilterUrl(1).split('?')[1] || '';
+            if (filterString) {
+                url += '?' + filterString;
+            }
+            window.open(url, '_blank');
+        }
+
+        // ─── File Upload Generic Handler ───────────────────────────────────────────
+
+        function ajaxFileUploadRecipe(inputElement, recipeId) {
+            var file = inputElement.files[0];
+            if (!file) return;
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '/receipegh.ashx?folder_id=receipeImages&foldersize=300_300,80_80&id=' + recipeId,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (r) {
+                    // Success callback triggers page refresh to display new image
+                    location.reload();
+                },
+                error: function (x) {
+                    alert('Error uploading file: ' + x.responseText);
+                }
+            });
+        }
+    </script>
+}
+
+@functions {
+    public string GetPagingUrl(int pNo)
+    {
+        var url = $"/managereceipe/page-{pNo}";
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrEmpty(ViewBag.SearchKeyword))
+            queryParams.Add($"search={ViewBag.SearchKeyword}");
+
+        if (ViewBag.FilterStatus != 0)
+            queryParams.Add($"filterstatus={ViewBag.FilterStatus}");
+
+        if (ViewBag.CookingStatus != 0)
+            queryParams.Add($"cookingstatus={ViewBag.CookingStatus}");
+
+        if (ViewBag.CatId != 0)
+            queryParams.Add($"catid={ViewBag.CatId}");
+
+        if (ViewBag.RecipeCatId != 0)
+            queryParams.Add($"receipecatid={ViewBag.RecipeCatId}");
+
+        if (ViewBag.RecipeTagId != 0)
+            queryParams.Add($"receipetagid={ViewBag.RecipeTagId}");
+
+        if (!string.IsNullOrEmpty(ViewBag.SearchTags))
+            queryParams.Add($"searchtags={ViewBag.SearchTags}");
+
+        if (queryParams.Count > 0)
+            url += "?" + string.Join("&", queryParams);
+
+        return url;
+    }
+}

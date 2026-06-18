@@ -1,0 +1,206 @@
+@{
+    ViewData["Title"] = "Manage Franchise Product";
+    var franchises = ViewBag.Franchises as List<CakerStreet.Business.Controllers.FranchiseDropdownItem> ?? new List<CakerStreet.Business.Controllers.FranchiseDropdownItem>();
+    var products = ViewBag.Products as List<CakerStreet.Business.Controllers.FranchiseProductItem> ?? new List<CakerStreet.Business.Controllers.FranchiseProductItem>();
+    var selectedId = (long)(ViewBag.SelectedFranchiseId ?? 0L);
+    var message = ViewBag.Message as string ?? "";
+    var franchiseTitle = ViewBag.FranchiseTitle as string ?? "";
+    var franchiseStatus = (int)(ViewBag.FranchiseStatus ?? 0);
+    var franchiseIsActive = (bool)(ViewBag.FranchiseIsActive ?? false);
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .edit-form { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .edit-form .form-group { margin-bottom: 10px; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Franchise Product</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-success">@message</div>
+        }
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Franchise Dropdown ─────────────────────────────────────────── *@
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label><strong>Select Franchise:</strong></label>
+                        <select id="ddlFranchise" class="form-control" onchange="onFranchiseChange();">
+                            <option value="0">--Select Franchise--</option>
+                            @foreach (var f in franchises)
+                            {
+                                <option value="@f.Id" @(f.Id == selectedId ? "selected" : "")>@f.DisplayTitle</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Edit Form (shown when franchise selected) ──────────────────── *@
+                @if (selectedId > 0)
+                {
+                    <div class="col-md-12">
+                        <div class="edit-form">
+                            <h4>Edit Franchise Details</h4>
+                            <input type="hidden" id="hfFranchiseId" value="@selectedId" />
+                            <div class="form-group">
+                                <label>Title:</label>
+                                <input type="text" id="txtTitle" class="form-control" value="@franchiseTitle" style="max-width: 400px;" />
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="ddlStatus" class="form-control" style="max-width: 250px;">
+                                    <option value="1" @(franchiseStatus == 1 ? "selected" : "")>Under Proposal</option>
+                                    <option value="2" @(franchiseStatus == 2 ? "selected" : "")>Approved</option>
+                                    <option value="3" @(franchiseStatus == 3 ? "selected" : "")>Disapproved</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Is Active:</label>
+                                <select id="ddlIsActive" class="form-control" style="max-width: 250px;">
+                                    <option value="1" @(franchiseIsActive ? "selected" : "")>Yes</option>
+                                    <option value="0" @(!franchiseIsActive ? "selected" : "")>No</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="saveFranchise();">Save</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeFranchise();">Remove Franchise</button>
+                        </div>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    @* ─── Product Table ──────────────────────────────────────────────── *@
+                    <div class="col-md-12" style="margin-top: 15px;">
+                        @if (products.Count > 0)
+                        {
+                            <h4>Linked Products (@products.Count)</h4>
+                            <div class="table prdlstouter" id="our_products">
+                                <table class="table table-bordred table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <th>Price</th>
+                                            <th>Min Stock</th>
+                                            <th>Total Investment</th>
+                                            <th>Ordered</th>
+                                            <th>Delivered</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in products)
+                                        {
+                                            <tr>
+                                                <td>@item.ProductName</td>
+                                                <td>@item.Price.ToString("N2")</td>
+                                                <td>@item.MinStockReq</td>
+                                                <td>@item.TotalInvestment.ToString("N2")</td>
+                                                <td>@item.Ordered</td>
+                                                <td>@item.Delivered</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">No products linked to this franchise.</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    function onFranchiseChange() {
+        var val = $('#ddlFranchise').val();
+        if (val && val !== '0') {
+            window.location.href = '/manageproductwithfranchise?franchiseid=' + val;
+        } else {
+            window.location.href = '/manageproductwithfranchise';
+        }
+    }
+
+    function saveFranchise() {
+        var title = $.trim($('#txtTitle').val());
+        if (title === '') {
+            showMessage('Title is required.', false);
+            return;
+        }
+
+        var data = {
+            franchiseId: $('#hfFranchiseId').val(),
+            title: title,
+            status: $('#ddlStatus').val(),
+            isActive: $('#ddlIsActive').val()
+        };
+
+        $.post('/manageproductwithfranchise/save', data, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () {
+                    window.location.href = '/manageproductwithfranchise?franchiseid=' + data.franchiseId + '&msg=' + encodeURIComponent(r.message);
+                }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+
+    function removeFranchise() {
+        if (!confirm('Are you sure you want to remove this franchise?')) {
+            return;
+        }
+
+        var data = {
+            franchiseId: $('#hfFranchiseId').val()
+        };
+
+        $.post('/manageproductwithfranchise/remove', data, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () {
+                    window.location.href = '/manageproductwithfranchise?msg=' + encodeURIComponent(r.message);
+                }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to remove.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while removing.', false);
+        });
+    }
+</script>
+}

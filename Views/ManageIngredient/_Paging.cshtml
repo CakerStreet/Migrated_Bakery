@@ -1,0 +1,36 @@
+@using CakerStreet.Business.Services
+@{
+    var result = ViewBag.Result as ManageIngredientListResult;
+}
+
+@if (result != null && result.TotalPages > 1)
+{
+    var totalPages = result.TotalPages;
+    var currentPage = (int)ViewBag.CurrentPage;
+    <ul class="pagination pagination-sm no-margin pull-right">
+        @if (currentPage > 1)
+        {
+            <li>
+                <a href="@Url.Action("Index", new { pageno = 1, search = ViewBag.SearchKeyword, filterstatus = ViewBag.FilterStatus, activestatus = ViewBag.ActiveStatus, cookingstatus = ViewBag.CookingStatus, taggrpstatus = ViewBag.TagGrpStatus, catid = ViewBag.CatId, grpcatid = ViewBag.GrpCatId, searchtags = ViewBag.SearchTags })">&laquo;&laquo; First</a>
+            </li>
+            <li>
+                <a href="@Url.Action("Index", new { pageno = currentPage - 1, search = ViewBag.SearchKeyword, filterstatus = ViewBag.FilterStatus, activestatus = ViewBag.ActiveStatus, cookingstatus = ViewBag.CookingStatus, taggrpstatus = ViewBag.TagGrpStatus, catid = ViewBag.CatId, grpcatid = ViewBag.GrpCatId, searchtags = ViewBag.SearchTags })">&laquo; Prev</a>
+            </li>
+        }
+        @for (int i = Math.Max(1, currentPage - 3); i <= Math.Min(totalPages, currentPage + 3); i++)
+        {
+            <li class="@(i == currentPage ? "active" : "")">
+                <a href="@Url.Action("Index", new { pageno = i, search = ViewBag.SearchKeyword, filterstatus = ViewBag.FilterStatus, activestatus = ViewBag.ActiveStatus, cookingstatus = ViewBag.CookingStatus, taggrpstatus = ViewBag.TagGrpStatus, catid = ViewBag.CatId, grpcatid = ViewBag.GrpCatId, searchtags = ViewBag.SearchTags })">@i</a>
+            </li>
+        }
+        @if (currentPage < totalPages)
+        {
+            <li>
+                <a href="@Url.Action("Index", new { pageno = currentPage + 1, search = ViewBag.SearchKeyword, filterstatus = ViewBag.FilterStatus, activestatus = ViewBag.ActiveStatus, cookingstatus = ViewBag.CookingStatus, taggrpstatus = ViewBag.TagGrpStatus, catid = ViewBag.CatId, grpcatid = ViewBag.GrpCatId, searchtags = ViewBag.SearchTags })">Next &raquo;</a>
+            </li>
+            <li>
+                <a href="@Url.Action("Index", new { pageno = totalPages, search = ViewBag.SearchKeyword, filterstatus = ViewBag.FilterStatus, activestatus = ViewBag.ActiveStatus, cookingstatus = ViewBag.CookingStatus, taggrpstatus = ViewBag.TagGrpStatus, catid = ViewBag.CatId, grpcatid = ViewBag.GrpCatId, searchtags = ViewBag.SearchTags })">Last &raquo;&raquo;</a>
+            </li>
+        }
+    </ul>
+}

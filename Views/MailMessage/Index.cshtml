@@ -1,0 +1,66 @@
+@{
+    Layout = null;
+    var messageMode = ViewBag.MessageMode as string ?? "";
+    var messageCode = ViewBag.MessageCode as string ?? "";
+    var siteUrl = ViewBag.SiteUrl as string ?? "http://localhost:5000";
+    var websiteName = ViewBag.WebsiteName as string ?? "CakerStreet.com";
+}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Customer Care</title>
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 40px;
+            text-align: center;
+        }
+        .form {
+            display: inline-block;
+            margin: 20px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px #ccc;
+            text-align: left;
+            max-width: 600px;
+            width: 100%;
+            font-size: 15px;
+            line-height: 24px;
+        }
+        .normallink {
+            color: #db3736;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .normallink:hover {
+            color: #000;
+        }
+        .nu {
+            text-decoration: unset;
+        }
+    </style>
+</head>
+<body>
+    <div class="form">
+        <h3 class="list-head" style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #db3736;">Customer Support</h3>
+        
+        @if (messageMode.ToLower() == "checksuccess")
+        {
+            <p>Dear Customer,</p>
+            <p>Your payment towards the order number <span class="normallink nu">#@(messageCode.Replace("_", ", "))</span> has been successfully received.</p>
+            <p>Please <a href="@siteUrl" class="normallink">Click here</a> to go to the main page.</p>
+            <p>Thank you for your interest!</p>
+        }
+        else
+        {
+            <p><b>Dear Customer</b>,</p>
+            <p>Your transaction has been declined by the payment gateway. Try again by changing your credentials. Please <a href="@siteUrl" class="normallink"><b>Click here</b></a> to go to the main page.</p>
+            <p><b>Thanks,</b></p>
+            <p><b>Customer Support,<br/>@websiteName</b></p>
+        }
+    </div>
+</body>
+</html>

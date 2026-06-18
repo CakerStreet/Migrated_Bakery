@@ -1,0 +1,180 @@
+@*
+    Print view for Cutters / Product Images grid.
+    Migrated from: printcutters.aspx
+    Layout: _PrintLayout (standalone print page, no sidebar)
+*@
+@{
+    Layout = "~/Views/Shared/_PrintLayout.cshtml";
+    ViewBag.Title = "Print Images";
+
+    var products = ViewBag.Products as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+    int pageSize = (int)(ViewBag.PageSize ?? 16);
+    int itemsPerRow = (int)(ViewBag.ItemsPerRow ?? 4);
+    int boxHeight = (int)(ViewBag.Height ?? 176);
+    int totalCount = (int)(ViewBag.TotalCount ?? 0);
+    double itemWidthPercent = (100.0 / itemsPerRow) - 2;
+
+    // Size checkboxes: value → label (legacy hard-coded values)
+    var sizeOptions = new Dictionary<string, string>
+    {
+        { "432", "6\"" }, { "428", "8\"" }, { "426", "10\"" }, { "828", "12\"" }, { "829", "14\"" }
+    };
+}
+
+<style type="text/css" media="all">
+    .divattouter .divname, .divattouter .OptionAttr_outer { display: none; visibility: hidden; }
+    .container { width: 8.27in; }
+    .divattouter .OptionAttr_outer:last-child { display: block; visibility: visible; }
+    .divattouter .maindata .parentli { font-weight: bold; }
+    .divattouter .headertext .red { color: #aa041c; font-size: 13px; font-weight: bold; text-decoration: underline; }
+    body, body * { font-weight: normal; background-color: #ffffff; }
+    .btn-primary { background-color: #b51a1a; color: #ffffff; border-color: #b51a1a; }
+    b { font-weight: bold; }
+    a:link:after, a:visited:after { content: ""; }
+    .redcolored { color: #b51a1a; }
+    ul { padding: 0; list-style-type: none; margin: 0; }
+    .bakery-prd { float: left; margin: 1%; position: relative; }
+    .thumbnail { background-color: #fff; border: 1px solid #000; border-radius: 0; display: block; line-height: 1.42857; padding: 5px; margin-bottom: 0; overflow: hidden; position: relative; }
+    .deliverybox_productbox { display: block; height: 32px; padding: 0; position: relative; width: 100%; }
+    .productName_productbox { position: relative; padding: 0; height: 32px; line-height: 16px; font-size: 12px; }
+    .removePrd { position: absolute; right: 1px; top: 1px; padding: 0 5px; line-height: 20px; border: 1px solid #ccc; border-radius: 5px; z-index: 3; }
+    .removePrd:hover { text-decoration: unset; }
+    a.absolute-anchor { bottom: 0; color: transparent !important; left: 0; position: absolute; right: 0; top: 0; z-index: 2; background: transparent; }
+    .drpCountPrd { position: absolute; right: 7px; top: 27px; z-index: 3; }
+    .page-break { clear: both; }
+    .startPage { clear: both; height: 70px; }
+    .page-break .noprint { text-align: center; display: block; background-color: #fccc; line-height: 30px; }
+    .div_imgBox { background-position: center center; background-repeat: no-repeat; display: table; width: 100%; background-size: 100% auto; }
+    .div_imgBox img { max-width: 100%; max-height: 100%; }
+    .chkSize { width: 100%; }
+    .chkSize td { text-align: center; }
+    .chkSize label { font-size: 14px; width: 20px; padding: 0; margin: 0; font-weight: bold; }
+    .deliverybox_productbox.size { bottom: 0; height: 36px; position: absolute; left: 0; opacity: .8; z-index: 3; }
+</style>
+
+<style type="text/css" media="print">
+    @@media page { size: A4 Portrait; }
+    .container { width: 100%; }
+    @@page { margin: 5mm; padding: 0; }
+    #dvPrintButtons, .noprint { visibility: hidden; display: none; }
+    .page-break { page-break-before: always; height: 70px; }
+</style>
+
+<div class="container">
+    @* ── Layout Parameters Form (hidden on print) ── *@
+    <form method="post" asp-controller="PrintCutters" asp-action="Submit" class="noprint">
+        <table width="100%">
+            <tr>
+                <td width="200px">No. of Items / page</td>
+                <td>
+                    <input type="number" name="txtNoOfItems" value="@pageSize" class="form-control" style="width:100px;display:inline-block;" placeholder="No of Items (e.g 10)" required />
+                </td>
+            </tr>
+            <tr>
+                <td>Items / Rows</td>
+                <td>
+                    <input type="number" name="txtItemsperRow" value="@itemsPerRow" class="form-control" style="width:100px;display:inline-block;" placeholder="No of Items (e.g 5)" required />
+                </td>
+            </tr>
+            <tr>
+                <td>Item Box Height</td>
+                <td>
+                    <input type="number" name="txtHeight" id="txtHeight" value="@boxHeight" class="form-control" style="width:100px;display:inline-block;" placeholder="Height" required />
+                </td>
+            </tr>
+            <tr style="display:none;">
+                <td>Prd IDs</td>
+                <td>
+                    <textarea name="txtPRdIDs" class="form-control" style="height:200px;" placeholder="e.g. 9088-1,9089-2...">@(Context.Session.GetString("TempPrintCutter_Pids") ?? "")</textarea>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button type="submit" class="btn btn-primary btn-sm">Submit</button></td>
+            </tr>
+        </table>
+    </form>
+
+    @* ── Print button + item count ── *@
+    <div id="dvPrintButtons" class="row" style="margin-top: 10px; text-align: center;">
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.print();">Print</button>
+        </div>
+        <br />
+        <div style="text-align:left;">@totalCount Items</div>
+    </div>
+
+    @* ── Product Grid ── *@
+    @for (int i = 0; i < products.Count; i++)
+    {
+        var product = products[i];
+        var productId = Convert.ToString(product["product_ID"]);
+        var countPrd = Convert.ToString(product["countprd"]);
+        var imageUrl = Convert.ToString(product["ImageUrl"]);
+        var showSizes = (bool)product["ShowSizes"];
+        var sizeList = product["SizeList"] as List<string> ?? new List<string>();
+
+        @* First item gets a startPage spacer *@
+        if (i == 0)
+        {
+            <div class="startPage"></div>
+        }
+
+        <div class="bakery-prd" style="width:@(itemWidthPercent)%;">
+            <div class="thumbnail">
+                <div class="deliverybox_productbox">
+                    <div class="productName_productbox">
+                        #@product["product_code"] -
+                        @product["product_name"]
+                    </div>
+                </div>
+                <div class="div_imgBox prdbox" style="height:@(boxHeight)px;">
+                    <img src="@imageUrl" style="border-width:0px;"
+                         onerror="this.src='@(ViewBag.CustomerWebsite)/images/blankImages/img75.jpg';" />
+                </div>
+
+                @* Size checkboxes for product_type 1 *@
+                @if (showSizes)
+                {
+                    <div class="deliverybox_productbox size">
+                        <div class="productName_productbox">
+                            <table class="chkSize">
+                                <tr>
+                                    @foreach (var sizeOpt in sizeOptions)
+                                    {
+                                        <td>
+                                            <input type="checkbox" disabled @(sizeList.Contains(sizeOpt.Key) ? "checked" : "") />
+                                            <label>@sizeOpt.Value</label>
+                                        </td>
+                                    }
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                @* Remove button (hidden on print) *@
+                <a href="/printcutters?exclude=@(productId)-@(countPrd)" class="noprint removePrd" title="Remove">X</a>
+
+                @* Count dropdown (hidden on print) *@
+                <form method="post" action="/printcutters/updatecount" class="noprint drpCountPrd" style="display:inline;">
+                    <input type="hidden" name="productId" value="@productId" />
+                    <select name="count" onchange="this.form.submit();">
+                        @for (int c = 1; c <= 5; c++)
+                        {
+                            <option value="@c" @(countPrd == c.ToString() ? "selected" : "")>@c</option>
+                        }
+                    </select>
+                </form>
+            </div>
+            @* Link to manage topper *@
+            <a target="_blank" href="/managetopper?id=@productId&type=5" class="absolute-anchor noprint"></a>
+        </div>
+
+        @* Page break after every N items (except the last set) *@
+        if ((i + 1) % pageSize == 0 && (i + 1) < totalCount)
+        {
+            <div class="page-break"><span class="noprint">-- Next Page --</span></div>
+        }
+    }
+</div>

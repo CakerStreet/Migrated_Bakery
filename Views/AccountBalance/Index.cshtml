@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "My Account Balance";
+    var overview = ViewBag.Overview as CakerStreet.Business.Services.AccountOverviewModel ?? new CakerStreet.Business.Services.AccountOverviewModel();
+    var orders = ViewBag.Orders as List<CakerStreet.Business.Services.AccountOrderItem> ?? new List<CakerStreet.Business.Services.AccountOrderItem>();
+    var withdrawalsEnabled = (bool)(ViewBag.WithdrawalsEnabled ?? false);
+}
+
+@section Head {
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .overview-panel { margin-bottom: 20px; }
+        .overview-panel .row { display: flex; flex-wrap: wrap; }
+        .overview-item { text-align: center; padding: 15px 10px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px; background: #fafafa; }
+        .overview-item .amount { font-size: 20px; font-weight: bold; color: #333; }
+        .overview-item .label-text { font-size: 12px; color: #777; margin-top: 5px; }
+        .status-pending { color: #777; }
+        .status-confirmed { color: orange; }
+        .status-available { color: green; }
+        .status-paidout { color: green; font-weight: bold; }
+        .status-cancelled { color: #d9534f; }
+        .status-withdrawal { color: #337ab7; }
+        .btn-withdraw { padding: 2px 8px; font-size: 11px; }
+        .net-amount { font-weight: bold; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">My Account Balance</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+
+        @* ─── Account Overview Panel ──────────────────────────────────────────── *@
+        <div class="overview-panel">
+            <div class="row">
+                <div class="col-sm-3 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount">£@overview.PendingAmount.ToString("N2")</div>
+                        <div class="label-text">Pending</div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount" style="color: orange;">£@overview.ConfirmedAmount.ToString("N2")</div>
+                        <div class="label-text">Confirmed</div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount" style="color: green;">£@overview.AvailableAmount.ToString("N2")</div>
+                        <div class="label-text">Available</div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount" style="color: #d9534f;">£@overview.CancelledAmount.ToString("N2")</div>
+                        <div class="label-text">Cancelled</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount">£@overview.TotalTrade.ToString("N2")</div>
+                        <div class="label-text">Total Trade</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount">£@overview.FeeCharged.ToString("N2")</div>
+                        <div class="label-text">Fee Charges</div>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-xs-6">
+                    <div class="overview-item">
+                        <div class="amount" style="color: green;">£@overview.PayoutAmount.ToString("N2")</div>
+                        <div class="label-text">Payouts</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clearfix"></div>
+
+        @* ─── Order List Table ────────────────────────────────────────────────── *@
+        @if (orders.Count == 0)
+        {
+            <div class="alert alert-info">No orders found.</div>
+        }
+        else
+        {
+            <div class="table prdlstouter">
+                <table class="table table-bordred table-striped" id="tblAccountBalance">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Collection Date</th>
+                            <th>Order #</th>
+                            <th>Amount</th>
+                            <th>Fee</th>
+                            <th>Net</th>
+                            <th>Status</th>
+                            <th>Payout Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in orders)
+                        {
+                            var netAmount = order.TotalPrice - order.CSMargin - order.PaypalFee - order.PayoutRefund - order.CouponValue;
+                            var statusText = GetStatusText(order.Status);
+                            var payoutStatusHtml = GetPayoutStatusHtml(order);
+                            var canWithdraw = order.Status == 4 && !order.IsPayout && !order.WithdrawalId.HasValue;
+
+                            <tr>
+                                <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                                <td>@order.CollectionDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <a href="/printorder/@order.OrderId" target="_blank">@order.OrderId</a>
+                                    @if (order.IsRepeat)
+                                    {
+                                        <span class="label label-info" style="font-size:9px;">Repeat</span>
+                                    }
+                                </td>
+                                <td>£@order.TotalPrice.ToString("N2")</td>
+                                <td>£@((order.CSMargin + order.PaypalFee).ToString("N2"))</td>
+                                <td class="net-amount">£@netAmount.ToString("N2")</td>
+                                <td>@statusText</td>
+                                <td>@Html.Raw(payoutStatusHtml)</td>
+                                <td>
+                                    @if (canWithdraw)
+                                    {
+                                        <button type="button" class="btn btn-danger btn-withdraw" 
+                                                onclick="requestWithdrawal(@order.OrderId)">
+                                            Withdraw
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function requestWithdrawal(orderId) {
+        var enabled = @(withdrawalsEnabled ? "true" : "false");
+        if (!enabled) {
+            alert('Withdrawals disabled in migration mode. Contact admin.');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to request withdrawal for order #' + orderId + '?')) {
+            return;
+        }
+
+        $.ajax({
+            url: '/myaccountbalance/withdraw',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ orderId: orderId }),
+            success: function (r) {
+                if (r.success) {
+                    alert('Withdrawal request sent successfully!');
+                    location.reload();
+                } else {
+                    alert(r.message || 'Withdrawal failed.');
+                }
+            },
+            error: function () {
+                alert('An error occurred. Please try again.');
+            }
+        });
+    }
+</script>
+}
+
+@functions {
+    string GetStatusText(int status)
+    {
+        return status switch
+        {
+            0 => "Pending",
+            1 => "Confirmed",
+            2 => "Processed",
+            3 => "Under Delivery",
+            4 => "Completed",
+            5 => "Under Processing",
+            11 => "Cancelled",
+            _ => ""
+        };
+    }
+
+    string GetPayoutStatusHtml(CakerStreet.Business.Services.AccountOrderItem order)
+    {
+        if (order.IsPayout)
+        {
+            return "<span class='status-paidout'>Paid Out</span>";
+        }
+        if (order.WithdrawalId.HasValue)
+        {
+            return "<span class='status-withdrawal'>Withdrawal request sent</span>";
+        }
+        if (order.Status == 4 && !order.IsPayout)
+        {
+            return "<span class='status-available'>Available</span>";
+        }
+        if (order.Status is 1 or 2 or 3 or 5)
+        {
+            return "<span class='status-confirmed'>Confirmed</span>";
+        }
+        if (order.Status == 0)
+        {
+            return "<span class='status-pending'>Pending</span>";
+        }
+        if (order.Status == 11)
+        {
+            return "<span class='status-cancelled'>Cancelled</span>";
+        }
+        return "";
+    }
+}

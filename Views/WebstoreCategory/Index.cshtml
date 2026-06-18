@@ -1,0 +1,172 @@
+@{
+    ViewData["Title"] = "Manage Categories";
+    var categories = ViewBag.Categories as List<CakerStreet.Business.Controllers.WebstoreCategoryController.CategoryNode>
+        ?? new List<CakerStreet.Business.Controllers.WebstoreCategoryController.CategoryNode>();
+    var returnUrl = ViewBag.ReturnUrl as string ?? "/mywebstore";
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style>
+        .middleSection { width: 100%; }
+        .cat-tree { margin-top: 15px; }
+        .cat-item { border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; margin-bottom: 8px; background: #f9f9f9; }
+        .cat-item.level-1 { background: #eee; font-weight: bold; }
+        .cat-item.level-2 { margin-left: 30px; background: #fff; font-weight: normal; }
+        .cat-item.level-3 { margin-left: 60px; background: #fff; font-size: 13px; }
+        .cat-item input { border: 1px solid #ccc; padding: 4px 8px; width: 250px; }
+        .cat-item .btn-remove { color: #d9534f; cursor: pointer; margin-left: 10px; }
+        .cat-item .btn-up { color: #337ab7; cursor: pointer; margin-left: 5px; }
+        .add-cat-btn { color: #337ab7; cursor: pointer; margin: 5px 0 5px 0; display: inline-block; }
+        .add-sub-btn { color: #337ab7; cursor: pointer; margin: 3px 0 3px 30px; display: inline-block; font-size: 13px; }
+        .add-sub3-btn { color: #337ab7; cursor: pointer; margin: 3px 0 3px 60px; display: inline-block; font-size: 12px; }
+        .alert-msg { display: none; margin: 10px 0; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Categories</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+        <div class="clearfix"></div>
+
+        <div class="col-md-8 cat-tree" id="catTree">
+            @foreach (var cat in categories)
+            {
+                <div class="cat-item level-1" data-id="@cat.Id">
+                    <input type="text" class="txt-cat" value="@cat.Name" maxlength="30" placeholder="Category Name" />
+                    <span class="btn-remove" onclick="removeItem(this)">✕</span>
+                    <span class="btn-up" onclick="moveUp(this)">↑</span>
+                </div>
+                foreach (var sub in cat.Children)
+                {
+                    <div class="cat-item level-2" data-id="@sub.Id" data-parent="@cat.Id">
+                        <input type="text" class="txt-cat" value="@sub.Name" maxlength="30" placeholder="Sub-category Name" />
+                        <span class="btn-remove" onclick="removeItem(this)">✕</span>
+                        <span class="btn-up" onclick="moveUp(this)">↑</span>
+                    </div>
+                    foreach (var sub3 in sub.Children)
+                    {
+                        <div class="cat-item level-3" data-id="@sub3.Id" data-parent="@sub.Id">
+                            <input type="text" class="txt-cat" value="@sub3.Name" maxlength="30" placeholder="Sub-sub-category" />
+                            <span class="btn-remove" onclick="removeItem(this)">✕</span>
+                        </div>
+                    }
+                    <a class="add-sub3-btn" onclick="addLevel3(this, @sub.Id)">+ Add sub-sub-category</a>
+                }
+                <a class="add-sub-btn" onclick="addLevel2(this, @cat.Id)">+ Add sub-category</a>
+            }
+        </div>
+
+        <div class="col-md-8" style="margin-top:10px;">
+            <a class="add-cat-btn" onclick="addLevel1()">+ Add new category</a>
+        </div>
+
+        <div class="col-md-8" style="margin-top:20px;">
+            <button type="button" class="btn btn-danger" onclick="saveAll();">Save Categories</button>
+            <a href="@returnUrl" class="btn btn-default" style="margin-left:10px;">Cancel</a>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script>
+function showMessage(msg, ok) {
+    var $d = $('#divMessage');
+    $d.removeClass('alert-danger alert-success alert-msg').addClass(ok ? 'alert alert-success' : 'alert alert-danger').text(msg).fadeIn();
+    setTimeout(function(){ $d.fadeOut(function(){ $(this).addClass('alert-msg'); }); }, 4000);
+}
+
+function addLevel1() {
+    var html = '<div class="cat-item level-1" data-id="0"><input type="text" class="txt-cat" value="" maxlength="30" placeholder="Category Name" /><span class="btn-remove" onclick="removeItem(this)">✕</span><span class="btn-up" onclick="moveUp(this)">↑</span></div><a class="add-sub-btn" onclick="addLevel2(this, 0)">+ Add sub-category</a>';
+    $('#catTree').append(html);
+}
+
+function addLevel2(el, parentId) {
+    var html = '<div class="cat-item level-2" data-id="0" data-parent="' + parentId + '"><input type="text" class="txt-cat" value="" maxlength="30" placeholder="Sub-category Name" /><span class="btn-remove" onclick="removeItem(this)">✕</span><span class="btn-up" onclick="moveUp(this)">↑</span></div>';
+    $(el).before(html);
+}
+
+function addLevel3(el, parentId) {
+    var html = '<div class="cat-item level-3" data-id="0" data-parent="' + parentId + '"><input type="text" class="txt-cat" value="" maxlength="30" placeholder="Sub-sub-category" /><span class="btn-remove" onclick="removeItem(this)">✕</span></div>';
+    $(el).before(html);
+}
+
+function removeItem(el) {
+    if (confirm('Remove this category?')) { $(el).closest('.cat-item').remove(); }
+}
+
+function moveUp(el) {
+    var $item = $(el).closest('.cat-item');
+    var $prev = $item.prev('.cat-item');
+    if ($prev.length && $prev.hasClass($item.attr('class').split(' ').pop())) {
+        $item.insertBefore($prev);
+    }
+}
+
+function buildTree() {
+    var tree = [];
+    var $items = $('#catTree').children('.cat-item.level-1, .add-sub-btn, .add-sub3-btn, .cat-item.level-2, .cat-item.level-3');
+    
+    // Simpler approach: iterate all level-1 items, then find their children
+    $('#catTree .cat-item.level-1').each(function() {
+        var catId = parseInt($(this).data('id')) || 0;
+        var catName = $.trim($(this).find('.txt-cat').val());
+        if (!catName) return;
+
+        var cat = { id: catId, name: catName, isDeleted: false, children: [] };
+        
+        // Find level-2 items between this level-1 and the next level-1 (or end)
+        var $next = $(this).nextUntil('.level-1');
+        $next.filter('.cat-item.level-2').each(function() {
+            var subId = parseInt($(this).data('id')) || 0;
+            var subName = $.trim($(this).find('.txt-cat').val());
+            if (!subName) return;
+
+            var sub = { id: subId, name: subName, isDeleted: false, children: [] };
+
+            // Find level-3 items after this level-2
+            $(this).nextUntil('.level-2, .level-1, .add-sub-btn').filter('.cat-item.level-3').each(function() {
+                var sub3Id = parseInt($(this).data('id')) || 0;
+                var sub3Name = $.trim($(this).find('.txt-cat').val());
+                if (!sub3Name) return;
+                sub.children.push({ id: sub3Id, name: sub3Name, isDeleted: false, children: [] });
+            });
+
+            cat.children.push(sub);
+        });
+
+        tree.push(cat);
+    });
+
+    return tree;
+}
+
+function saveAll() {
+    var tree = buildTree();
+    if (tree.length === 0) { alert('Please add at least one category.'); return; }
+
+    $.ajax({
+        url: '/managewebstorecategory/save',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(tree),
+        success: function(r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function(){ location.reload(); }, 1500);
+            } else {
+                showMessage(r.message || 'Save failed.', false);
+            }
+        },
+        error: function() { showMessage('An error occurred.', false); }
+    });
+}
+</script>
+}

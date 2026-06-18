@@ -1,0 +1,30 @@
+@{
+    Layout = "~/Views/Shared/_SidebarLayout.cshtml";
+    ViewData["Title"] = "Convert Bytes To Image URL";
+}
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3>Convert Bytes To Image URL</h3>
+    </div>
+    <div class="panel-body">
+        <form method="post" asp-controller="CreateImageFromByte" asp-action="">
+            <div class="form-group">
+                <label>Paste Base64 Image String:</label>
+                <textarea name="txtByte" class="form-control" rows="10" style="height:200px;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+        @if (!string.IsNullOrEmpty(ViewBag.ResultUrl as string))
+        {
+            <div class="form-group" style="margin-top:20px;">
+                <label>Generated Image URL:</label>
+                <input type="text" class="form-control" value="@ViewBag.ResultUrl" readonly onclick="this.select()" />
+            </div>
+            <div style="margin-top:10px;">
+                <img src="@ViewBag.ResultUrl" style="max-width:400px; border:1px solid #ccc;" alt="Generated Image" />
+            </div>
+        }
+    </div>
+</div>

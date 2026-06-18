@@ -1,0 +1,157 @@
+@{
+    ViewData["Title"] = "Payment Settings";
+    var settings = ViewBag.Settings as CakerStreet.Business.Services.PaymentSettingsModel;
+    var isEnabled = (bool)(ViewBag.IsEnabled ?? false);
+}
+
+@section Head {
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .section-panel { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px; background: #fff; }
+        .section-panel h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; }
+        .readonly-banner { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px 15px; border-radius: 4px; margin-bottom: 20px; }
+        .readonly-banner i { margin-right: 8px; }
+        .masked-display { color: #666; font-family: monospace; font-size: 14px; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Payment Settings</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        @if (!isEnabled)
+        {
+            <div class="readonly-banner">
+                <i class="fa fa-exclamation-triangle"></i>
+                <strong>Read-Only Mode:</strong> Payment settings are in read-only mode during migration. Changes will not be saved.
+            </div>
+        }
+
+        <div class="section-panel">
+            <h4>Bank Details</h4>
+            <div class="form-horizontal" role="form">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Bank Name:</label>
+                    <div class="col-sm-6">
+                        <input type="text" id="txtBankName" class="form-control" value="@(settings?.BankName ?? "")" maxlength="200" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Account Name:</label>
+                    <div class="col-sm-6">
+                        <input type="text" id="txtAccountName" class="form-control" value="@(settings?.AccountName ?? "")" maxlength="200" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Account Number:</label>
+                    <div class="col-sm-6">
+                        <input type="text" id="txtAccountNo" class="form-control" placeholder="Enter account number" maxlength="50" />
+                        @if (!string.IsNullOrEmpty(settings?.AccountNoMasked))
+                        {
+                            <span class="masked-display help-block">Current: @settings.AccountNoMasked</span>
+                        }
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">IFSC Code:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtIFSCCode" class="form-control" value="@(settings?.IFSCCode ?? "")" maxlength="50" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Account Type:</label>
+                    <div class="col-sm-4">
+                        <select id="drpAccountType" class="form-control">
+                            <option value="">-- Select --</option>
+                            <option value="Current" @(settings?.AccountType == "Current" ? "selected" : "")>Current</option>
+                            <option value="Savings" @(settings?.AccountType == "Savings" ? "selected" : "")>Savings</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Sort Code:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtSortCode" class="form-control" value="@(settings?.SortCode ?? "")" maxlength="20" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Swift Code:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtSwiftCode" class="form-control" value="@(settings?.SwiftCode ?? "")" maxlength="20" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Routing Number:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtRoutingNo" class="form-control" value="@(settings?.RoutingNo ?? "")" maxlength="20" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-6">
+                        <a href="javascript:void(0);" class="btn btn-danger btn-red" onclick="savePaymentSettings();">Save</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    var isEnabled = @(isEnabled ? "true" : "false");
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success');
+        $div.addClass(isSuccess ? 'alert-success' : 'alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(); }, 5000);
+    }
+
+    function savePaymentSettings() {
+        if (!isEnabled) {
+            showMessage('Payment settings are in read-only mode during migration. Changes will not be saved.', false);
+            return;
+        }
+
+        var bankName = $('#txtBankName').val().trim();
+        var accountName = $('#txtAccountName').val().trim();
+        var accountNo = $('#txtAccountNo').val().trim();
+        var ifscCode = $('#txtIFSCCode').val().trim();
+        var accountType = $('#drpAccountType').val();
+        var sortCode = $('#txtSortCode').val().trim();
+        var swiftCode = $('#txtSwiftCode').val().trim();
+        var routingNo = $('#txtRoutingNo').val().trim();
+
+        if (!bankName) { alert('Please enter Bank Name.'); return; }
+        if (!accountName) { alert('Please enter Account Name.'); return; }
+
+        $.post('/seller-payment-settings/save', {
+            bankName: bankName,
+            accountName: accountName,
+            accountNo: accountNo,
+            ifscCode: ifscCode,
+            accountType: accountType,
+            sortCode: sortCode,
+            swiftCode: swiftCode,
+            routingNo: routingNo
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+</script>
+}

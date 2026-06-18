@@ -1,0 +1,119 @@
+@using CakerStreet.Business.Controllers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var bakers = ViewBag.Bakers as List<LinkBakersController.BakerItem> ?? new();
+    var selectedBakerId = ViewBag.SelectedBakerId as long? ?? 0;
+    var templateGroups = ViewBag.TemplateGroups as List<LinkBakersController.TemplateTypeGroup> ?? new();
+    var saveMsg = ViewBag.SaveMsg as string;
+    var cdnBase = ViewBag.CdnBase as string ?? "";
+}
+
+@section head {
+    <link href="/css/mystore.css" rel="stylesheet" />
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection
+        {
+            width: 100%;
+        }
+        .filter-radio li
+        {
+            float: left;
+        }
+    </style>
+}
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">
+            Link Bakers With Cake Template</h2>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        @if (!string.IsNullOrEmpty(saveMsg))
+        {
+            <div id="div_topmessagepnl" class="alert alert-info">
+                @saveMsg
+            </div>
+        }
+        <div class="clearfix">
+        </div>
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <form action="/linkbakerswithcaketemplate/save" method="post">
+                <div class="row-fluid category_box">
+                    <input type="hidden" name="hfCatIds" value="0" />
+                    
+                    <div class="form-group col-md-6 no-padding-left">
+                        <label>Choose Bakers :</label>
+                        <select name="ddlBusiness" id="ddlBusiness" class="form-control" style="display: inline; max-width: 250px;" onchange="onBakerChange(this.value)">
+                            <option value="0">--Select Bakers--</option>
+                            @foreach (var baker in bakers)
+                            {
+                                if (baker.Id == selectedBakerId)
+                                {
+                                    <option value="@baker.Id" selected="selected">@baker.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@baker.Id">@baker.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="clearfix">
+                    </div>
+
+                    @if (selectedBakerId > 0)
+                    {
+                        <div class="table prdlstouter" id="our_products">
+                            <div class="col-md-12">
+                                <a class="pull-right" id="anctemplateView" href="http://localhost:27201/crmtemplatelist" target="_blank">View Template Products Listing</a>
+                            </div>
+                            
+                            @foreach (var group in templateGroups)
+                            {
+                                <div class="div_caketype">
+                                    <div class="col-md-8" style="margin-top: 10px;">
+                                        <div class="form-group">
+                                            <label class="label-inline">
+                                                <u>
+                                                    <input type="checkbox" onchange="selectall_template(this)" /> @group.TypeName
+                                                </u>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    @foreach (var temp in group.Templates)
+                                    {
+                                        <div class="col-md-12">
+                                            <label class="checkbox-inline">
+                                                <input type="checkbox" name="chkTemplate" class="div_checkinner" value="@temp.TemplateId" @(temp.IsChecked ? "checked=\"checked\"" : "") />
+                                            </label>
+                                            <a href="http://localhost:27201/crmtemplatelist#@temp.TemplateName" target="_blank">@temp.TemplateName</a>
+                                        </div>
+                                        <div class="clearfix">
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="divbtnmain_outer" id="divbtnmain_outer">
+                            <button type="submit" class="btn btn-lg btn-black square">Save All</button>
+                        </div>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function onBakerChange(bakerId) {
+        window.location.href = "/linkbakerswithcaketemplate?bakerId=" + bakerId;
+    }
+
+    function selectall_template(headerChk) {
+        var isChecked = $(headerChk).is(":checked");
+        $(headerChk).closest(".div_caketype").find(".div_checkinner").prop('checked', isChecked);
+    }
+</script>

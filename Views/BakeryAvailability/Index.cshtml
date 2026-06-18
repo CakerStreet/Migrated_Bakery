@@ -1,0 +1,277 @@
+@using CakerStreet.Business.Services
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int month = ViewBag.Month;
+    int year = ViewBag.Year;
+    var busyDaysList = ViewBag.BusyDays as List<AvailabilitySpecialDayItem> ?? new();
+    var busyDates = new HashSet<DateTime>(busyDaysList.Select(d => d.Date.Date));
+
+    DateTime firstOfMonth = new DateTime(year, month, 1);
+    int daysInMonth = DateTime.DaysInMonth(year, month);
+    int startDayOfWeek = (int)firstOfMonth.DayOfWeek; // 0 = Sunday, 1 = Monday, etc.
+
+    // Prev month details
+    int prevMonth = month - 1;
+    int prevYear = year;
+    if (prevMonth < 1)
+    {
+        prevMonth = 12;
+        prevYear--;
+    }
+
+    // Next month details
+    int nextMonth = month + 1;
+    int nextYear = year;
+    if (nextMonth > 12)
+    {
+        nextMonth = 1;
+        nextYear++;
+    }
+
+    var monthNames = new[] { "", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+    var monthName = monthNames[month];
+}
+
+@section Head {
+    <style type="text/css">
+        .calendar-container {
+            max-width: 700px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .calendar-header h3 {
+            margin: 0;
+            font-weight: bold;
+            font-size: 20px;
+            color: #333;
+        }
+        .calendar-table th {
+            text-align: center;
+            font-weight: 600;
+            color: #666;
+            background-color: #f9f9f9;
+            border-bottom: 2px solid #eee !important;
+            padding: 12px 0;
+        }
+        .calendar-table td {
+            height: 70px;
+            vertical-align: middle !important;
+            text-align: center;
+            padding: 0 !important;
+            font-size: 14px;
+            border: 1px solid #eee !important;
+        }
+        .day-cell {
+            display: block;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none !important;
+            color: #333;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .day-cell.selectable {
+            cursor: pointer;
+        }
+        .day-cell.selectable:hover {
+            background-color: #f5f5f5;
+        }
+        .bggreen {
+            background-color: #e2f5e4 !important; /* Nice soft green background */
+        }
+        .bggreen .day-cell {
+            color: #27ae60 !important;
+        }
+        .bggreen:hover {
+            background-color: #d1eed4 !important;
+        }
+        .csstodaydatestyle {
+            box-shadow: inset 0 0 0 2px #d63d40 !important;
+        }
+        .legend-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #555;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .legend-color.available {
+            background-color: #fff;
+        }
+        .legend-color.busy {
+            background-color: #e2f5e4;
+            border-color: #27ae60;
+        }
+        .past-day {
+            color: #ccc !important;
+            cursor: not-allowed;
+            background-color: #fafafa;
+        }
+    </style>
+}
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                <div class="orderWrappernew">
+                    <div class="innerhead">
+                        <div class="col-md-1">
+                            <a data-toggle="collapse" href="#collapse4" aria-expanded="true">
+                                <span class="glyphicon glyphicon-minus"></span>
+                            </a>
+                        </div>
+                        <div class="col-md-11">
+                            <h2>Availability Calendar</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse4" aria-expanded="true" style="padding-top: 20px;">
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <a href="/bakeryavailability?month=@prevMonth&year=@prevYear" class="btn btn-default btn-sm">
+                                    <span class="glyphicon glyphicon-chevron-left"></span> Prev Month
+                                </a>
+                                <h3>@monthName @year</h3>
+                                <a href="/bakeryavailability?month=@nextMonth&year=@nextYear" class="btn btn-default btn-sm">
+                                    Next Month <span class="glyphicon glyphicon-chevron-right"></span>
+                                </a>
+                            </div>
+
+                            <table class="table table-bordered calendar-table" style="table-layout: fixed;">
+                                <thead>
+                                    <tr>
+                                        <th>Sun</th>
+                                        <th>Mon</th>
+                                        <th>Tue</th>
+                                        <th>Wed</th>
+                                        <th>Thu</th>
+                                        <th>Fri</th>
+                                        <th>Sat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int currentDay = 1;
+                                        int offset = startDayOfWeek;
+                                        int totalCells = daysInMonth + offset;
+                                        int rowsCount = (int)Math.Ceiling((double)totalCells / 7);
+
+                                        for (int r = 0; r < rowsCount; r++)
+                                        {
+                                            <tr>
+                                                @for (int c = 0; c < 7; c++)
+                                                {
+                                                    int cellIndex = r * 7 + c;
+                                                    if (cellIndex < offset || currentDay > daysInMonth)
+                                                    {
+                                                        <td style="background-color: #fafafa;">&nbsp;</td>
+                                                    }
+                                                    else
+                                                    {
+                                                        var targetDate = new DateTime(year, month, currentDay);
+                                                        var isPast = targetDate < DateTime.Today;
+                                                        var isBusy = busyDates.Contains(targetDate);
+                                                        var isToday = targetDate == DateTime.Today;
+                                                        var cellId = $"td_{targetDate:ddMMyyyy}";
+                                                        var cellClasses = new List<string>();
+
+                                                        if (isBusy) cellClasses.Add("bggreen");
+                                                        if (isToday) cellClasses.Add("csstodaydatestyle");
+
+                                                        <td id="@cellId" class="@string.Join(" ", cellClasses)">
+                                                            @if (isPast)
+                                                            {
+                                                                <span class="day-cell past-day">@currentDay</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="javascript:void(0);" onclick="changeBusySchedule('@targetDate.ToString("dd/MM/yyyy")', '@cellId');" class="day-cell selectable">
+                                                                    @currentDay
+                                                                </a>
+                                                            }
+                                                        </td>
+                                                        currentDay++;
+                                                    }
+                                                }
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+
+                            <div class="legend-container">
+                                <div class="legend-item">
+                                    <div class="legend-color available"></div>
+                                    <span>Available</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color busy"></div>
+                                    <span>Busy</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function changeBusySchedule(dateStr, cellId) {
+        var $cell = $("#" + cellId);
+        
+        // Add visual loading indicator
+        var imgId = "img_" + cellId;
+        $cell.append("<img id='" + imgId + "' src='/images/loading_wall.gif' style='position: absolute; width: 16px; bottom: 5px; right: 5px;' />");
+
+        $.ajax({
+            type: "POST",
+            url: "/bakeryavailability/toggle",
+            data: JSON.stringify({ dateStr: dateStr }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (res) {
+                $("#" + imgId).remove();
+                if (res.success) {
+                    if (res.isBusy) {
+                        $cell.addClass("bggreen");
+                    } else {
+                        $cell.removeClass("bggreen");
+                    }
+                } else {
+                    alert("Error updating schedule: " + res.message);
+                }
+            },
+            error: function () {
+                $("#" + imgId).remove();
+                alert("Communication with the server failed.");
+            }
+        });
+    }
+</script>

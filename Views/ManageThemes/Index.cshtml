@@ -1,0 +1,433 @@
+@{
+    ViewData["Title"] = "Manage Party Themes";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.ThemeItem> ?? new List<CakerStreet.Business.Services.ThemeItem>();
+    var totalPages = (int)(ViewBag.TotalPages ?? 0);
+    var totalCount = (int)(ViewBag.TotalCount ?? 0);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var search = ViewBag.Search as string ?? "";
+    var filterStatus = (int)(ViewBag.FilterStatus ?? 0);
+    var userType = ViewBag.UserType as string ?? "";
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .alert-msg { display: none; margin: 10px 0; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Party Themes</h2>
+        <a href="/addnewtheme" class="btn btn-success btn-sm" style="margin-left: 15px;">
+            <span class="glyphicon glyphicon-plus"></span> Add New Theme
+        </a>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        @if (items.Count == 0 && string.IsNullOrEmpty(search) && filterStatus == 0)
+        {
+            <div class="alert alert-danger">No Themes Found</div>
+        }
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                <div class="col-md-12">
+                    @if (items.Count > 0 || !string.IsNullOrEmpty(search) || filterStatus != 0)
+                    {
+                        <div class="col-md-3">
+                            <div class="btn-group">
+                                <button class="btn btn-danger bg-red" type="button">Action on
+                                    <span id="spnfilterselected">0</span> selected</button>
+                                <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul role="menu" class="dropdown-menu">
+                                    <li><a href="javascript:void(0);" onclick="bulkSetActive();">Set as Active</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkSetInactive();">Set as Inactive</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkUpdateRecords();">Update Records</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkDelete();">Remove</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <select id="drpFilterStatus" class="form-control input-sm" onchange="doFilterStatus();">
+                                <option value="0" @(filterStatus == 0 ? "selected" : "")>All</option>
+                                <option value="1" @(filterStatus == 1 ? "selected" : "")>Active</option>
+                                <option value="2" @(filterStatus == 2 ? "selected" : "")>Inactive</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <input type="text" id="txtsearch" class="form-control input-sm" placeholder="Search by title" value="@search" />
+                            <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doSearch();">Go</a>
+                            <a href="/managethemes" class="btn btn-danger btn-sm">X</a>
+                        </div>
+                    }
+                </div>
+
+                <div class="clearfix"></div>
+
+                @if (items.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="chk headertext">
+                                        <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                    </th>
+                                    <th class="type">Title</th>
+                                    <th class="status">Popular</th>
+                                    <th class="status">Status</th>
+                                    <th class="action">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in items)
+                                {
+                                    <tr class="rowtext" data-id="@item.Id">
+                                        <td class="chk">
+                                            <input type="checkbox" class="chkrow" data-id="@item.Id" onchange="chkuncheckHeadernRowbyrow();" />
+                                        </td>
+                                        <td class="type">
+                                            <input type="text" class="form-control input-sm txt-title" value="@item.Title" data-id="@item.Id" />
+                                        </td>
+                                        <td class="status">
+                                            <select class="form-control input-sm drp-popular" data-id="@item.Id">
+                                                <option value="true" @(item.IsPopular ? "selected" : "")>Yes</option>
+                                                <option value="false" @(!item.IsPopular ? "selected" : "")>No</option>
+                                            </select>
+                                        </td>
+                                        <td class="status">@(item.IsActive ? "Active" : "Inactive")</td>
+                                        <td class="action">
+                                            <a href="javascript:void(0);" class="btn btn-primary btn-xs" onclick="saveRow(@item.Id);">Save</a>
+                                            <a href="javascript:void(0);" class="btn btn-danger btn-xs" onclick="removeRow(@item.Id);">Remove</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @* ─── Pagination ─────────────────────────────────────────────────── *@
+                    @if (totalPages > 1)
+                    {
+                        <div class="pagination pagination-right">
+                            <div class="paging_outer">
+                                <ul class="left">
+                                    <li><a href="@GetPageUrl(1)">First</a></li>
+                                    <li class="@(currentPage <= 1 ? "disabled" : "")">
+                                        @if (currentPage > 1)
+                                        {
+                                            <a href="@GetPageUrl(currentPage - 1)"><img src="/img/prev-arrow.png" alt="Previous" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/prev-arrow.png" alt="Previous" /></span>
+                                        }
+                                    </li>
+                                </ul>
+                                <ul class="numbering">
+                                    @{
+                                        int pageButtonCount = 3;
+                                        int min = currentPage - pageButtonCount;
+                                        int max = currentPage + pageButtonCount;
+                                        if (max > totalPages) min -= (max - totalPages);
+                                        if (min < 1) max += (1 - min);
+                                        bool needDiv = false;
+
+                                        for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            if (i <= 2 || i > totalPages - 2 || (min <= i && i <= max))
+                                            {
+                                                <li class="@(i == currentPage ? "active" : "")">
+                                                    <a href="@GetPageUrl(i)">@i</a>
+                                                </li>
+                                                needDiv = true;
+                                            }
+                                            else if (needDiv)
+                                            {
+                                                <li class="disabled"><span>...</span></li>
+                                                needDiv = false;
+                                            }
+                                        }
+                                    }
+                                </ul>
+                                <ul class="right">
+                                    <li class="@(currentPage >= totalPages ? "disabled" : "")">
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <a href="@GetPageUrl(currentPage + 1)"><img src="/img/nxt-arrow.png" alt="Next" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/nxt-arrow.png" alt="Next" /></span>
+                                        }
+                                    </li>
+                                    <li><a href="@GetPageUrl(totalPages)">Last</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                }
+                else if (!string.IsNullOrEmpty(search) || filterStatus != 0)
+                {
+                    <div class="alert alert-danger">No Themes Found</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber)
+    {
+        var searchVal = ViewBag.Search as string ?? "";
+        var filterStatusVal = (int)(ViewBag.FilterStatus ?? 0);
+        var url = "/managethemes";
+        var queryParts = new List<string>();
+
+        if (!string.IsNullOrEmpty(searchVal))
+        {
+            queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+        }
+        if (filterStatusVal != 0)
+        {
+            queryParts.Add("filterstatus=" + filterStatusVal);
+        }
+        if (pageNumber != 1)
+        {
+            queryParts.Add("pageno=" + pageNumber);
+        }
+
+        if (queryParts.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParts);
+        }
+        return url;
+    }
+}
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+        updateSelectedCount();
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        $('#spnfilterselected').text($('.rowtext .chkrow:checked').length);
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            ids.push($(this).data('id'));
+        });
+        return ids;
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+
+    function doSearch() {
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword === '') {
+            alert('Please enter search keyword');
+            return;
+        }
+        var url = '/managethemes?search=' + encodeURIComponent(keyword);
+        var fs = $('#drpFilterStatus').val();
+        if (fs !== '0') url += '&filterstatus=' + fs;
+        window.location.href = url;
+    }
+
+    function doFilterStatus() {
+        var fs = $('#drpFilterStatus').val();
+        var url = '/managethemes';
+        var parts = [];
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword !== '') parts.push('search=' + encodeURIComponent(keyword));
+        if (fs !== '0') parts.push('filterstatus=' + fs);
+        if (parts.length > 0) url += '?' + parts.join('&');
+        window.location.href = url;
+    }
+
+    // Allow Enter key in search box
+    $(document).ready(function () {
+        $('#txtsearch').on('keypress', function (e) {
+            if (e.which === 13) {
+                doSearch();
+                return false;
+            }
+        });
+    });
+
+    // ─── Individual Row Save ────────────────────────────────────────────────────
+
+    function saveRow(id) {
+        var $row = $('tr[data-id="' + id + '"]');
+        var title = $.trim($row.find('.txt-title').val());
+        var isPopular = $row.find('.drp-popular').val() === 'true';
+
+        if (title === '') {
+            alert('Title cannot be empty.');
+            return;
+        }
+
+        $.post('/managethemes/update', { id: id, title: title, isPopular: isPopular }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+
+    function removeRow(id) {
+        if (!confirm('Are you sure to remove this theme?')) return;
+        $.post('/managethemes/bulkdelete', { ids: id.toString() }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to remove.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    // ─── Bulk Actions ───────────────────────────────────────────────────────────
+
+    function bulkSetActive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('Please select at least one item.');
+            return;
+        }
+        $.post('/managethemes/bulkactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    function bulkSetInactive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('Please select at least one item.');
+            return;
+        }
+        $.post('/managethemes/bulkinactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+
+    function bulkUpdateRecords() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('Please select at least one item.');
+            return;
+        }
+        var items = [];
+        ids.forEach(function (id) {
+            var $row = $('tr[data-id="' + id + '"]');
+            var title = $.trim($row.find('.txt-title').val());
+            var isPopular = $row.find('.drp-popular').val() === 'true';
+            items.push({ id: id, title: title, isPopular: isPopular });
+        });
+
+        $.ajax({
+            url: '/managethemes/bulkupdate',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                    setTimeout(function () { location.reload(); }, 1000);
+                } else {
+                    showMessage(r.message || 'Failed to update.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred.', false);
+            }
+        });
+    }
+
+    function bulkDelete() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('Please select at least one item.');
+            return;
+        }
+        if (!confirm('Are you sure to remove selected ' + ids.length + ' theme(s)?')) {
+            return;
+        }
+        $.post('/managethemes/bulkdelete', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to remove.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+</script>
+}

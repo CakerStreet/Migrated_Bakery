@@ -1,0 +1,1024 @@
+@model CakerStreet.Business.Services.BusinessOrdersResult
+@{
+    ViewData["Title"] = "Business Orders";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var tabCounts = ViewBag.TabCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var orderType = (int)(ViewBag.OrderType ?? 0);
+    var searchQuery = ViewBag.SearchQuery as string ?? "";
+    var startDate = ViewBag.StartDate as string ?? "";
+    var endDate = ViewBag.EndDate as string ?? "";
+    var dateMode = (int)(ViewBag.DateMode ?? 1);
+    var deliveryMode = (int)(ViewBag.DeliveryMode ?? 0);
+    var legacyUrl = ViewBag.HdCRMGlobalUrl as string ?? "http://localhost:27201";
+    var custUrl = ViewBag.HdCustGlobalUrl as string ?? "http://localhost:5000";
+    var isCSBakery = false; // Phase A: simplified
+}
+
+@section Head {
+    <link href="@(cdnBase)bakery_content/css/bakeryorder.css" rel="stylesheet" />
+    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .pagination > .active > a, .pagination > .active > a:focus,
+        .pagination > .active > a:hover, .pagination > .active > span,
+        .pagination > .active > span:focus, .pagination > .active > span:hover {
+            background-color: #cf0000;
+            border-color: #cf0000;
+        }
+        .pagination > li > a[disabled] { opacity: .5; }
+        .pagination > li > a, .pagination > li > span {
+            border: 1px solid #E1E1E1;
+            color: #6C6764;
+        }
+        /* Legacy parity: green time slot highlight */
+        .big { font-size: 14px; clear: both; display: block; text-align: left; background-color: #00cc00; color: #fff; padding: 3px 8px; font-weight: bold; border-radius: 3px; margin-top: 3px; }
+        .sml { font-size: 11px; }
+        /* Legacy parity: bg-black button */
+        .bg-black { background-color: #000; color: #fff; }
+        .bg-black:hover { background-color: #333; color: #fff; }
+        .margin { margin: 2px 0; }
+        /* Legacy parity: watermark text overlay for special orders */
+        .watermarktext {
+            color: #f10606;
+            font-family: arial;
+            font-size: 50px;
+            line-height: 75px;
+            text-align: center;
+            transform: rotate(-30deg);
+            width: auto;
+            -webkit-transform: rotate(-30deg);
+            -moz-transform: rotate(-30deg);
+            -ms-transform: rotate(-30deg);
+            -o-transform: rotate(-30deg);
+            background-color: #f2dfdf;
+            padding: 0 20px;
+            display: none;
+            border: 1px solid #f10606;
+            box-shadow: 1px 1px 15px 2px #aaa;
+        }
+        .watermarktext.in { display: block; }
+        /* Sorting row highlight */
+        .bg { background-color: #ffffcc; }
+        .dv_sortouter { cursor: pointer; display: inline-block; width: 20px; height: 14px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 4l4 6H4z" fill="%23666"/></svg>') no-repeat center; }
+        .dv_sortouter.dwn { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 12l4-6H4z" fill="%23666"/></svg>') no-repeat center; }
+        /* Ingredient popup list styling */
+        .ingredientList_popup table { width: 100%; }
+        .ingredientList_popup table td { padding: 4px 6px; border-bottom: 1px solid #eee; font-size: 12px; }
+    </style>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $(".order-from, .order-to").datepicker({ dateFormat: "dd/mm/yy" });
+        });
+    </script>
+}
+
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            @* === STATUS TABS === *@
+            <div class="panel-heading">
+                <ul>
+                    <li>
+                        <a class="@(orderType == 0 ? "stt" : "")" href="/businessorders?ordertype=0">Pending@(tabCounts.ContainsKey(0) && tabCounts[0] > 0 ? " [" + tabCounts[0] + "]" : "")</a>
+                    </li>
+                    <li>
+                        <a class="@(orderType == 1 ? "stt" : "")" href="/businessorders?ordertype=1">Confirmed@(tabCounts.ContainsKey(1) && tabCounts[1] > 0 ? " [" + tabCounts[1] + "]" : "")</a>
+                    </li>
+                    <li>
+                        <a class="@(orderType == 5 || orderType == 12 ? "stt" : "")" href="/businessorders?ordertype=5">Job Assigned@(tabCounts.ContainsKey(5) && tabCounts[5] > 0 ? " [" + tabCounts[5] + "]" : "")</a>
+                    </li>
+                    <li>
+                        <a class="@(orderType == 3 ? "stt" : "")" href="/businessorders?ordertype=3">Under Delivery@(tabCounts.ContainsKey(3) && tabCounts[3] > 0 ? " [" + tabCounts[3] + "]" : "")</a>
+                    </li>
+                    <li>
+                        <a class="@(orderType == 4 ? "stt" : "")" href="/businessorders?ordertype=4">Completed@(tabCounts.ContainsKey(4) && tabCounts[4] > 0 ? " [" + tabCounts[4] + "]" : "")</a>
+                    </li>
+                    <li>
+                        <a class="@(orderType == 11 ? "stt" : "")" href="/businessorders?ordertype=11">Cancelled@(tabCounts.ContainsKey(11) && tabCounts[11] > 0 ? " [" + tabCounts[11] + "]" : "")</a>
+                    </li>
+                    <li>
+                        <a class="@(orderType == 10 ? "stt" : "")" href="/businessorders?ordertype=10">Forwarded</a>
+                    </li>
+                </ul>
+            </div>
+
+            @* === DELIVERY MODE SUB-TABS === *@
+            @if (orderType == 12)
+            {
+                @await Html.PartialAsync("_AssignedTasks", (CakerStreet.Business.Models.AssignedTasksViewModel)ViewBag.AssignedTasksModel)
+            }
+            else
+            {
+            @if (orderType == 5)
+            {
+                <div class="panel-heading bot">
+                    <ul>
+                        <li><a class="stt" href="/businessorders?ordertype=5">All</a></li>
+                        <li><a href="/businessorders?ordertype=12">Assigned Tasks</a></li>
+                    </ul>
+                </div>
+            }
+            <div class="panel-heading bot">
+                <ul>
+                    <li><a class="@(deliveryMode == 0 ? "stt" : "")" href="/businessorders?ordertype=@orderType">All</a></li>
+                    <li><a class="@(deliveryMode == 1 ? "stt" : "")" href="/businessorders?ordertype=@orderType&dm=1">Collection</a></li>
+                    <li><a class="@(deliveryMode == 2 ? "stt" : "")" href="/businessorders?ordertype=@orderType&dm=2&rt=0">Delivery By Hand</a></li>
+                    <li><a class="@(deliveryMode == 4 ? "stt" : "")" href="/businessorders?ordertype=@orderType&dm=4">Delivery By Post</a></li>
+                </ul>
+            </div>
+
+            @* === SEARCH FORM === *@
+            <div class="search-field">
+                <form method="get" action="/businessorders">
+                    <input type="hidden" name="ordertype" value="@orderType" />
+                    @if (deliveryMode > 0)
+                    {
+                        <input type="hidden" name="dm" value="@deliveryMode" />
+                    }
+                    <div class="pull-left col-sm-2 flush">
+                        <select name="datemode" class="orderdrpdate form-control">
+                            <option value="1" @(dateMode == 1 ? "selected" : "")>Order Date</option>
+                            <option value="2" @(dateMode == 2 ? "selected" : "")>Occasion date</option>
+                        </select>
+                    </div>
+                    <div class="pull-left col-sm-2 flush-right">
+                        <input type="text" name="sdate" class="order-from form-control" placeholder="Start Date" value="@startDate" />
+                    </div>
+                    <div class="pull-left col-sm-2 flush-right">
+                        <input type="text" name="edate" class="order-to form-control" placeholder="End Date" value="@endDate" />
+                    </div>
+                    <div class="pull-left col-md-4 col-sm-3 flush-right">
+                        <input type="text" name="q" class="order-search form-control" placeholder="Search...Order ID / Name" value="@searchQuery" />
+                    </div>
+                    <div class="pull-left col-sm-3 col-md-2 flush-right">
+                        <button type="submit" class="btn btn-danger pull-left btn-sm" onclick="return validateDateFields()">Submit</button>
+                        <a href="/businessorders?ordertype=@orderType" class="btn btn-info pull-left btn-sm" style="margin-left: 5px;">Reset</a>
+                    </div>
+                </form>
+
+                <div class="col-sm-12" style="padding: 10px;">
+                    @* Update Sorting - matching legacy sorting functionality *@
+                    <div class="updatesorting_outer" style="display:none;">
+                        <a class="btn btn-danger updatesorting" href="javascript:void(0);" onclick="updatesorting()">Update Sorting</a>
+                    </div>
+                    @* Bulk action buttons - route to legacy *@
+                    <div class="div_buttons_outer btn-group pull-left">
+                        <button class="btn btn-xs btn-danger" type="button">Apply on selected</button>
+                        <button type="button" class="btn btn-xs btn-danger dropdown-toggle" data-toggle="dropdown" style="height: 22px;">
+                            <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="javascript:void(0);" onclick="bulkAction(5)">Job Assigned</a></li>
+                            <li><a href="javascript:void(0);" onclick="bulkAction(2)">Order Processed</a></li>
+                            <li><a href="javascript:void(0);" onclick="bulkAction(3)">Order Under Delivery</a></li>
+                            <li><a href="javascript:void(0);" onclick="bulkAction(4)">Order Completed</a></li>
+                            <li><a href="javascript:void(0);" onclick="bulkDelete()">Remove Order</a></li>
+                        </ul>
+                    </div>
+                    <div class="pull-right col-sm-12 text-danger raln">
+                        @{
+                            int showFrom = (Model.PageNumber - 1) * Model.PageSize + 1;
+                            int showTo = Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount);
+                        }
+                        <label style="float:left;margin-top: 14px;">Showing [@showFrom To @showTo] of @Model.TotalCount record(s)</label>
+                        Total: @Model.TotalCount
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+
+            @if (Model.Orders == null || Model.Orders.Count == 0)
+            {
+                <div class="panel-body">
+                    <div class="alert alert-danger">No Record found</div>
+                </div>
+            }
+            else
+            {
+                <div class="panel-body">
+                    <div class="div_not_assigned">
+                        <table class="table bootstrap-datatable pending_orders">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center;">
+                                        <input type="checkbox" id="chkSelectAll" onclick="toggleSelectAll(this)" />
+                                    </th>
+                                    <th>Order Date</th>
+                                    <th>Order ID</th>
+                                    <th style="width: 200px">Item</th>
+                                    <th>Customer</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th>Delivery Mode</th>
+                                    <th style="width: 200px">Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var order in Model.Orders)
+                                {
+                                    <tr class="trOrderlist" data-id="@order.OrderId" data-orderid="@order.OrderId">
+                                        @* CHECKBOX COLUMN *@
+                                        <td valign="top" class="checkboxtd" align="center">
+                                            <input type="checkbox" class="chkOrder" value="@order.OrderId" />
+                                        </td>
+
+                                        @* ORDER DATE COLUMN *@
+                                        <td valign="top">
+                                            @order.OrderDate.ToString("dd-MM-yyyy")<br />@order.OrderDate.ToString("hh:mm tt")
+                                            @if (order.FollowingOrderId > 0)
+                                            {
+                                                <img src="@(cdnBase)bakery_content/img/Fowarded.png" alt="Forwarded" />
+                                            }
+                                        </td>
+
+                                        @* ORDER ID COLUMN *@
+                                        <td valign="top">
+                                            <a target="_blank" href="/businessorderdetail?ordid=@order.OrderId">@if (order.IsRepeat)
+                                                {<span style="color:green;">@order.OrderId ®</span>}
+                                                else if (order.IsForwarded)
+                                                {<span style="color:blue;">@order.OrderId ⟶</span>}
+                                                else
+                                                {@order.OrderId}</a>
+                                        </td>
+
+                                        @* ITEM COLUMN (nested order details) *@
+                                        <td class="img" valign="top">
+                                            @foreach (var detail in order.OrderDetails)
+                                            {
+                                                <div class="divprddet">
+                                                    <a target="_blank" href="@(custUrl)/product/@detail.ProductSeoUrl">
+                                                        <img class="@(order.OrderDetails.IndexOf(detail) > 0 ? "norm" : "img")"
+                                                             border="0" loading="lazy"
+                                                             src="@(cdnBase)upload/Product_Images/resized_300_300/@detail.ProductImage"
+                                                             title="@detail.ProductName" /></a><br />
+                                                    @detail.ProductName | Qty: @detail.Quantity
+                                                    <br />
+                                                    Sub OrderID: @detail.SubOrderId
+                                                    <br />
+                                                    @* Click New Image checkbox *@
+                                                    @if (detail.IsChangeOrderImageMarked == 0)
+                                                    {
+                                                        <div class="checkbox clickimage">
+                                                            <label style="color: #0000ff;">
+                                                                <input type="checkbox" class="chkChangeOrderImage" value="@detail.OrderDetailId"
+                                                                       data-orderdetailid="@detail.OrderDetailId"
+                                                                       @(detail.IsUpdated == 0 ? "checked" : "") />
+                                                                Click New Image
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                    @* Link to already existed item - for expired/customized products *@
+                                                    @if (detail.IsExpired)
+                                                    {
+                                                        <a href="/mapcustomizedcake?id=@detail.ProductId" target="_blank" class="btn btn-sm @(detail.IsCustomizedPrdMapped ? "btn-success" : "btn-info")">@(detail.IsCustomizedPrdMapped ? "View linked to existed Item" : "Link to already existed Item")</a>
+                                                    }
+                                                    @* Files / Topper / Cutters link *@
+                                                    @if (detail.PrdType != 3)
+                                                    {
+                                                        <div class="div_Documents">
+                                                            <a href="/businessorderdetail?ordid=@order.OrderId#files" target="_blank">Files / Topper / Cutters</a>
+                                                        </div>
+                                                    }
+                                                    @* View | Edit Ingredients *@
+                                                    <div class="div_Documents" style="text-align: left">
+                                                        <a style="cursor: pointer;" onclick="ViewIngredients_popup(this, @order.OrderId, @detail.OrderDetailId)">View | Edit Ingredients</a>
+                                                    </div>
+                                                </div>
+                                                @* Has Topper checkbox *@
+                                                <div class="checkbox">
+                                                    <label>
+                                                        <input type="checkbox" class="chkHasTopper" data-oid="@order.OrderId" data-odetid="@detail.OrderDetailId" @(detail.TopperTypeId > 0 ? "checked" : "") />
+                                                        Has Topper
+                                                    </label>
+                                                </div>
+                                                <div class="dvTopperType dvTopperType_@(detail.OrderDetailId) topperrd_outer" style="@(detail.TopperTypeId > 0 ? "" : "display:none;")">
+                                                    <label class="radio-inline">
+                                                        <input type="checkbox" class="rbEdible rbEdible_@(detail.OrderDetailId)" data-oid="@order.OrderId" data-odetid="@detail.OrderDetailId" @(detail.TopperTypeId == 1 || detail.TopperTypeId == 3 ? "checked" : "") /> Edible
+                                                    </label>
+                                                    <label class="radio-inline">
+                                                        <input type="checkbox" class="rbNonEdible rbNonEdible_@(detail.OrderDetailId)" data-oid="@order.OrderId" data-odetid="@detail.OrderDetailId" @(detail.TopperTypeId == 2 || detail.TopperTypeId == 3 ? "checked" : "") /> Non-Edible
+                                                    </label>
+                                                </div>
+                                                <div class="clearfix"></div>
+                                            }
+                                        </td>
+
+                                        @* CUSTOMER COLUMN *@
+                                        <td class="prd-img2" valign="top">
+                                            @order.CustomerName<br />
+                                            @order.Phone<br />
+                                            @order.Postcode.ToUpper()
+                                            @if (!string.IsNullOrEmpty(order.DistanceText))
+                                            {
+                                                <br /><text>(@order.DistanceText)</text>
+                                            }
+                                            <br />
+                                            @if (!string.IsNullOrEmpty(order.ReviewStars) && order.ReviewStars != "0")
+                                            {
+                                                <div class="div_reviews">
+                                                    <ul>
+                                                        @if (order.ReviewStars != "0")
+                                                        {
+                                                            <li class="liimg"><img class="imgstar" src="@(cdnBase)bakery_content/img/stars/starrating@(order.ReviewStars).png" /></li>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(order.ReviewRemarks))
+                                                        {
+                                                            <li class="remarks">@(order.ReviewRemarks.Length > 100 ? order.ReviewRemarks.Substring(0, 95) + "..." : order.ReviewRemarks)</li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            }
+                                            <a class="text-info" style="display:table; cursor:pointer;" onclick="openReviewModal(@order.OrderId)">@(!string.IsNullOrEmpty(order.ReviewStars) && order.ReviewStars != "0" ? "Change" : "Add Reviews")</a>
+                                        </td>
+
+                                        @* QTY COLUMN *@
+                                        <td class="qty" valign="top">
+                                            @order.Qty
+                                        </td>
+
+                                        @* TOTAL COLUMN *@
+                                        <td valign="top">
+                                            &pound;@order.BakeryPayout.ToString("0.00")
+                                            @if (order.HasRefund)
+                                            {
+                                                <div class="div_reviews">
+                                                    <ul>
+                                                        <li class="lirefund">Refunded: £@Math.Round((double)order.TotalRefund, 2)</li>
+                                                        @if (order.PayoutRefund > 0)
+                                                        {
+                                                            <li>Bakery: £@((double)order.PayoutRefund)</li>
+                                                        }
+                                                        @if (order.CsRefund > 0)
+                                                        {
+                                                            <li>CS: £@((double)order.CsRefund)</li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </td>
+
+                                        @* DELIVERY MODE COLUMN *@
+                                        <td class="deliverymode" valign="top">
+                                            @Html.Raw(order.GetDeliveryModeText(isCSBakery))
+                                        </td>
+
+                                        @* DATE COLUMN (matching legacy delivery date rendering) *@
+                                        <td valign="top">
+                                            @{
+                                                var delivDate = order.CollectionDate;
+                                                var dispDate = order.DispatchDate;
+                                                var isPostal = (order.DeliveryMode == 4);
+                                                var isDeliveryByHand = (order.DeliveryMode == 2);
+                                                string dateHtml;
+                                                if (isPostal)
+                                                {
+                                                    var dispTodayStr = dispDate.Date == DateTime.Now.Date
+                                                        ? "- <b class='big'>Today</b>"
+                                                        : "(" + dispDate.ToString("dddd") + ")";
+                                                    dateHtml = "<u>Dispatched Date:</u><br/>"
+                                                        + dispDate.ToString("dd-MM-yyyy") + " " + dispTodayStr
+                                                        + "<br/>(04:00 PM - 06:00 PM)<br/><br/>"
+                                                        + "<u>Delivery Date:</u><br/>"
+                                                        + delivDate.ToString("dd-MM-yyyy") + " (" + delivDate.ToString("dddd") + ")"
+                                                        + "<br/>(10:00 AM - 05:30 PM)"
+                                                        + "<br/><br/><u>Occasion Date:</u><br/>"
+                                                        + order.OccasionDate.ToString("dd-MM-yyyy") + " (" + order.OccasionDate.ToString("dddd") + ")";
+                                                }
+                                                else if (isDeliveryByHand)
+                                                {
+                                                    var dispTodayStr = dispDate.Date == DateTime.Now.Date
+                                                        ? "- <b class='big'>Today</b>"
+                                                        : "(" + dispDate.ToString("dddd") + ")";
+                                                    dateHtml = "<u>Dispatched Date:</u><br/>"
+                                                        + dispDate.ToString("dd-MM-yyyy") + " " + dispTodayStr
+                                                        + "<br/><b class='big'>" + delivDate.AddHours(-2).ToString("hh:mm") + "<b class='sml'>" + delivDate.AddHours(-2).ToString("tt") + "</b> - " + delivDate.ToString("hh:mm") + "<b class='sml'>" + delivDate.ToString("tt") + "</b></b>"
+                                                        + "<br/><br/><u>Delivery Date:</u><br/>"
+                                                        + delivDate.ToString("dd-MM-yyyy") + " (" + delivDate.ToString("dddd") + ")"
+                                                        + "<br/>(" + delivDate.ToString("hh:mm tt") + " - " + delivDate.AddHours(2).ToString("hh:mm tt") + ")";
+                                                }
+                                                else
+                                                {
+                                                    var todayStr = delivDate.Date == DateTime.Now.Date
+                                                        ? "- <b class='big'>Today</b>"
+                                                        : "(" + delivDate.ToString("dddd") + ")";
+                                                    dateHtml = "<u>Collection Date:</u><br/>"
+                                                        + delivDate.ToString("dd-MM-yyyy") + " " + todayStr
+                                                        + "<br/><b class='big'>" + delivDate.ToString("hh:mm") + "<b class='sml'>" + delivDate.ToString("tt") + "</b> - " + delivDate.AddHours(1).ToString("hh:mm") + "<b class='sml'>" + delivDate.AddHours(1).ToString("tt") + "</b></b>";
+                                                }
+                                            }
+                                            @Html.Raw(dateHtml)
+                                        </td>
+
+                                        @* STATUS COLUMN *@
+                                        <td valign="top">
+                                            @if (order.Status == 0 || order.Status == 11)
+                                            {
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-danger">@order.StatusText</button>
+                                                    <button type="button" class="btn btn-sm btn-danger dropdown-toggle" data-toggle="dropdown">
+                                                        <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                    </button>
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        @if (order.Status == 0)
+                                                        {
+                                                            <li><a href="javascript:void(0);" onclick="confirmOrder(@order.OrderId)">Confirm Order</a></li>
+                                                            <li class="divider"></li>
+                                                        }
+                                                        <li><a href="javascript:void(0);" onclick="openCancelModal(@order.OrderId)">Cancel Order</a></li>
+                                                    </ul>
+                                                </div>
+                                            }
+                                            else if (order.Status == 4)
+                                            {
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-info">@order.StatusText</button>
+                                                    <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown">
+                                                        <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                    </button>
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        <li><a href="javascript:void(0);" onclick="deleteOrder(@order.OrderId)">Remove Order</a></li>
+                                                    </ul>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="@(order.Status != 5 ? "btn-group" : "")">
+                                                    <button type="button" class="btn btn-sm btn-success">@order.StatusText</button>
+                                                    @if (order.Status != 5)
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown">
+                                                            <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                        </button>
+                                                    }
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        @if (order.Status <= 1)
+                                                        {
+                                                            <li><a href="javascript:void(0);" onclick="updateOrderStatus(@order.OrderId, 5)">Job Assigned</a></li>
+                                                        }
+                                                        @if (order.Status <= 1 || order.Status == 5)
+                                                        {
+                                                            <li><a href="javascript:void(0);" onclick="updateOrderStatus(@order.OrderId, 2)">Order Processed</a></li>
+                                                        }
+                                                        @if (order.Status <= 2 || order.Status == 5)
+                                                        {
+                                                            <li><a href="javascript:void(0);" onclick="updateOrderStatus(@order.OrderId, 3)">Order Under Delivery</a></li>
+                                                        }
+                                                        <li><a href="javascript:void(0);" onclick="updateOrderStatus(@order.OrderId, 4)">Order Completed</a></li>
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </td>
+
+                                        @* ACTION COLUMN *@
+                                        <td valign="top">
+                                            <a target="_blank" href="/businessorderdetail?ordid=@order.OrderId" class="btn btn-sm bg-black margin">
+                                                View Detail
+                                            </a>
+                                            <a target="_blank" href="/printorderbakers/@order.OrderId" class="btn btn-xs btn-default" style="margin-top:3px;">
+                                                <i class="glyphicon glyphicon-print"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @* === PAGINATION === *@
+                @if (Model.TotalPages > 1)
+                {
+                    var paginationParams = (deliveryMode > 0 ? "&dm=" + deliveryMode : "") + (!string.IsNullOrEmpty(searchQuery) ? "&q=" + searchQuery : "") + (!string.IsNullOrEmpty(startDate) ? "&sdate=" + startDate + "&edate=" + endDate + "&datemode=" + dateMode : "");
+                    <div class="text-center">
+                        <ul class="pagination">
+                            @if (Model.PageNumber > 1)
+                            {
+                                <li><a href="/businessorders?ordertype=@orderType&pno=1@(paginationParams)">First</a></li>
+                                <li><a href="/businessorders?ordertype=@orderType&pno=@(Model.PageNumber - 1)@(paginationParams)">«</a></li>
+                            }
+                            else
+                            {
+                                <li class="disabled"><a href="#" disabled>First</a></li>
+                                <li class="disabled"><a href="#" disabled>«</a></li>
+                            }
+
+                            @{
+                                int startPage = Math.Max(1, Model.PageNumber - 4);
+                                int endPage = Math.Min(Model.TotalPages, startPage + 9);
+                                if (endPage - startPage < 9) { startPage = Math.Max(1, endPage - 9); }
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                <li class="@(i == Model.PageNumber ? "active" : "")">
+                                    <a href="/businessorders?ordertype=@orderType&pno=@i@(paginationParams)">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.PageNumber < Model.TotalPages)
+                            {
+                                <li><a href="/businessorders?ordertype=@orderType&pno=@(Model.PageNumber + 1)@(paginationParams)">»</a></li>
+                                <li><a href="/businessorders?ordertype=@orderType&pno=@(Model.TotalPages)@(paginationParams)">Last</a></li>
+                            }
+                            else
+                            {
+                                <li class="disabled"><a href="#" disabled>»</a></li>
+                                <li class="disabled"><a href="#" disabled>Last</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+            } @* end else (non-ordertype-12) *@
+        </div>
+    </div>
+</div>
+
+@* === CANCEL ORDER MODAL === *@
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" role="dialog" aria-labelledby="cancelOrderModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" style="color:#fff;">&times;</span></button>
+                <h4 class="modal-title" id="cancelOrderModalLabel" style="color: #fff;">Cancel Order - <span id="cancelOrderId"></span></h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Cancel Reason: <abbr class="text-danger">*</abbr></label>
+                    <select id="ddlCancelReason" class="form-control" style="max-width: 400px;">
+                        <option value="0">Select Cancel Reason</option>
+                        <option value="No Inventory">No Inventory</option>
+                        <option value="Unable To Fulfill The Order By Required Delivery Date">Unable To Fulfill The Order By Required Delivery Date</option>
+                        <option value="Pricing Error">Pricing Error</option>
+                        <option value="Customer Exchange">Customer Exchange</option>
+                        <option value="Buyer Cancelled">Buyer Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description: <abbr class="text-danger">*</abbr></label>
+                    <textarea id="txtCancelComments" class="form-control" rows="3" placeholder="Enter cancellation details..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="chkNotifyCustomer" checked /> Notify Customer</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="submitCancelOrder()">Cancel Order</button>
+                <button class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* === ORDER REVIEWS MODAL === *@
+<div class="modal fade" id="reviewOrderModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" style="color:#fff;">&times;</span></button>
+                <h4 class="modal-title" style="color: #fff;">Order Reviews</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewOrderId" value="0" />
+                <div class="form-group">
+                    <label>Select Stars:</label>
+                    <select id="drpStars" class="form-control" style="max-width: 200px;">
+                        <option value="0">No Rating</option>
+                        <option value="1">1 Star</option>
+                        <option value="2">2 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="5">5 Stars</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Remarks:</label>
+                    <textarea id="txtReviewRemarks" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="submitReview()">Submit</button>
+                <button class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* === MANAGE INGREDIENTS MODAL (matching legacy dvAddIngredients) === *@
+<div class="modal fade" id="dvAddIngredients" tabindex="-1" role="dialog" data-orddetid="0" data-ordid="0">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" style="color:#fff;">&times;</span></button>
+                <h4 class="modal-title" style="color: #fff;">Manage Ingredients - #<span id="ltIngOrderID"></span></h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="control-label">Select Section: <abbr class="text-danger">*</abbr></label>
+                    <select id="drptasktype_ingpopup" class="form-control" style="max-width: 400px;">
+                        <option value="0">Baking</option>
+                        <option value="1">Filling</option>
+                        <option value="2">Icing</option>
+                        <option value="3">Decoration</option>
+                        <option value="4">Finishing</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Batch No: <abbr class="text-danger">*</abbr></label>
+                    <input type="text" id="txtBatchID_Ing" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <button type="button" id="btnAddIng_popup" class="btn btn-danger" onclick="btnAddIng_popup_Click()">Add Ingredient</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+                <div class="form-group row">
+                    <div id="ingredientList_popup" class="col-sm-12 ingredientList_popup"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    // === HAS TOPPER / EDIBLE / NON-EDIBLE (matching legacy jsbakeryorders.js) ===
+    $(document).on("click", ".chkHasTopper", function () {
+        var orderid = $(this).attr("data-oid");
+        var orderdetailid = $(this).attr("data-odetid");
+        if ($(this).is(":checked")) {
+            $(".rbEdible_" + orderdetailid).prop('checked', true);
+            $(".rbNonEdible_" + orderdetailid).prop('checked', false);
+            $(".dvTopperType_" + orderdetailid).show();
+        } else {
+            $(".dvTopperType_" + orderdetailid).hide();
+        }
+        SaveOrderTopperType($(this).is(":checked"), 1, orderid, orderdetailid);
+    });
+
+    $(document).on("change", ".rbEdible, .rbNonEdible", function () {
+        var orderid = $(this).attr("data-oid");
+        var orderdetailid = $(this).attr("data-odetid");
+        var hastopper = $(".chkHasTopper[data-odetid='" + orderdetailid + "']").is(":checked");
+        var edible = $(".rbEdible_" + orderdetailid).is(":checked");
+        var nonedible = $(".rbNonEdible_" + orderdetailid).is(":checked");
+        var typeid = 1;
+        if (edible && nonedible) { typeid = 3; }
+        else if (nonedible && !edible) { typeid = 2; }
+        else if (!edible && !nonedible) {
+            hastopper = false;
+            $(".chkHasTopper[data-odetid='" + orderdetailid + "']").prop('checked', false);
+            $(".dvTopperType_" + orderdetailid).hide();
+        }
+        SaveOrderTopperType(hastopper, typeid, orderid, orderdetailid);
+    });
+
+    function SaveOrderTopperType(hastopper, typeid, orderid, orderdetailid) {
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/savetopper",
+            data: JSON.stringify({ orderId: parseInt(orderid), orderDetailId: parseInt(orderdetailid), hasTopper: hastopper, topperTypeId: typeid }),
+            contentType: "application/json",
+            error: function () { alert('Failed to save topper type.'); }
+        });
+    }
+
+    // === SELECT ALL / BULK ACTIONS ===
+    function toggleSelectAll(el) {
+        $('.chkOrder').prop('checked', $(el).prop('checked'));
+    }
+
+    function getSelectedOrderIds() {
+        var ids = [];
+        $('.chkOrder:checked').each(function () { ids.push(parseInt($(this).val())); });
+        return ids;
+    }
+
+    function bulkAction(newStatus) {
+        var ids = getSelectedOrderIds();
+        if (ids.length === 0) { alert('Please select at least one order.'); return; }
+        var statusNames = { 2: 'Order Processed', 3: 'Under Delivery', 4: 'Completed', 5: 'Job Assigned' };
+        if (!confirm('Apply "' + (statusNames[newStatus] || '') + '" to ' + ids.length + ' selected order(s)?')) return;
+        var completed = 0;
+        ids.forEach(function (id) {
+            $.ajax({
+                type: "POST", url: "/businessorders/status",
+                data: JSON.stringify({ orderId: id, newStatus: newStatus }),
+                contentType: "application/json", async: false,
+                success: function () { completed++; }
+            });
+        });
+        alert(completed + ' order(s) updated.');
+        location.reload();
+    }
+
+    function bulkDelete() {
+        var ids = getSelectedOrderIds();
+        if (ids.length === 0) { alert('Please select at least one order.'); return; }
+        if (!confirm('Remove ' + ids.length + ' selected order(s)? This cannot be undone.')) return;
+        var completed = 0;
+        ids.forEach(function (id) {
+            $.ajax({
+                type: "POST", url: "/businessorders/delete",
+                data: JSON.stringify({ orderId: id }),
+                contentType: "application/json", async: false,
+                success: function () { completed++; }
+            });
+        });
+        alert(completed + ' order(s) removed.');
+        location.reload();
+    }
+
+    // === CLICK NEW IMAGE ===
+    $(document).on("change", ".chkChangeOrderImage", function () {
+        var orderDetailId = $(this).attr("data-orderdetailid");
+        var isChecked = $(this).is(":checked");
+        $.ajax({
+            type: "POST", url: "/businessorders/markchangeimage",
+            data: JSON.stringify({ orderDetailId: parseInt(orderDetailId), markForChange: !isChecked }),
+            contentType: "application/json",
+            error: function () { alert('Failed to update image mark.'); }
+        });
+    });
+
+    // === ORDER REVIEWS ===
+    function openReviewModal(orderId) {
+        $('#reviewOrderId').val(orderId);
+        $('#drpStars').val('0');
+        $('#txtReviewRemarks').val('');
+        $('#reviewOrderModal').modal('show');
+    }
+
+    function submitReview() {
+        var orderId = parseInt($('#reviewOrderId').val());
+        var stars = parseInt($('#drpStars').val());
+        var remarks = $('#txtReviewRemarks').val().trim();
+
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/savereview",
+            data: JSON.stringify({ orderId: orderId, stars: stars, remarks: remarks }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) {
+                    $('#reviewOrderModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to save review.');
+                }
+            },
+            error: function () { alert('Server error.'); }
+        });
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+        var statusNames = { 2: 'Order Processed', 3: 'Order Under Delivery', 4: 'Order Completed', 5: 'Job Assigned' };
+        var label = statusNames[newStatus] || ('status ' + newStatus);
+        if (!confirm('Are you sure you want to change this order to "' + label + '"?')) return;
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/status",
+            data: JSON.stringify({ orderId: orderId, newStatus: newStatus }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) { location.reload(); }
+                else { alert(result.message || 'Failed to update status.'); }
+            },
+            error: function () { alert('Server error. Please try again.'); }
+        });
+    }
+
+    function confirmOrder(orderId) {
+        if (!confirm('Are you sure you want to confirm this order?')) return;
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/confirm",
+            data: JSON.stringify({ orderId: orderId }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) { location.reload(); }
+                else { alert(result.message || 'Failed to confirm order.'); }
+            },
+            error: function () { alert('Server error. Please try again.'); }
+        });
+    }
+
+    function deleteOrder(orderId) {
+        if (!confirm('Are you sure you want to remove this order? This cannot be undone.')) return;
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/delete",
+            data: JSON.stringify({ orderId: orderId }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) { location.reload(); }
+                else { alert(result.message || 'Failed to remove order.'); }
+            },
+            error: function () { alert('Server error. Please try again.'); }
+        });
+    }
+
+    // === CANCEL ORDER ===
+    var cancelOrderId = 0;
+
+    function openCancelModal(orderId) {
+        cancelOrderId = orderId;
+        $('#cancelOrderId').text(orderId);
+        $('#ddlCancelReason').val('0');
+        $('#txtCancelComments').val('');
+        $('#chkNotifyCustomer').prop('checked', true);
+        $('#cancelOrderModal').modal('show');
+    }
+
+    function submitCancelOrder() {
+        var reason = $('#ddlCancelReason').val();
+        var comments = $('#txtCancelComments').val().trim();
+        if (reason === '0') { alert('Please select a cancel reason.'); return; }
+        if (!comments) { alert('Please provide cancel description.'); return; }
+
+        $.ajax({
+            type: "POST",
+            url: "/businessorders/cancel",
+            data: JSON.stringify({
+                orderId: cancelOrderId,
+                reason: reason,
+                comments: comments,
+                notifyCustomer: $('#chkNotifyCustomer').is(':checked')
+            }),
+            contentType: "application/json",
+            success: function (result) {
+                if (result.success) {
+                    $('#cancelOrderModal').modal('hide');
+                    if (result.warnings && result.warnings.length > 0) {
+                        alert('Order cancelled.\n\nNote: ' + result.warnings.join('\n'));
+                    }
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to cancel order.');
+                }
+            },
+            error: function () { alert('Server error. Please try again.'); }
+        });
+    }
+
+    // === DATE VALIDATION (matching legacy CompareValidator) ===
+    function validateDateFields() {
+        var sdateVal = $('.order-from').val().trim();
+        var edateVal = $('.order-to').val().trim();
+        if (sdateVal && !isValidDate(sdateVal)) {
+            alert('Invalid start date. Please use dd/mm/yyyy format.');
+            return false;
+        }
+        if (edateVal && !isValidDate(edateVal)) {
+            alert('Invalid end date. Please use dd/mm/yyyy format.');
+            return false;
+        }
+        if (sdateVal && edateVal) {
+            var sd = parseDate(sdateVal);
+            var ed = parseDate(edateVal);
+            if (sd && ed && sd > ed) {
+                alert('Start date should be less than end date.');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isValidDate(str) {
+        var parts = str.split('/');
+        if (parts.length !== 3) return false;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (isNaN(d) || isNaN(m) || isNaN(y)) return false;
+        var dt = new Date(y, m - 1, d);
+        return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+    }
+
+    function parseDate(str) {
+        var parts = str.split('/');
+        if (parts.length !== 3) return null;
+        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+    }
+
+    // === UPDATE SORTING (matching legacy moveupward/movedownward/updatesorting) ===
+    function moveupward(el) {
+        var thisRow = $(el).closest('tr');
+        var prevRow = thisRow.prev();
+        if (prevRow.length) {
+            prevRow.before(thisRow);
+            $(el).closest('table').find('tr').removeClass('bg');
+            thisRow.addClass('bg');
+        }
+        $('.updatesorting_outer').show();
+    }
+
+    function movedownward(el) {
+        var thisRow = $(el).closest('tr');
+        var nextRow = thisRow.next();
+        if (nextRow.length) {
+            nextRow.after(thisRow);
+            $(el).closest('table').find('tr').removeClass('bg');
+            thisRow.addClass('bg');
+        }
+        $('.updatesorting_outer').show();
+    }
+
+    function updatesorting() {
+        var arr = [];
+        var counter = 0;
+        $('.trOrderlist').each(function () {
+            arr.push({ OrderID: parseInt($(this).attr('data-id')), Ordersts: 5, DisplayOrder: counter + 1 });
+            counter++;
+        });
+        $.ajax({
+            type: 'POST',
+            url: '/businessorders/updatesorting',
+            data: JSON.stringify({ items: arr }),
+            contentType: 'application/json',
+            success: function () { location.reload(); },
+            error: function () { alert('Failed to update sorting.'); }
+        });
+    }
+
+    // === VIEW / EDIT INGREDIENTS POPUP (matching legacy ViewIngredients_popup) ===
+    function ViewIngredients_popup(el, ordID, orddetID) {
+        $('#dvAddIngredients').attr('data-orddetid', orddetID);
+        $('#dvAddIngredients').attr('data-ordid', ordID);
+        $('#drptasktype_ingpopup').val('0');
+        $('#txtBatchID_Ing').val('');
+        $('#ltIngOrderID').text(ordID);
+        getingredientlist_popup(orddetID);
+    }
+
+    function getingredientlist_popup(orderdetID) {
+        $.ajax({
+            type: 'POST',
+            url: '/businessorders/ingredients',
+            data: JSON.stringify({ orderDetailId: parseInt(orderdetID) }),
+            contentType: 'application/json',
+            success: function (result) {
+                if (result.success) {
+                    var html = '';
+                    if (result.items && result.items.length > 0) {
+                        html = '<table class="table table-condensed"><thead><tr><th>Section</th><th>Batch No</th><th>Product</th><th>Date</th><th></th></tr></thead><tbody>';
+                        $.each(result.items, function (i, item) {
+                            html += '<tr><td>' + item.sectionName + '</td><td>' + item.batchId + '</td><td>' + (item.productName || '-') + '</td><td>' + (item.createDate ? new Date(item.createDate).toLocaleDateString() : '-') + '</td>';
+                            html += '<td><a href="javascript:void(0);" onclick="btnremIng_popup_Click(' + item.id + ')" class="text-danger">Remove</a></td></tr>';
+                        });
+                        html += '</tbody></table>';
+                    } else {
+                        html = '<p class="text-muted">No ingredients added yet.</p>';
+                    }
+                    $('#ingredientList_popup').html(html);
+                    $('#dvAddIngredients').modal('show');
+                } else {
+                    alert(result.message || 'Failed to load ingredients.');
+                }
+            },
+            error: function () { alert('Server error loading ingredients.'); }
+        });
+    }
+
+    function btnAddIng_popup_Click() {
+        var batchId = $('#txtBatchID_Ing').val().trim();
+        if (!batchId) { alert('Please Enter Batch No.'); return; }
+        var orddetID = $('#dvAddIngredients').attr('data-orddetid');
+        var ordID = $('#dvAddIngredients').attr('data-ordid');
+        var sectionId = parseInt($('#drptasktype_ingpopup').val());
+        $.ajax({
+            type: 'POST',
+            url: '/businessorders/addingredient',
+            data: JSON.stringify({ orderDetailId: parseInt(orddetID), orderId: parseInt(ordID), batchId: batchId, sectionId: sectionId }),
+            contentType: 'application/json',
+            success: function (result) {
+                if (result.success) {
+                    $('#txtBatchID_Ing').val('');
+                    getingredientlist_popup(orddetID);
+                } else {
+                    alert(result.message || 'Failed to add ingredient.');
+                }
+            },
+            error: function () { alert('Server error adding ingredient.'); }
+        });
+    }
+
+    function btnremIng_popup_Click(ingredientId) {
+        if (!confirm('Remove this ingredient?')) return;
+        var orddetID = $('#dvAddIngredients').attr('data-orddetid');
+        $.ajax({
+            type: 'POST',
+            url: '/businessorders/removeingredient',
+            data: JSON.stringify({ ingredientId: ingredientId }),
+            contentType: 'application/json',
+            success: function (result) {
+                if (result.success) {
+                    getingredientlist_popup(orddetID);
+                } else {
+                    alert(result.message || 'Failed to remove ingredient.');
+                }
+            },
+            error: function () { alert('Server error removing ingredient.'); }
+        });
+    }
+</script>
+}

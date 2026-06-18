@@ -1,0 +1,262 @@
+@using CakerStreet.Business.Services
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var product = ViewBag.Product as ProductDetails;
+    var videos = ViewBag.Videos as List<PrdVideoItem> ?? new();
+    var editVideo = ViewBag.EditVideo as PrdVideoItem;
+    var successMsg = ViewBag.SuccessMessage as string;
+    var errorMsg = ViewBag.ErrorMessage as string;
+    var isEditMode = editVideo != null;
+}
+
+@functions {
+    public string GetProductImage(string imgName, string cdnBase)
+    {
+        if (string.IsNullOrEmpty(imgName))
+        {
+            return "https://cakerstreet1.s3.amazonaws.com/images/blankImages/110x135.jpg";
+        }
+        var path = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "upload", "Product_images", "resized_300_300", imgName);
+        if (System.IO.File.Exists(path))
+        {
+            return "/upload/Product_images/resized_300_300/" + imgName;
+        }
+        return cdnBase + "upload/Product_images/resized_300_300/" + imgName;
+    }
+
+    public string GetVideoThumb(string thumbName)
+    {
+        if (string.IsNullOrEmpty(thumbName))
+        {
+            return "/images/blankImages/img75.jpg";
+        }
+        var path = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "upload", "videos", "photothumb", thumbName);
+        if (System.IO.File.Exists(path))
+        {
+            return "/upload/videos/photothumb/" + thumbName;
+        }
+        return "/upload/videos/photothumb/" + thumbName;
+    }
+}
+
+@section Head {
+    <style type="text/css">
+        .font-weight-normal {
+            font-weight: normal;
+        }
+        .img img {
+            max-height: 60px;
+            max-width: 60px;
+        }
+        .table.prdlstouter {
+            margin-top: 20px;
+        }
+        .desc {
+            width: 50%;
+            text-align: justify;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse3" aria-expanded="true">
+                        <span class="glyphicon glyphicon-minus"></span>
+                    </a>
+                </div>
+                <div class="col-md-11">
+                    <h2>
+                        Manage Topper @(product?.Name) (@(product?.Code))
+                        <a href="/mywebstore?prdtype=4" target="_blank" style="float:right;color:#fff;font-size:14px; margin-left: 15px;">Add New Topper</a>
+                        <a href="/mywebstore" style="float:right;color:#fff;font-size:14px;">Back to Webstore</a>
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+                <div class="col-md-12 caln" style="margin-top: 15px; margin-bottom: 15px;">
+                    <a href="@(product != null ? $"/mywebstore/product/{product.ProductId}" : "#")" target="_blank">
+                        <img src="@(product != null ? GetProductImage(product.Image1, ViewBag.CdnBase) : "")" style="max-width: 150px; max-height: 150px; border: 1px solid #ddd; padding: 4px; border-radius: 4px;" />
+                    </a>
+                </div>
+
+                @if (!string.IsNullOrEmpty(successMsg))
+                {
+                    <div class="alert alert-success col-md-12">
+                        @successMsg
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(errorMsg))
+                {
+                    <div class="alert alert-danger col-md-12">
+                        @errorMsg
+                    </div>
+                }
+
+                <div class="clearfix"></div>
+
+                <!-- DIY Description Form -->
+                <form action="/managevideos/savedesc" method="post" class="col-md-12 row" style="margin-bottom: 25px;">
+                    <input type="hidden" name="id" value="@(product?.ProductId)" />
+                    <div class="form-group col-md-12">
+                        <label style="font-weight: bold; margin-bottom: 10px;">DIY Description</label>
+                        <textarea id="txtDescription" name="description" class="form-control" rows="5">@(product?.Description)</textarea>
+                    </div>
+                    <div class="col-md-12" style="margin-top: 10px;">
+                        <button type="submit" class="btn btn-danger">Save Description</button>
+                    </div>
+                </form>
+
+                <div class="clearfix"></div>
+
+                <!-- Add/Edit Video Form -->
+                <div class="orderWrappernew" style="margin-top: 20px; border: 1px solid #ddd; border-radius: 4px;">
+                    <div class="innerhead" style="background-color: #f5f5f5; border-bottom: 1px solid #ddd; padding: 10px 15px;">
+                        <div class="col-md-1">
+                            <a data-toggle="collapse" href="#collapse2" aria-expanded="true">
+                                <span class="glyphicon glyphicon-minus" style="color: #333;"></span>
+                            </a>
+                        </div>
+                        <div class="col-md-11">
+                            <h3 style="margin: 0; font-size: 16px; font-weight: bold; color: #333;">
+                                @(isEditMode ? "Edit Video" : "Add Video")
+                            </h3>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse2" aria-expanded="true" style="padding: 15px;">
+                        <form action="/managevideos/savevideo" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="id" value="@(product?.ProductId)" />
+                            <input type="hidden" name="videoId" value="@(editVideo?.VideoId ?? 0)" />
+                            <input type="hidden" name="hfThumb" value="@(editVideo?.VideoThumb ?? "")" />
+                            <input type="hidden" name="hfVideo" value="@(editVideo?.Video ?? "")" />
+
+                            <div class="form-group">
+                                <label for="txtTitle">Title <span class="text-danger">*</span></label>
+                                <input type="text" id="txtTitle" name="title" value="@(editVideo?.Title)" class="form-control" placeholder="Title" required />
+                            </div>
+
+                            <div class="form-group hide" style="display: none;">
+                                <label for="txtVidDescription">Description</label>
+                                <textarea id="txtVidDescription" name="description" class="form-control" placeholder="Description">@(editVideo?.Description)</textarea>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label for="fupThumb">
+                                    Browse Thumb <span class="text-danger">*</span> 
+                                    @if (isEditMode) { <span class="text-muted">(Leave empty to keep existing thumbnail)</span> }
+                                </label>
+                                <input type="file" id="fupThumb" name="fupThumb" class="form-control-file" accept="image/*" @(isEditMode ? "" : "required") />
+                                @if (isEditMode && !string.IsNullOrEmpty(editVideo?.VideoThumb))
+                                {
+                                    <div style="margin-top: 5px;">
+                                        <img src="@GetVideoThumb(editVideo.VideoThumb)" style="max-height: 50px; border: 1px solid #ccc; padding: 2px;" />
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label for="fupVideo">
+                                    Browse Video <span class="text-danger">*</span>
+                                    @if (isEditMode) { <span class="text-muted">(Leave empty to keep existing video file)</span> }
+                                </label>
+                                <input type="file" id="fupVideo" name="fupVideo" class="form-control-file" accept="video/mp4" @(isEditMode ? "" : "required") />
+                                @if (isEditMode && !string.IsNullOrEmpty(editVideo?.Video))
+                                {
+                                    <div style="margin-top: 5px;" class="text-info small">
+                                        Current video file: @editVideo.Video
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="form-group" style="margin-top: 20px;">
+                                <button type="submit" class="btn btn-danger">@(isEditMode ? "Update Video" : "Save Video")</button>
+                                @if (isEditMode)
+                                {
+                                    <a href="/managevideos?id=@(product?.ProductId)" class="btn btn-default" style="margin-left: 10px;">Cancel Edit</a>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @if (videos.Count > 0)
+                {
+                    <div class="orderWrappernew" style="margin-top: 25px;">
+                        <form action="/managevideos/updateorders" method="post">
+                            <input type="hidden" name="id" value="@(product?.ProductId)" />
+
+                            <div class="table-responsive prdlstouter">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr class="active">
+                                            <th style="width: 10%; text-align: center;">Thumbnail</th>
+                                            <th style="width: 30%;">Title</th>
+                                            <th style="width: 30%;">Description</th>
+                                            <th style="width: 15%;">Display Order</th>
+                                            <th style="width: 15%; text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var video in videos)
+                                        {
+                                            <tr>
+                                                <td class="img" style="text-align: center; vertical-align: middle;">
+                                                    <img src="@GetVideoThumb(video.VideoThumb)" style="max-width: 60px; max-height: 60px; border: 1px solid #eee;" />
+                                                </td>
+                                                <td style="vertical-align: middle; font-weight: bold;">
+                                                    @video.Title
+                                                </td>
+                                                <td style="vertical-align: middle; font-size: 13px;">
+                                                    @video.Description
+                                                </td>
+                                                <td style="vertical-align: middle;">
+                                                    <input type="number" name="displayOrder_@video.VideoId" value="@video.DisplayOrder" class="form-control" style="width: 70px; display: inline-block; text-align: center;" required />
+                                                </td>
+                                                <td style="text-align: center; vertical-align: middle;">
+                                                    <a href="/managevideos?id=@(product?.ProductId)&editId=@(video.VideoId)" class="btn btn-default btn-xs" style="margin-right: 5px;">Edit</a>
+                                                    <a href="/managevideos/delete/@(video.VideoId)?prdId=@(product?.ProductId)" class="btn btn-danger btn-xs" onclick="return confirm('Are you sure to delete this item?')">Delete</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style="margin-top: 15px; margin-bottom: 30px;">
+                                <button type="submit" class="btn btn-danger">Update Display Orders</button>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info col-md-12" style="margin-top: 25px;">
+                        No videos added yet for this product.
+                    </div>
+                }
+
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var roxyFileman = '/fileman/index.html';
+        CKEDITOR.replace('txtDescription', {
+            filebrowserBrowseUrl: roxyFileman,
+            filebrowserImageBrowseUrl: roxyFileman + '?type=image',
+            removeDialogTabs: 'link:upload;image:upload'
+        });
+    });
+</script>

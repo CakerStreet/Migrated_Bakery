@@ -1,0 +1,77 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+    <style type="text/css">
+        .div_QuestionMain_outer {
+            display: table;
+            margin: 0px auto 20px;
+            width: 100%;
+        }
+        ol, ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .div_QuestionMain > ul.UL_QuestionMain {
+            display: table;
+            width: 100%;
+        }
+        .div_QuestionMain_outer li {
+            line-height: 30px;
+        }
+        .div_QuestionMain > ul.UL_QuestionMain li {
+            float: left;
+            line-height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            position: relative;
+            padding: 5px 0 5px 20px;
+        }
+        ul.UL_QuestionMain li span {
+            position: absolute;
+            left: 0;
+            top: 5px;
+        }
+        .inventoryWrapper .innerhead {
+            display: table;
+            width: 100%;
+        }
+        .normallink, .normallink:hover, .normallink:focus {
+            font-size: 14px;
+            text-decoration: underline;
+            color: #fff;
+        }
+    </style>
+}
+
+<div class="row top-margin">
+</div>
+<div class="clearfix">
+</div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <div class="col-md-12" style="padding-left:0; padding-right: 0;">
+            <h2 style="display: inline-block;">HACCP</h2>
+            <a href="/food-standards" class="pull-right normallink">Back</a>
+        </div>
+    </div>
+    <div class="col-lg-12 padding-top-mobile" style="padding-left:0; padding-right:0; margin-top: 15px;">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="div_QuestionMain">
+                <ul class="UL_QuestionMain">
+                    <li>
+                        <span>1.</span>
+                        <a href="https://cakerstreet1.s3.amazonaws.com/upload/haccp/sfbb-caterers-pack-fixed-filled.pdf" target="_blank">Safer Food Better Business Guide</a>
+                    </li>
+                    <li>
+                        <span>2.</span>
+                        <a href="/dailydairychecklists">Daily Dairy</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

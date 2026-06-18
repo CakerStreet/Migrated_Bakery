@@ -1,0 +1,196 @@
+@model CakerStreet.Business.Services.POItemReceivedPrintResult
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Purchase Order Item Received Detail</title>
+    <style type="text/css" media="print">
+        #dvPrintButtons {
+            visibility: hidden;
+            display: none;
+        }
+        @@media page {
+            size: A4 landscape;
+        }
+    </style>
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+            color: #555;
+            font-size: 12px;
+        }
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .headingnormaltr > td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: center;
+        }
+        .headingboldtr > td {
+            background-color: #eee;
+            border: 1px solid #ddd;
+            padding: 8px 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .headingbold {
+            font-weight: bold;
+            text-align: left;
+        }
+        .headingnormal {
+            text-align: left;
+        }
+        .table-po {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .table-po td {
+            padding: 6px;
+        }
+        .section-header {
+            background: #404040;
+            height: 30px;
+            padding-left: 15px;
+            color: #FFFFFF;
+            font-size: 14px;
+            line-height: 30px;
+            font-weight: bold;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="dvPrintButtons" style="margin-top: 5px; text-align: center;">
+            <input id="btnPrint" class="btn" onclick="window.print();" type="button" value="Print" />
+        </div>
+        <table width="100%" cellspacing="0" cellpadding="10" border="0" align="center">
+            <tbody>
+                <tr>
+                    <td>
+                        Greetings <strong></strong>!!
+                        <br><br>
+                        There is new Purchase Order Request from <a href="http://localhost:5202" target="_blank">CakerStreet</a>
+                        <br><br>
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+                            <tbody>
+                                <tr>
+                                    <td class="section-header">
+                                        Received Detail
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <table class="table-po" border="0" align="center">
+                                            <tbody>
+                                                <tr>
+                                                    <td class="headingbold" width="30%">Invoice No :</td>
+                                                    <td class="headingnormal">@Model.PO_InvoiceNo</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="headingbold" width="30%">Invoice Date :</td>
+                                                    <td class="headingnormal">@Model.PO_InvoiceDate.ToString("dd MMMM yyyy")</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="headingbold" width="30%">Received Date :</td>
+                                                    <td class="headingnormal"><b>@Model.PO_ReceivedDate.ToString("dd MMMM yyyy")</b></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="headingbold" width="30%">Received By :</td>
+                                                    <td class="headingnormal">@Model.ReceivedByName</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="headingbold" width="30%">Supplier Name :</td>
+                                                    <td class="headingnormal">@Model.SupplierName</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="headingbold" width="30%">Remarks :</td>
+                                                    <td class="headingnormal">@Html.Raw(Model.PO_Remarks?.Replace("\r\n", "<br/>")?.Replace("\n", "<br/>"))</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br><br>
+                        <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+                            <tbody>
+                                <tr>
+                                    <td class="section-header">
+                                        Purchase Order Detail
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table width="100%" cellspacing="0" cellpadding="0" border="1" bordercolor="#cccccc" align="center" style="border-collapse: collapse; margin-top: 15px;">
+                            <thead>
+                                <tr class="headingboldtr">
+                                    <td width="30">Sr.</td>
+                                    <td>Batch ID</td>
+                                    <td>Supplier Name</td>
+                                    <td>Location</td>
+                                    <td>Product Name</td>
+                                    <td width="70">SKU</td>
+                                    <td width="100">Qty</td>
+                                    <td width="110">Rate</td>
+                                    <td>Amount</td>
+                                    <td width="40">Disc.(%)</td>
+                                    <td width="40">Sub Total</td>
+                                    <td width="40">VAT(%)</td>
+                                    <td width="40">VAT</td>
+                                    <td width="40">Net Total</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int index = 1; }
+                                @foreach (var item in Model.LineItems)
+                                {
+                                    <tr class="headingnormaltr">
+                                        <td>@index</td>
+                                        <td>@item.PODet_BatchID</td>
+                                        <td>@item.SupplierName</td>
+                                        <td>@item.FullLocation</td>
+                                        <td style="text-align: left; padding-left: 5px;">@item.ProductName</td>
+                                        <td>@item.ProductCode</td>
+                                        <td>@item.POdet_Qty</td>
+                                        <td>&pound;@item.POdet_RatePerItem.ToString("F2")</td>
+                                        <td>&pound;@item.POdet_Amount.ToString("F2")</td>
+                                        <td>@item.POdet_disc.ToString("G29")</td>
+                                        <td>&pound;@item.POdet_Subtotal.ToString("F2")</td>
+                                        <td>@item.POdet_VatPer.ToString("G29")</td>
+                                        <td>&pound;@item.POdet_Vat.ToString("F2")</td>
+                                        <td>&pound;@item.POdet_NetTotal.ToString("F2")</td>
+                                    </tr>
+                                    index++;
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

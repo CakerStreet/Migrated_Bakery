@@ -1,0 +1,153 @@
+@*
+    Print view for Franchise Stock Checklist (Order Sponge List).
+    Migrated from: printFranchiseChecklist.aspx
+    Layout: _PrintLayout (standalone print page, no sidebar)
+
+    The legacy page rendered raw HTML from clsMail.GetranchiseChecklistdata_inmail().
+    This view reproduces the exact same table structure using Razor.
+*@
+@{
+    Layout = "~/Views/Shared/_PrintLayout.cshtml";
+    ViewBag.Title = "Order Sponge list";
+
+    var items = ViewBag.Items as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+    string domainName = ViewBag.DomainName ?? "";
+    string checklistTitle = ViewBag.ChecklistTitle ?? "";
+    string totalReqQty = ViewBag.TotalReqQty ?? "";
+    string checklistDate = ViewBag.ChecklistDate ?? "";
+    string checklistMadeBy = ViewBag.ChecklistMadeBy ?? "";
+    string remarks = ViewBag.Remarks ?? "";
+}
+
+<style type="text/css" media="all">
+    .tbl_outer { width: 650px; }
+</style>
+<style type="text/css" media="print">
+    .tbl_outer { width: 100%; }
+    #dvPrintButtons { visibility: hidden; display: none; }
+    @@media page { size: A4 landscape; }
+    @@page { margin: 5mm; padding: 0; }
+</style>
+
+@* Inline styles matching legacy clsMail HTML output *@
+<style type="text/css">
+    .headingnormaltr > td { border: 1px solid #ddd; padding: 2px; text-align: center; }
+    .headingboldtr > td { background-color: #eee; border: 1px solid #ddd; padding: 5px 2px; text-align: center; }
+    .headingnormaltr > td.laln, .headingboldtr > td.laln { text-align: left; padding-left: 10px; }
+    .headingnormaltr > td > font { font-size: 20px; font-weight: bold; color: #DB080C; }
+    .tdbg { background-color: #404040; height: 30px; padding-left: 15px; color: #FFFFFF; font-size: 14px; }
+</style>
+
+<div class="container">
+    @* ── Print button (hidden on print) ── *@
+    <div id="dvPrintButtons" class="row hidden-print" style="margin-top: 5px; text-align: center;">
+        <div class="btn-group">
+            <input id="btnPrint" class="btn btn-primary btn-sm" onclick="window.print();" type="button" value="Print" />
+        </div>
+    </div>
+
+    @* ── Main Content Table ── *@
+    <table class="tbl_outer" style="margin:0 auto" cellspacing="0" border="0" align="center">
+        <tr>
+            <td>
+                @* ── Checklist content (replicates clsMail HTML) ── *@
+                <table cellpadding="10" style="color:#555;font-family:arial;font-size:14px;" cellspacing="0" border="0" width="100%" align="center">
+                    <tr>
+                        <td>
+                            Greetings !!
+                            <br /><br />
+                            New stock checklist is generated for <font color="#DB080C">@domainName</font><br /><br />
+
+                            @* Checklist Detail Header *@
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" align="center" bordercolor="#cccccc">
+                                <tr><td class="tdbg">Checklist Detail</td></tr>
+                            </table>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" align="center" bordercolor="#cccccc">
+                                <tr>
+                                    <td>
+                                        <table cellpadding="5" cellspacing="5" border="0" width="100%" align="center" style="font-size:12px;color:#555;font-family:arial">
+                                            <tr>
+                                                <td width="30%" class="headingbold">Checklist ID :</td>
+                                                <td class="headingnormal">@checklistTitle</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="headingbold">Total Required Qty(s) :</td>
+                                                <td class="headingnormal">@totalReqQty</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="headingbold">Checklist Date:</td>
+                                                <td class="headingnormal">@checklistDate</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="headingbold">Checklist Made By:</td>
+                                                <td class="headingnormal">@checklistMadeBy</td>
+                                            </tr>
+                                            @if (!string.IsNullOrEmpty(remarks))
+                                            {
+                                                <tr>
+                                                    <td class="headingbold">Remarks :</td>
+                                                    <td class="headingnormal">@remarks</td>
+                                                </tr>
+                                            }
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            @* Items Detail Header *@
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" align="center" bordercolor="#cccccc">
+                                <tr><td class="tdbg">Items(s) Detail</td></tr>
+                            </table>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%" align="center" bordercolor="#cccccc">
+                                <tr>
+                                    <td>
+                                        <table cellpadding="5" cellspacing="5" border="0" width="100%" align="center" style="font-size:14px;color:#555;font-family:arial">
+                                            <tr class="headingboldtr">
+                                                <td width="30">Sr.</td>
+                                                <td width="80"></td>
+                                                <td width="60">Item No.</td>
+                                                <td class="laln">Items</td>
+                                                <td width="70">In Stock</td>
+                                                <td width="70">Req. Qty</td>
+                                            </tr>
+                                            @{
+                                                int counter = 0;
+                                            }
+                                            @foreach (var item in items)
+                                            {
+                                                counter++;
+                                                var reqQty = Convert.ToInt32(item["stockPrd_reqqty"]);
+                                                <tr class="headingnormaltr">
+                                                    <td>@counter</td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(Convert.ToString(item["ImageUrl"])))
+                                                        {
+                                                            <img src="@item["ImageUrl"]" />
+                                                        }
+                                                    </td>
+                                                    <td>@(Convert.ToString(item["product_displayorder"])).</td>
+                                                    <td class="laln">@item["product_Name"]</td>
+                                                    <td>@item["stockPrd_qty"]</td>
+                                                    <td>
+                                                        @if (reqQty > 0)
+                                                        {
+                                                            <font>@reqQty</font>
+                                                        }
+                                                        else
+                                                        {
+                                                            <text>-</text>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>

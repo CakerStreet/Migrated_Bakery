@@ -1,0 +1,231 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Generate SVG";
+
+    var templateBoxUrl = "/upload/personalised/" + ViewBag.TemplateBox;
+    if (ViewBag.TemplateBox == "cupcake.png")
+    {
+        templateBoxUrl = "https://www.cakerstreet.com/bakery_content/images/cupcake.png";
+    }
+
+    var templatePicUrl = "/upload/personalised/" + ViewBag.TemplatePic;
+    if (ViewBag.TemplatePic == "camera.jpg")
+    {
+        templatePicUrl = "https://www.cakerstreet.com/bakery_content/images/camera.jpg";
+    }
+}
+
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+<style>
+    .template_container {
+        width: 1090px;
+        height: 1090px;
+        display: table;
+        border: 1px solid #ccc;
+        margin: 0 auto;
+    }
+
+    .dvTemplateBox_Outer {
+        width: 1088px;
+        height: 1088px;
+        position: relative;
+    }
+
+    .dvTemplateBox {
+        width: 1088px;
+        height: 1088px;
+        position: relative;
+        z-index: 2;
+        background: transparent url('@templateBoxUrl') center center no-repeat;
+        background-size: 100% auto;
+    }
+
+    .dvTemplateBox:hover {
+        z-index: 0;
+    }
+
+    .dvTemplatePic {
+        width: 300px;
+        height: 300px;
+        position: absolute;
+        left: 715px;
+        top: 460px;
+        border: 1px solid #ccc;
+        z-index: 1;
+        cursor: pointer;
+        background: transparent url('@templatePicUrl') center center no-repeat;
+        background-size: 100% auto;
+    }
+
+    .dvTemplatePic:hover {
+        z-index: 3;
+    }
+
+    .ui-resizable-helper {
+        border: 2px dotted #00F;
+    }
+
+    .svgOuter {
+        display: none;
+    }
+</style>
+
+<div class="row">
+    <div id="dvCategory" class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-7">
+                    <h2>Generate SVG</h2>
+                </div>
+                <div class="col-md-5">
+                </div>
+            </div>
+
+            <div class="col-sm-12" style="margin-top: 15px;">
+                @if (!string.IsNullOrEmpty(ViewBag.UploadError))
+                {
+                    <div class="alert alert-danger">
+                        @ViewBag.UploadError
+                    </div>
+                }
+
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <div class="template_container">
+                            <div class="dvTemplateBox_Outer">
+                                <div id="dvTemplateBox" class="dvTemplateBox">
+                                </div>
+                                <div id="dvTemplatePic" class="dvTemplatePic"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Form 1 (Template Box) -->
+                    <form method="post" enctype="multipart/form-data" action="/createsvgforpersonalisedcake">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="pid" value="@ViewBag.PrdID" />
+                        <input type="hidden" name="hfTemplateBox" value="@ViewBag.TemplateBox" />
+                        <input type="hidden" name="hfTemplatePic" value="@ViewBag.TemplatePic" />
+                        <input type="hidden" name="hfIsPrdSvgAvailable" value="@ViewBag.IsPrdSvgAvailable" />
+                        <input type="hidden" name="uploadType" value="1" />
+                        
+                        <div class="form-group">
+                            <div class="col-sm-6">
+                                Browse Template Box: <input type="file" name="uploadFile" accept="image/*" required />
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-danger btn-sm">Upload Image</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Upload Form 2 (Template Pic) -->
+                    <form method="post" enctype="multipart/form-data" action="/createsvgforpersonalisedcake">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="pid" value="@ViewBag.PrdID" />
+                        <input type="hidden" name="hfTemplateBox" value="@ViewBag.TemplateBox" />
+                        <input type="hidden" name="hfTemplatePic" value="@ViewBag.TemplatePic" />
+                        <input type="hidden" name="hfIsPrdSvgAvailable" value="@ViewBag.IsPrdSvgAvailable" />
+                        <input type="hidden" name="uploadType" value="0" />
+
+                        <div class="form-group">
+                            <div class="col-sm-6">
+                                Browse Template Pic: <input type="file" name="uploadFile" accept="image/*" required />
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-danger btn-sm">Upload Image</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="well center-block" style="max-width: 400px; margin-top: 20px;">
+                    <a id="ancGenerateSVG" class="btn btn-success btn-lg btn-block">Generate SVG</a>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <textarea id="txtSVG" class="form-control" rows="10" placeholder="SVG HTML will be generated here">@ViewBag.SvgText</textarea>
+                    <a id="ancCopyDesc" class="btn btn-lg pull-right" style="margin-top: 5px;"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></a>
+                </div>
+            </div>
+
+            <div id="svgOuter" class="svgOuter">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1088" height="1088" viewBox="0 0 1088 1088">
+                    <metadata>
+                        <rdf:rdf xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                            <rdf:description rdf:about=""></rdf:description>
+                        </rdf:rdf>
+                    </metadata>
+
+                    <g id="ImageUpload1" style="cursor: pointer;">
+                        <image style="overflow:visible;cursor: pointer;" x="715" y="460" width="300" height="300" xlink:href="@templatePicUrl"></image>
+                    </g>
+                    <image id="Cake2D_CakeMask" style="pointer-events: none; display: none;" x="0" y="0" width="1088" height="1088" xlink:href="@templateBoxUrl"></image>
+                    <image id="Cake3D_CakeMask" style="pointer-events: none;" x="0" y="0" width="1088" height="1088" xlink:href="@templateBoxUrl"></image>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".dvTemplatePic").draggable({ containment: ".dvTemplateBox_Outer", scroll: false });
+
+        $(".dvTemplatePic").resizable({
+            //helper: "ui-resizable-helper"
+        });
+
+        $("body").on("click", "#ancCopyDesc", function () {
+            $("#txtSVG").select();
+            document.execCommand('copy');
+        });
+
+        $("body").on("click", "#ancGenerateSVG", function () {
+            var templatepic = $("#dvTemplateBox").css('background-image');
+            templatepic = templatepic.replace('url(', '').replace(')', '').replace(/\"/gi, "");
+
+            var camerapic = $("#dvTemplatePic").css('background-image');
+            camerapic = camerapic.replace('url(', '').replace(')', '').replace(/\"/gi, "");
+
+            $("#Cake2D_CakeMask").attr("xlink:href", templatepic);
+            $("#Cake3D_CakeMask").attr("xlink:href", templatepic);
+
+            var img = $("#ImageUpload1").children()[0];
+            $(img).attr("xlink:href", camerapic);
+
+            $(img).attr("width", $("#dvTemplatePic").outerWidth());
+            $(img).attr("height", $("#dvTemplatePic").outerHeight());
+
+            $(img).attr("x", Math.ceil($("#dvTemplatePic").position().left));
+            $(img).attr("y", Math.ceil($("#dvTemplatePic").position().top));
+
+            $("#txtSVG").val($("#svgOuter").html());
+        });
+
+        ShowPrdSVG();
+    });
+
+    function ShowPrdSVG() {
+        if ("@ViewBag.IsPrdSvgAvailable" == "1") {
+            $("#dvTemplateBox").css('background', "transparent url('" + $("#Cake2D_CakeMask").attr("xlink:href") + "') center center no-repeat");
+            $("#dvTemplateBox").css({ "background-size": "100% auto" });
+
+            var img = $("#ImageUpload1").children()[0];
+            $("#dvTemplatePic").css('background', "transparent url('" + $(img).attr("xlink:href") + "') center center no-repeat");
+            $("#dvTemplatePic").css({ "background-size": "100% auto" });
+            $("#dvTemplatePic").css({
+                width: $(img).attr("width") + "px",
+                height: $(img).attr("height") + "px",
+                top: $(img).attr("y") + "px",
+                left: $(img).attr("x") + "px"
+            });
+        }
+    }
+</script>

@@ -1,0 +1,286 @@
+@{
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var menuVisibility = ViewBag.MenuVisibility as CakerStreet.Business.Services.MenuVisibility;
+}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Caker Street</title>
+    <link rel="shortcut icon" href="@(cdnBase)bakery_content/img/favicon.ico?version=1.1" type="image/png" />
+    <link href="@(cdnBase)bakery_content/bakery_content/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="@(cdnBase)bakery_content/bakery_content/css/mycss.css" rel="stylesheet" />
+    <link href="@(cdnBase)bakery_content/bakery_content/css/dashboard.css" rel="stylesheet" />
+    <script src="~/js/clientScripts.js" type="text/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    @RenderSection("Head", required: false)
+</head>
+<body>
+    <input type="hidden" id="hdGlobalUrl" value="@ViewBag.HdGlobalUrl" />
+    <input type="hidden" id="hdCustGlobalUrl" value="@ViewBag.HdCustGlobalUrl" />
+    <input type="hidden" id="hdCRMGlobalUrl" value="@ViewBag.HdCRMGlobalUrl" />
+    <div class="navbar-fixed-top header_outer bg-light-grey" id="top-bar">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 bg-light-grey">
+                    <div class="hide-menu">
+                        <span class="menu">SHOW MENU</span>
+                    </div>
+                    <div class="col-lg-12 col-sm-12 col-xs-12">
+                        <div class="logoouter col-lg-12 col-sm-12 col-xs-12 text-center">
+                            <a href="/mywebstore">
+                                <img src="@(cdnBase)bakery_content/images/logo.png"></a>
+                        </div>
+                        <div class="col-lg-5 col-sm-4 col-xs-6 rightNav">
+                            <div class="dropdown">
+                                <button class="btn dropdown-toggle user" type="button" data-toggle="dropdown">
+                                    @ViewBag.BusinessName <br /> <font>Hi @ViewBag.UserName</font><span class="caret" style="position: absolute;right: 5px;top: 34px;"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    @if (menuVisibility?.ShowManageRota == true)
+                                    {
+                                        <li><a href="/dashboard">Staff Rota</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowModuleAssignment == true)
+                                    {
+                                        <li><a href="/managemoduleassignment">Module Assignment</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowOrderManifest == true)
+                                    {
+                                        <li><a href="/manageordermenifest">Order Manifest</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowEditBusinessInfo == true)
+                                    {
+                                        <li><a href="/editbusinessinfo">Edit Business</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowFoodStandards == true)
+                                    {
+                                        <li><a href="/food-standards">Food Standards</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowAllergen == true)
+                                    {
+                                        <li><a href="/manageallergenmatrix">Manage Allergen</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowBakeryInventory == true)
+                                    {
+                                        <li><a href="/mywebstore">Manage Bakery Inventory</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowStockInventory == true)
+                                    {
+                                        <li><a href="/mywebstore?prdtype=2">Manage Stock Inventory</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowPartyTheme == true)
+                                    {
+                                        <li><a href="/managethemes">Manage Party Theme</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowDeliveryRoutes == true)
+                                    {
+                                        <li><a href="/managedeliveryroutes">Manage Delivery Routes</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowDeliveryRoutesPayments == true)
+                                    {
+                                        <li><a href="/managedeliveryroutespayments">Manage Delivery Routes Payouts</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowTemplates == true)
+                                    {
+                                        <li><a href="/editCaketemplate">Manage Cake Templates</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowTemplateSpec == true)
+                                    {
+                                        <li><a href="/managespecificationbytemplate">Manage Template Specifications</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowTemplateFormula == true)
+                                    {
+                                        <li><a href="/managetemplateprice">Manage Template Formula</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowTemplateBakingCost == true)
+                                    {
+                                        <li><a href="/managetemplatebakerfee">Manage Template Baking Cost</a></li>
+                                    }
+                                    @if (menuVisibility?.ShowSupervisor == true)
+                                    {
+                                        <li><a href="/managesbakeryuperviser">@(menuVisibility.SupervisorName != null ? "Supervisor: " + menuVisibility.SupervisorName : "Manage Supervisor")</a></li>
+                                    }
+                                    <li><a href="/businesslogin?logout=1">Sign Out</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-sm-3 col-xs-6">
+                        </div>
+                    </div>
+                    <div class="clearfix">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid" style="padding: 0">
+        <div class="container mainmiddle">
+            <div class="col-sm-3 col-md-2 sidebar" style="display: none;" id="menu-container">
+                <ul class="menu-list">
+                    <li><a href="/businessorders">Orders
+                        <span class="badge">@(menuVisibility?.PendingOrderCount ?? 0)</span>
+                    </a></li>
+                    @if (menuVisibility?.ShowSpongeOrder == true)
+                    {
+                        <li><a href="/orderspongelist">Order Sponge</a></li>
+                    }
+                    @if (menuVisibility?.ShowSupplier == true)
+                    {
+                        <li><a href="/managesupplier">Manage Supplier</a></li>
+                    }
+                    @if (menuVisibility?.ShowSupplierLocation == true)
+                    {
+                        <li><a href="/managelocation">Manage Location</a></li>
+                    }
+                    @if (menuVisibility?.ShowBakeryInventory == true)
+                    {
+                        <li><a href="/mywebstore">Bakery Inventory</a></li>
+                    }
+                    @if (menuVisibility?.ShowStockInventory == true)
+                    {
+                        <li><a href="/mywebstore?prdtype=2">Stock Inventory</a></li>
+                    }
+                    @if (menuVisibility?.ShowEditBusinessInfo == true)
+                    {
+                        <li><a href="/editbusinessinfo">Edit Business Info</a></li>
+                    }
+                    @if (menuVisibility?.ShowPaymentSettings == true)
+                    {
+                        <li><a href="/seller-payment-settings">Payment Settings</a></li>
+                    }
+                    @if (menuVisibility?.ShowTradeAccount == true)
+                    {
+                        <li><a href="/myaccountbalance">Trade Account</a></li>
+                    }
+                    @if (menuVisibility?.ShowManageUsers == true)
+                    {
+                        <li><a href="/bakeryuser">Manage Users</a></li>
+                    }
+                    @if (menuVisibility?.ShowSupplierUsers == true)
+                    {
+                        <li><a href="/supplierusers">Manage Supplier Users</a></li>
+                    }
+                    @if (menuVisibility?.ShowUsersTimeline == true)
+                    {
+                        <li><a href="/bakerworktime">Manage Users Timeline</a></li>
+                    }
+                    @if (menuVisibility?.ShowBakeryIngredient == true)
+                    {
+                        <li><a href="/managebakeryingredient">Bakery Ingredient</a></li>
+                    }
+                    @if (menuVisibility?.ShowFranchiseProduct == true)
+                    {
+                        <li><a href="/manageproductwithfranchise">Franchise Product</a></li>
+                    }
+                    @if (menuVisibility?.ShowSandwichBar == true)
+                    {
+                        <li><a href="/manageIngredientastag">DIY Sandwich Bar</a></li>
+                    }
+                    @if (menuVisibility?.ShowPurchaseOrder == true)
+                    {
+                        <li><a href="/managepurchaseorder?status=0">Purchase Order</a></li>
+                    }
+                    @if (menuVisibility?.ShowSupplyOrder == true)
+                    {
+                        <li><a href="/managesupplyorder?status=0">Supply Order</a></li>
+                    }
+                    @if (menuVisibility?.ShowSocialLinks == true)
+                    {
+                        <li><a href="/managesociallinks">Social Links</a></li>
+                    }
+                </ul>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 col-md-12 main" id="main-container">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="div_backtotop" class="div_backtotop">
+        <div id="span_backtotop">
+            <div id="back-top-image">
+                <img src="@(cdnBase)bakery_content/images/icons/BackToTop_Arrow.png" alt="Back to top" title="Back to top">
+            </div>
+        </div>
+    </div>
+    <div id="dvNewOrder" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" style="color: #fff;" id="myModalLabel">New Order Alert</h4>
+                </div>
+                <div class="modal-body">
+                    <p>You Have Got A New Order</p>
+                    <p>
+                        <a href="/businessorders" class="btn bg-black" role="button">View Order</a>
+                        <a href="#" class="btn btn-danger popover-test" role="button" data-dismiss="modal" aria-label="Close">Close</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/js/bakeryglobal.js?version=1.0" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(window).resize(function (e) {
+            init();
+        });
+        $(document).ready(function (e) {
+            init();
+            menu();
+        });
+
+        function init() {
+            var h = $("#top-bar").height();
+            $(".spacing").height(h);
+        }
+
+        function menu() {
+            $(".menu").click(function (e) {
+                var text = $(this).text().toLowerCase();
+                if (text == "hide menu") {
+                    $("#menu-container").hide('slow');
+                    $(this).text("SHOW MENU");
+                }
+                else {
+                    $("#menu-container").show('slow');
+                    $(this).text("HIDE MENU");
+                }
+            });
+        }
+    </script>
+    <script type="text/javascript">
+        $(window).scroll(function () {
+            if ($(window).scrollTop() > 100) {
+                if (document.getElementById("div_backtotop")) {
+                    document.getElementById("div_backtotop").style.display = 'block';
+                }
+            }
+            else {
+                if (document.getElementById("div_backtotop")) {
+                    document.getElementById("div_backtotop").style.display = 'none';
+                }
+            }
+        });
+
+        $(document).ready(function () {
+            $('#div_backtotop').click(function () {
+                $('html, body').animate({ scrollTop: 0 }, 'slow');
+                document.getElementById("div_backtotop").style.display = 'none';
+                return false;
+            });
+        });
+    </script>
+    @RenderSection("FooterScripts", required: false)
+</body>
+</html>

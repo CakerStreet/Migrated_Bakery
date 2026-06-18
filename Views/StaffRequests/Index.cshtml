@@ -1,0 +1,386 @@
+@model CakerStreet.Business.Services.StaffRequestsViewModel
+@{
+    ViewData["Title"] = "Manage Staff Requests";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+@functions {
+    public static string GetAvailabilityStatus(int status)
+    {
+        return status switch
+        {
+            0 => "Available",
+            1 => "Not Available",
+            2 => "Can Available, (if Needed)",
+            3 => "Leave Request",
+            _ => "Available"
+        };
+    }
+
+    public static string GetStatusText(int status)
+    {
+        return status switch
+        {
+            0 => "Pending",
+            1 => "Approved",
+            2 => "Declined",
+            _ => "Pending"
+        };
+    }
+
+    public static string GetStatusRowColor(int approvedStatus)
+    {
+        return approvedStatus switch
+        {
+            1 => "#daf2cc",
+            0 => "#fee",
+            _ => "#f9dcdc"
+        };
+    }
+
+    public string BuildPageUrl(int pageNo)
+    {
+        var url = "/managestafftimingrequest";
+        var queryParts = new List<string>();
+
+        if (pageNo > 1)
+            queryParts.Add($"pageno={pageNo}");
+        if (Model.FilterStatus != 0)
+            queryParts.Add($"filterstatus={Model.FilterStatus}");
+        if (!string.IsNullOrEmpty(Model.StartDate))
+            queryParts.Add($"sdate={Uri.EscapeDataString(Model.StartDate)}");
+        if (!string.IsNullOrEmpty(Model.EndDate))
+            queryParts.Add($"edate={Uri.EscapeDataString(Model.EndDate)}");
+
+        if (queryParts.Count > 0)
+            url += "?" + string.Join("&", queryParts);
+
+        return url;
+    }
+}
+
+@section Head {
+    <link href="@(cdnBase)bakery_content/bakery_content/css/bakeryorder.css?ver=1.34" rel="stylesheet" />
+    <style type="text/css">
+        .filter-radio { list-style: none; padding: 0; margin: 0; }
+        .filter-radio li { float: left; margin-right: 15px; }
+        .filter-radio li label { cursor: pointer; }
+        .middleSection { width: 100%; }
+        .highlighttext { font-weight: bold; color: #333; }
+        .paging_outer { text-align: center; margin: 20px 0; }
+        .paging_outer ul { display: inline-block; list-style: none; padding: 0; margin: 0 5px; }
+        .paging_outer ul li { display: inline-block; margin: 0 2px; }
+        .paging_outer ul li a { padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #333; }
+        .paging_outer ul li.active a { background-color: #df3f42; color: #fff; border-color: #df3f42; }
+        .paging_outer ul li.disabled a { color: #999; pointer-events: none; }
+    </style>
+}
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Staff Requests</h2>
+        <a href="/dashboard" style="float:right; color:#fff; margin-right:10px;"><u>Staff Dashboard</u></a>
+        <font style="float:right; margin:0 7px;">|</font>
+        <a href="/staffrota" style="float:right; color:#fff;"><u>Manage Rota</u></a>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                <div id="dvFilter" class="col-md-12 form-group flush">
+                    <form method="get" action="/managestafftimingrequest" class="col-md-12 form-group flush">
+                        <div class="col-md-4">
+                            <input type="text" name="sdate" class="order-from form-control"
+                                   style="max-width: 115px; display: inline-table; margin: 0 0 0 7px;"
+                                   placeholder="Start Date" value="@Model.StartDate" />
+                            <input type="text" name="edate" class="order-to form-control"
+                                   style="max-width: 115px; display: inline-table; margin: 0 0 0 7px;"
+                                   placeholder="End Date" value="@Model.EndDate" />
+                            <input type="hidden" name="filterstatus" value="@Model.FilterStatus" />
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-danger btn-sm">Go</button>
+                            @if (!string.IsNullOrEmpty(Model.StartDate) || !string.IsNullOrEmpty(Model.EndDate))
+                            {
+                                <a href="/managestafftimingrequest?filterstatus=@Model.FilterStatus" class="btn btn-danger btn-sm">X</a>
+                            }
+                        </div>
+                    </form>
+
+                    <div class="col-md-offset-2 col-md-5">
+                        <ul class="filter-radio">
+                            <li>
+                                <label>
+                                    <input type="radio" name="filterstatus_radio" value="-1"
+                                           @(Model.FilterStatus == -1 ? "checked" : "")
+                                           onchange="applyFilter(this.value)" /> All
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input type="radio" name="filterstatus_radio" value="0"
+                                           @(Model.FilterStatus == 0 ? "checked" : "")
+                                           onchange="applyFilter(this.value)" /> Pending
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input type="radio" name="filterstatus_radio" value="1"
+                                           @(Model.FilterStatus == 1 ? "checked" : "")
+                                           onchange="applyFilter(this.value)" /> Approved
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input type="radio" name="filterstatus_radio" value="2"
+                                           @(Model.FilterStatus == 2 ? "checked" : "")
+                                           onchange="applyFilter(this.value)" /> Declined
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <br clear="all" />
+            </div>
+
+            <div class="clearfix"></div>
+
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert @Model.MessageClass">
+                    @Model.Message
+                </div>
+                <div class="clearfix"></div>
+            }
+
+            @if (Model.Requests.Count > 0)
+            {
+                <div class="table prdlstouter">
+                    <table class="table table-bordred table-striped">
+                        <thead>
+                            <tr>
+                                <th class="Pwd">Date</th>
+                                <th class="Pwd">Staff Name</th>
+                                <th class="Pwd">Availability</th>
+                                <th class="Pwd">Time / Remarks</th>
+                                <th class="action">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Requests)
+                            {
+                                <tr class="rowtext">
+                                    <td class="Pwd">@item.Date.ToString("d")</td>
+                                    <td class="Pwd">@item.StaffName</td>
+                                    <td class="Pwd">@GetAvailabilityStatus(item.IsClosed)</td>
+                                    <td class="Pwd">
+                                        @if (item.IsClosed == 2)
+                                        {
+                                            <span>From: @(item.FromHour).00 To: @(item.ToHour).00</span>
+                                        }
+                                        else if (item.IsClosed == 3)
+                                        {
+                                            <span>@item.Remarks</span>
+                                        }
+                                    </td>
+                                    <td class="action">
+                                        @if (item.ApprovedStatus == 0 && item.RequestedBy == item.StaffId)
+                                        {
+                                            <form method="post" action="/managestafftimingrequest/approve" style="display:inline;">
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                            </form>
+                                            <button type="button" class="btn btn-danger btn-sm"
+                                                    onclick="declineRequest(@item.Id, '@item.Date.ToString("d")', '@Html.Raw(item.StaffName?.Replace("'", "\\'"))', '@GetAvailabilityStatus(item.IsClosed)', '@Html.Raw(item.IsClosed == 2 ? $"From: {item.FromHour}.00 To: {item.ToHour}.00" : item.IsClosed == 3 ? item.Remarks?.Replace("'", "\\'") : "")', @item.IsClosed)">Decline</button>
+                                        }
+                                        @if (item.RequestedBy != item.StaffId)
+                                        {
+                                            <span>Requested By:<br />@item.RequestedByName<br />@item.ModifiedOn.ToString("dd/MM/yyyy hh:mm tt")<br /><i style="color:#8c0000">@item.Remarks</i></span>
+                                        }
+                                    </td>
+                                </tr>
+                                @if (item.RequestedBy == item.StaffId && item.ApprovedStatus > 0)
+                                {
+                                    <tr class="rowtext" style="background-color:@GetStatusRowColor(item.ApprovedStatus)">
+                                        <td>Status: @GetStatusText(item.ApprovedStatus)</td>
+                                        <td colspan="3">
+                                            @GetStatusText(item.ApprovedStatus) By: <span class="highlighttext">@item.ApprovedBy</span><br />
+                                            @if (item.ApprovedOn.HasValue)
+                                            {
+                                                <text>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@item.ApprovedOn.Value.ToString("dd/MM/yyyy hh:mm tt")</text>
+                                            }
+                                        </td>
+                                        <td>@item.ApprovedRemarks</td>
+                                    </tr>
+                                }
+                                @if (item.RequestedBy != item.StaffId)
+                                {
+                                    <tr class="rowtext" style="background-color:@GetStatusRowColor(item.ApprovedStatus)">
+                                        <td>Status: @GetStatusText(item.ApprovedStatus)</td>
+                                        <td colspan="3">
+                                            @if (item.ApprovedStatus > 0)
+                                            {
+                                                <span>@GetStatusText(item.ApprovedStatus) By: <span class="highlighttext">@item.StaffName</span><br />
+                                                @if (item.ApprovedOn.HasValue)
+                                                {
+                                                    <text>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@item.ApprovedOn.Value.ToString("dd/MM/yyyy hh:mm tt")</text>
+                                                }
+                                                </span>
+                                            }
+                                        </td>
+                                        <td style="color:#8c0000; font-style:italic;">@item.ApprovedRemarks</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* Pagination *@
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="pagination pagination-right">
+                        <div class="paging_outer">
+                            <ul class="left">
+                                <li><a href="@BuildPageUrl(1)">First</a></li>
+                                <li class="@(Model.CurrentPage <= 1 ? "disabled" : "")">
+                                    <a href="@BuildPageUrl(Math.Max(1, Model.CurrentPage - 1))">‹</a>
+                                </li>
+                            </ul>
+                            <ul class="numbering">
+                                @{
+                                    int pageButtonCount = 3;
+                                    int minPage = Model.CurrentPage - pageButtonCount;
+                                    int maxPage = Model.CurrentPage + pageButtonCount;
+                                    if (maxPage > Model.TotalPages) minPage -= (maxPage - Model.TotalPages);
+                                    if (minPage < 1) maxPage += (1 - minPage);
+
+                                    bool needDiv = false;
+                                    for (int i = 1; i <= Model.TotalPages; i++)
+                                    {
+                                        if (i <= 2 || i > Model.TotalPages - 2 || (minPage <= i && i <= maxPage))
+                                        {
+                                            <li class="@(i == Model.CurrentPage ? "active" : "")">
+                                                <a href="@BuildPageUrl(i)">@i</a>
+                                            </li>
+                                            needDiv = true;
+                                        }
+                                        else if (needDiv)
+                                        {
+                                            <li class="disabled"><a>...</a></li>
+                                            needDiv = false;
+                                        }
+                                    }
+                                }
+                            </ul>
+                            <ul class="right">
+                                <li class="@(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                                    <a href="@BuildPageUrl(Math.Min(Model.TotalPages, Model.CurrentPage + 1))">›</a>
+                                </li>
+                                <li><a href="@BuildPageUrl(Model.TotalPages)">Last</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@* Decline modal *@
+<div id="declineModal" class="modal" tabindex="-1" role="dialog" style="display:none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Decline Staff Availability</h4>
+                <button type="button" class="close" onclick="closeDeclineModal()">&times;</button>
+            </div>
+            <form method="post" action="/managestafftimingrequest/decline">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="declineRequestId" value="0" />
+                    <div class="form-horizontal" role="form">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Date:</label>
+                            <div class="col-sm-4 control-label" style="text-align: left;">
+                                <span id="declineDate"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Staff Name:</label>
+                            <div class="col-sm-4 control-label" style="text-align: left;">
+                                <span id="declineStaffName"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Availability:</label>
+                            <div class="col-sm-4 control-label" style="text-align: left;">
+                                <span id="declineAvailability"></span>
+                            </div>
+                        </div>
+                        <div class="form-group" id="declineTimeGroup">
+                            <label class="col-sm-3 control-label" id="declineTimeLabel">Time:</label>
+                            <div class="col-sm-4 control-label" style="text-align: left;">
+                                <span id="declineTime"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Your Remarks: <span class="text-danger">*</span></label>
+                            <div class="col-sm-9">
+                                <textarea name="remarks" id="declineRemarks" class="form-control" rows="3" placeholder="Remarks" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-danger" onclick="closeDeclineModal()">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div id="declineBackdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1040;"></div>
+
+@section FooterScripts {
+    <script type="text/javascript">
+        function applyFilter(value) {
+            var url = '/managestafftimingrequest?filterstatus=' + value;
+            var sdate = document.querySelector('input[name="sdate"]');
+            var edate = document.querySelector('input[name="edate"]');
+            if (sdate && sdate.value) url += '&sdate=' + encodeURIComponent(sdate.value);
+            if (edate && edate.value) url += '&edate=' + encodeURIComponent(edate.value);
+            window.location.href = url;
+        }
+
+        function declineRequest(id, date, staffName, availability, timeRemarks, isClosed) {
+            document.getElementById('declineRequestId').value = id;
+            document.getElementById('declineRemarks').value = '';
+            document.getElementById('declineDate').textContent = date;
+            document.getElementById('declineStaffName').textContent = staffName;
+            document.getElementById('declineAvailability').textContent = availability;
+            var timeGroup = document.getElementById('declineTimeGroup');
+            var timeLabel = document.getElementById('declineTimeLabel');
+            var timeSpan = document.getElementById('declineTime');
+            if (isClosed == 2) {
+                timeGroup.style.display = '';
+                timeLabel.textContent = 'Time:';
+                timeSpan.textContent = timeRemarks;
+            } else if (isClosed == 3) {
+                timeGroup.style.display = '';
+                timeLabel.textContent = 'Remarks:';
+                timeSpan.textContent = timeRemarks;
+            } else {
+                timeGroup.style.display = 'none';
+            }
+            document.getElementById('declineModal').style.display = 'block';
+            document.getElementById('declineBackdrop').style.display = 'block';
+        }
+
+        function closeDeclineModal() {
+            document.getElementById('declineModal').style.display = 'none';
+            document.getElementById('declineBackdrop').style.display = 'none';
+        }
+    </script>
+}

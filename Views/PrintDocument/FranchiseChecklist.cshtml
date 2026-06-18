@@ -1,0 +1,160 @@
+@model CakerStreet.Business.Services.FranchiseChecklistPrintResult
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Franchise Checklist Detail</title>
+    <style type="text/css" media="print">
+        #dvPrintButtons {
+            visibility: hidden;
+            display: none;
+        }
+        @@media page {
+            size: A4 portrait;
+        }
+    </style>
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+            color: #555;
+            font-size: 14px;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        .headingnormaltr > td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .headingboldtr > td {
+            background-color: #eee;
+            border: 1px solid #ddd;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .headingnormaltr > td.laln, .headingboldtr > td.laln {
+            text-align: left;
+            padding-left: 10px;
+        }
+        .headingnormaltr > td > font {
+            font-size: 18px;
+            font-weight: bold;
+            color: #DB080C;
+        }
+        .tdbg {
+            background-color: #404040;
+            height: 35px;
+            padding-left: 15px;
+            color: #FFFFFF;
+            font-size: 15px;
+            line-height: 35px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .headingbold {
+            font-weight: bold;
+            width: 30%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="dvPrintButtons" style="text-align: center; margin-bottom: 15px;">
+            <input id="btnPrint" class="btn" onclick="window.print();" type="button" value="Print" />
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            Greetings !!
+            <br /><br />
+            New stock checklist is generated for <font color='#DB080C' style="font-weight: bold;">@Model.DomainName</font><br/>
+        </div>
+
+        <div class="tdbg">Checklist Detail</div>
+        <table cellpadding='5' cellspacing='5' border='0' width='100%' style='font-size:12px; color:#555; margin-top: 10px; margin-bottom: 20px;'>
+            <tr>
+                <td class='headingbold'>Checklist ID :</td>
+                <td class='headingnormal'>@Model.BatchTitle</td>
+            </tr>
+            <tr>
+                <td class='headingbold'>Total Required Qty(s) :</td>
+                <td class='headingnormal'>@Model.ReqQty</td>
+            </tr>
+            <tr>
+                <td class='headingbold'>Checklist Date:</td>
+                <td class='headingnormal'>@Model.BatchDate.ToLongDateString()</td>
+            </tr>
+            <tr>
+                <td class='headingbold'>Checklist Made By:</td>
+                <td class='headingnormal'>@Model.BatchName</td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Model.Remarks))
+            {
+                <tr>
+                    <td class='headingbold'>Remarks :</td>
+                    <td class='headingnormal'>@Model.Remarks</td>
+                </tr>
+            }
+        </table>
+
+        <div class="tdbg">Items(s) Detail</div>
+        <table cellpadding='5' cellspacing='0' border='0' width='100%' style='font-size:14px; color:#555; margin-top: 10px; border-collapse: collapse;'>
+            <thead>
+                <tr class='headingboldtr'>
+                    <td width='30'>Sr.</td>
+                    <td width='80'>Image</td>
+                    <td width='60'>Item No.</td>
+                    <td class='laln'>Items</td>
+                    <td width='70'>In Stock</td>
+                    <td width='70'>Req. Qty</td>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int counter = 1; }
+                @foreach (var item in Model.LineItems)
+                {
+                    <tr class='headingnormaltr'>
+                        <td>@counter</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.ProductImage))
+                            {
+                                <img src='https://cakerstreet1.s3.amazonaws.com/upload/Product_images/resized_80_80/@item.ProductImage' width="60" height="60" alt="Item Image" />
+                            }
+                        </td>
+                        <td>@item.DisplayOrder.</td>
+                        <td class='laln'>@item.ProductName</td>
+                        <td>@item.InStockQty</td> 
+                        <td>
+                            @if (item.ReqQty > 0)
+                            {
+                                <font>@item.ReqQty</font>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </td>
+                    </tr>
+                    counter++;
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

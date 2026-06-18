@@ -1,0 +1,383 @@
+@using System.Data
+@model DataTable
+@{
+    Layout = null;
+    var cutter = (CakerStreet.Business.Controllers.TempPrintCutter)ViewBag.Cutter;
+    var cdnBase = (string)ViewBag.CdnBase;
+    var totalRecords = (int)ViewBag.TotalRecords;
+    var itemsPerRow = double.Parse(cutter.itemperrow);
+    var itemWidthPercent = (100.0 / itemsPerRow) - 2.0;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Print Images</title>
+    <link rel="shortcut icon" href="~/images/icons/favicon.ico?version=1.1" type="image/png" />
+    <link href="~/css/bootstrap.css" rel="stylesheet" type="text/css" />
+
+    <style type="text/css" media="all">
+        .divattouter .divname, .divattouter .OptionAttr_outer {
+            display: none;
+            visibility: hidden;
+        }
+        .container {
+            width: 8.27in;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .divattouter .OptionAttr_outer:last-child {
+            display: block;
+            visibility: visible;
+        }
+        .divattouter .maindata .parentli {
+            font-weight: bold;
+        }
+        .divattouter .headertext .red {
+            color: #aa041c;
+            font-size: 13px;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        body, body * {
+            font-weight: normal;
+            background-color: #ffffff;
+        }
+        .btn-primary {
+            background-color: #b51a1a;
+            color: #ffffff;
+            border-color: #b51a1a;
+        }
+        b {
+            font-weight: bold;
+        }
+        a:link:after, a:visited:after {
+            content: "";
+        }
+        .redcolored {
+            color: #b51a1a;
+        }
+        ul {
+            padding: 0;
+            list-style-type: none;
+            margin: 0;
+        }
+        .paging_outer {
+            display: table;
+            float: none;
+            margin: 10px auto;
+        }
+        .pagination ul > li {
+            display: inline;
+        }
+        .pagination ul > li > a, .pagination ul > li > span {
+            background-color: #ffffff;
+            border-color: #dddddd;
+            border-style: solid;
+            border-width: 1px 1px 1px 0;
+            float: left;
+            line-height: 38px;
+            padding: 0 14px;
+            text-decoration: none;
+        }
+        .paging_outer .left {
+            float: left;
+            margin-right: 10px;
+        }
+        .paging_outer .right {
+            float: right;
+            margin-left: 10px;
+        }
+        .paging_outer .numbering {
+            float: left;
+        }
+        .pagination ul.numbering > li > a:hover, .pagination ul > li > span {
+            background-color: #1c5f67;
+            border: 1px solid #404040;
+            color: #fff;
+        }
+        .pagination ul > li > a, .pagination ul > li > span {
+            border: 1px solid #ddd;
+            margin: 2px;
+        }
+        .pagination ul.numbering > .active > a, .pagination ul > .active > span {
+            background-color: #1c5f67;
+            color: #fff;
+            border: 1px solid #404040;
+        }
+        .pagination {
+            float: left;
+            text-align: right;
+            width: 100%;
+        }
+        .pagination ul {
+            display: table;
+            margin: 5px auto;
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .bakery-prd {
+            float: left;
+            margin: 1%;
+            position: relative;
+        }
+        .thumbnail {
+            background-color: #fff;
+            border: 1px solid #000;
+            border-radius: 0;
+            display: block;
+            line-height: 1.42857;
+            padding: 5px;
+            transition: border .2s ease-in-out 0s;
+            margin-bottom: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .deliverybox_productbox {
+            display: block;
+            height: 32px;
+            padding: 0;
+            position: relative;
+            width: 100%;
+        }
+        .productName_productbox {
+            position: relative;
+            padding: 0;
+            height: 32px;
+            line-height: 16px;
+            font-size: 12px;
+        }
+        .removePrd {
+            position: absolute;
+            right: 1px;
+            top: 1px;
+            padding: 0 5px;
+            line-height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 3;
+            color: #b51a1a;
+        }
+        .removePrd:hover {
+            text-decoration: unset;
+        }
+        a.absolute-anchor {
+            bottom: 0;
+            color: transparent !important;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            z-index: 2;
+            background: transparent;
+        }
+        .drpCountPrd {
+            position: absolute;
+            right: 7px;
+            top: 27px;
+            z-index: 3;
+        }
+        .page-break {
+            clear: both;
+        }
+        .startPage {
+            clear: both;
+            height: 70px;
+        }
+        .page-break .noprint {
+            text-align: center;
+            display: block;
+            background-color: #fccc;
+            line-height: 30px;
+        }
+        .div_imgBox {
+            background-position: center center;
+            background-repeat: no-repeat;
+            display: table;
+            height: 180px;
+            width: 100%;
+            background-size: 100% auto;
+        }
+        .div_imgBox img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .chkSize {
+            width: 100%;
+        }
+        .chkSize td {
+            text-align: center;
+        }
+        .chkSize label {
+            font-size: 14px;
+            width: 20px;
+            padding: 0;
+            margin: 0;
+            font-weight: bold;
+        }
+        .deliverybox_productbox.size {
+            bottom: 0;
+            height: 36px;
+            position: absolute;
+            left: 0;
+            opacity: .8;
+            z-index: 3;
+        }
+    </style>
+
+    <style type="text/css" media="print">
+        @@media page {
+            size: A4 Portrait;
+        }
+        .container {
+            width: 100%;
+        }
+        @@page {
+            margin: 5mm;
+            padding: 0;
+        }
+        #dvPrintButtons, .noprint {
+            visibility: hidden;
+            display: none !important;
+        }
+        .page-break {
+            page-break-before: always;
+            height: 70px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form method="post" action="~/printcutters" class="noprint" style="margin-top: 15px;">
+            <table class="table table-bordered">
+                <tr>
+                    <td width="200px">No. of Items / page</td>
+                    <td>
+                        <input type="number" name="txtNoOfItems" value="@cutter.pagesize" class="form-control" style="width: 150px;" required />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Items / Rows</td>
+                    <td>
+                        <input type="number" name="txtItemsperRow" value="@cutter.itemperrow" class="form-control" style="width: 150px;" required />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Item Box Height</td>
+                    <td>
+                        <input type="number" name="txtHeight" id="txtHeight" value="@cutter.height" class="form-control" style="width: 150px;" required />
+                    </td>
+                </tr>
+                <tr style="display: none;">
+                    <td>Prd IDs</td>
+                    <td>
+                        <textarea name="txtPRdIDs" class="form-control" rows="5">@string.Join(",", cutter.pid)</textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+
+        <div id="dvPrintButtons" class="row" style="margin-top: 10px; text-align: center;">
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm" onclick="window.print();">Print</button>
+            </div>
+            <br />
+            <div style="text-align:left; margin-top: 5px;">@totalRecords Items</div>
+        </div>
+
+        @if (Model != null && Model.Rows.Count > 0)
+        {
+            for (int i = 0; i < Model.Rows.Count; i++)
+            {
+                var row = Model.Rows[i];
+                var countPrd = Convert.ToString(row["countprd"]);
+                var productType = Convert.ToString(row["product_type"]);
+                var imageFile = Convert.ToString(row["product_image1"]);
+                var imageUrl = string.IsNullOrEmpty(imageFile) 
+                    ? $"{cdnBase}images/blankImages/img75.jpg" 
+                    : $"{cdnBase}upload/Product_Images/resized_300_300/{imageFile}";
+
+                var isFirstItem = (i == 0);
+                var isPageBreak = ((i + 1) % int.Parse(cutter.pagesize) == 0 && (i + 1) != Model.Rows.Count);
+
+                if (isFirstItem)
+                {
+                    <div class="startPage"></div>
+                }
+
+                <div id="divItem_outer_@i" class="bakery-prd" style="width: @(itemWidthPercent)%;">
+                    <div class="thumbnail">
+                        <div class="deliverybox_productbox">
+                            <div class="productName_productbox">
+                                #@row["product_code"] - @row["product_name"]
+                            </div>
+                        </div>
+                        <div class="div_imgBox prdbox bg" style="height: @(cutter.height)px;">
+                            <img src="@imageUrl" alt="@row["product_name"]" style="border-width: 0px;" />
+                        </div>
+
+                        @if (productType == "1")
+                        {
+                            var sizes = Convert.ToString(row["sizes"]).Replace(" ", "").Split(',').ToList();
+                            <div class="deliverybox_productbox size" style="display: block;">
+                                <div class="productName_productbox">
+                                    <div class="chkSize d-flex justify-content-around">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" checked="@(sizes.Contains("432"))" disabled />
+                                            <label class="form-check-label">6"</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" checked="@(sizes.Contains("428"))" disabled />
+                                            <label class="form-check-label">8"</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" checked="@(sizes.Contains("426"))" disabled />
+                                            <label class="form-check-label">10"</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" checked="@(sizes.Contains("828"))" disabled />
+                                            <label class="form-check-label">12"</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" checked="@(sizes.Contains("829"))" disabled />
+                                            <label class="form-check-label">14"</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <a href="~/printcutters/remove?excludePid=@(row["product_ID"])-@(countPrd)" class="noprint removePrd" title="Remove">X</a>
+                        
+                        <select class="drpCountPrd noprint" onchange="location.href='@Url.Content("~/printcutters/updatecount")?productId=@(row["product_ID"])&count=' + this.value;">
+                            @for (int j = 1; j <= 5; j++)
+                            {
+                                if (countPrd == j.ToString())
+                                {
+                                    <option value="@j" selected>@j</option>
+                                }
+                                else
+                                {
+                                    <option value="@j">@j</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <a target="_blank" href="~/managetopper?id=@(row["product_id"])&type=5" class="absolute-anchor noprint"></a>
+                </div>
+
+                if (isPageBreak)
+                {
+                    <div class="page-break"><span class="noprint">-- Next Page --</span></div>
+                }
+            }
+        }
+    </div>
+</body>
+</html>

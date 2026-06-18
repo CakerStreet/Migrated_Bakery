@@ -1,0 +1,213 @@
+@{
+    Layout = null;
+    var mapsEnabled = (bool)(ViewBag.MapsEnabled ?? false);
+    var jsApiKey = ViewBag.JsApiKey as string ?? "";
+    var orderIds = ViewBag.OrderIds as string ?? "";
+    var date = ViewBag.Date as string ?? "";
+}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Google Maps - Order Locations</title>
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    @if (mapsEnabled)
+    {
+        <script src="https://maps.googleapis.com/maps/api/js?key=@jsApiKey&v=3&callback=initMap" async defer></script>
+    }
+    <style type="text/css">
+        a { cursor: pointer; }
+        .div_googlefeed_Merchantcontainer, .div_prdtag_container {
+            border: 1px solid Green;
+            border-radius: 5px;
+            bottom: 0;
+            height: 200px;
+            left: 500px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 5px;
+            position: absolute;
+            width: 250px;
+            z-index: 1111;
+            background: #fff;
+        }
+        .div_googlefeed_Merchantcontainer .close, .div_prdtag_container .close {
+            background-color: #ff0000;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 16px;
+            padding: 5px 8px;
+            opacity: 0.4;
+            float: right;
+            cursor: pointer;
+        }
+        .normallink {
+            text-decoration: underline;
+            line-height: 20px;
+            font-weight: 400;
+        }
+        .div_googlefeed_Merchantcontainer .close:hover, .div_prdtag_container .close:hover {
+            opacity: 0.7;
+        }
+        .div_googlefeed_Merchantcontainer .headertext, .div_prdtag_container .headertext {
+            color: #ff0000;
+            font-size: 14px;
+            line-height: 16px;
+            padding: 5px;
+        }
+        .div_googlefeed_Merchantcontainer ul, .div_prdtag_container ul {
+            display: table;
+            padding-top: 5px;
+            width: 100%;
+        }
+        .div_googlefeed_Merchantcontainer li a {
+            background-color: #e5e5e5;
+            display: block;
+            font-size: 14px;
+            line-height: 18px;
+            margin-bottom: 2px;
+            padding: 5px;
+            color: #a40000;
+            text-decoration: unset;
+            cursor: pointer;
+        }
+        .div_googlefeed_Merchantcontainer li.stt a, .pending_orders a.ancTag.stt {
+            background-color: #a40000;
+            color: #fff;
+        }
+        a.ancTag.stt {
+            background-color: #a40000;
+            color: #fff;
+        }
+        a.ancTag {
+            color: #337ab7;
+            padding: 0 10px;
+            line-height: 24px;
+            opacity: 1;
+            background-color: #ccc;
+            display: inline-block;
+            text-decoration: unset;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        ul, ol {
+            padding: 0;
+            margin: 0;
+            list-style-type: none;
+        }
+        .map-disabled-message {
+            padding: 40px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            color: #666;
+        }
+        .map-disabled-message h2 {
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    @if (!mapsEnabled)
+    {
+        <div class="map-disabled-message">
+            <h2>Google Maps is not configured</h2>
+            <p>Please add the API key in appsettings.json and set <code>GoogleMaps:Enabled</code> to <code>true</code>.</p>
+        </div>
+    }
+    else
+    {
+        <div id="map" style="width: 100%; height: 800px; display: block; margin: 0 auto;"></div>
+        <script type="text/javascript">
+            var map;
+            var delay = 100;
+            var infowindow;
+            var latlng = new google.maps.LatLng(52.48142, -1.89983); // UK
+            var geocoder;
+            var bounds;
+            var nextAddress = 0;
+            var locations = [];
+
+            function initMap() {
+                geocoder = new google.maps.Geocoder();
+                bounds = new google.maps.LatLngBounds();
+                infowindow = new google.maps.InfoWindow();
+
+                var mapOptions = {
+                    zoom: 5,
+                    center: latlng,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+                // Load locations via AJAX
+                var orderIdsParam = '@Html.Raw(orderIds)';
+                var dateParam = '@Html.Raw(date)';
+
+                $.ajax({
+                    type: "GET",
+                    url: "/map-orderlocation/locations?orderIds=" + encodeURIComponent(orderIdsParam) + "&date=" + encodeURIComponent(dateParam),
+                    dataType: "json",
+                    success: function (data) {
+                        locations = data;
+                        if (locations.length > 0) {
+                            theNext();
+                        }
+                    },
+                    error: function (x, e) {
+                        alert("Failed to load order locations. " + x.responseText);
+                    }
+                });
+            }
+
+            function geocodeAddress(mapaddress, showaddress, next) {
+                geocoder.geocode({
+                    address: mapaddress
+                }, function (results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        var p = results[0].geometry.location;
+                        var lat = p.lat();
+                        var lng = p.lng();
+                        createMarker(mapaddress, showaddress, lat, lng);
+                    } else {
+                        if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+                            nextAddress--;
+                            delay++;
+                        }
+                    }
+                    next();
+                });
+            }
+
+            function createMarker(add, showaddress, lat, lng) {
+                var contentString = showaddress;
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(lat, lng),
+                    map: map
+                });
+
+                google.maps.event.addListener(marker, 'click', function () {
+                    infowindow.setContent(contentString);
+                    infowindow.open(map, marker);
+                });
+
+                bounds.extend(marker.position);
+            }
+
+            function theNext() {
+                if (nextAddress < locations.length) {
+                    var loc = locations[nextAddress];
+                    nextAddress++;
+                    setTimeout(function () {
+                        geocodeAddress(loc.mapLocation, loc.address, theNext);
+                    }, delay);
+                } else {
+                    map.fitBounds(bounds);
+                }
+            }
+        </script>
+    }
+</body>
+</html>

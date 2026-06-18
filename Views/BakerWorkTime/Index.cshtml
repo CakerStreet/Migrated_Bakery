@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Manage Users Timeline";
+    var staffList = ViewBag.StaffList as List<CakerStreet.Business.Services.StaffDropdownItem> ?? new List<CakerStreet.Business.Services.StaffDropdownItem>();
+    var selectedStaffId = (int)(ViewBag.SelectedStaffId ?? 0);
+    var fromDate = ViewBag.FromDate as string ?? DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd");
+    var toDate = ViewBag.ToDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var workTimeGroups = ViewBag.WorkTimeGroups as List<CakerStreet.Business.Services.WorkTimeDayGroup> ?? new List<CakerStreet.Business.Services.WorkTimeDayGroup>();
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+@section Head {
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .worktime-filter { margin-bottom: 15px; }
+        .worktime-filter label { margin-right: 5px; font-weight: bold; }
+        .worktime-filter select, .worktime-filter input[type="date"] { margin-right: 10px; }
+        .day-group { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
+        .day-header { background: #f5f5f5; padding: 10px 15px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #ddd; }
+        .order-row { padding: 8px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; }
+        .order-row:last-child { border-bottom: none; }
+        .order-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 10px; }
+        .order-info { flex: 1; }
+        .order-info .product-name { font-weight: bold; font-size: 13px; }
+        .order-info .order-id-link { font-size: 12px; color: #d9534f; }
+        .task-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; color: #fff; margin-right: 5px; }
+        .task-badge-topper { background-color: #5bc0de; }
+        .task-badge-filling { background-color: #f0ad4e; }
+        .task-badge-icing { background-color: #d9534f; }
+        .task-badge-decoration { background-color: #5cb85c; }
+        .task-badge-finishing { background-color: #337ab7; }
+        .task-badge-delivery { background-color: #777; }
+        .task-badge-unknown { background-color: #999; }
+        .time-info { font-size: 12px; color: #666; min-width: 200px; text-align: right; }
+        .duration { font-weight: bold; color: #333; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Users Timeline</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        @* ─── Filter Bar ──────────────────────────────────────────────────── *@
+        <div class="worktime-filter">
+            <form method="get" action="/bakerworktime" style="display: inline;">
+                <label for="staffid">Staff:</label>
+                <select id="staffid" name="staffid" style="min-width: 180px;">
+                    <option value="0">Select Staff</option>
+                    @foreach (var staff in staffList)
+                    {
+                        var selected = staff.Id == selectedStaffId ? "selected" : "";
+                        <option value="@staff.Id" @selected>@staff.Name</option>
+                    }
+                </select>
+
+                <label for="from">From:</label>
+                <input type="date" id="from" name="from" value="@fromDate" />
+
+                <label for="to">To:</label>
+                <input type="date" id="to" name="to" value="@toDate" />
+
+                <button type="submit" class="btn btn-danger btn-sm">Go</button>
+            </form>
+        </div>
+
+        <div class="clearfix"></div>
+
+        @* ─── Results ─────────────────────────────────────────────────────── *@
+        @if (selectedStaffId == 0)
+        {
+            <div class="alert alert-info">Please select a staff member and date range, then click Go.</div>
+        }
+        else if (workTimeGroups.Count == 0)
+        {
+            <div class="alert alert-warning">No work time records found for the selected staff and date range.</div>
+        }
+        else
+        {
+            foreach (var dayGroup in workTimeGroups)
+            {
+                var totalDayMinutes = dayGroup.Orders.Sum(o => o.TotalMinutes);
+                var dayHours = totalDayMinutes / 60;
+                var dayMins = totalDayMinutes % 60;
+
+                <div class="day-group">
+                    <div class="day-header">
+                        @dayGroup.TaskDate.ToString("dddd, dd MMMM yyyy")
+                        <span style="float: right; font-size: 12px; color: #666;">
+                            Total: @($"{dayHours:D2}:{dayMins:D2}") hrs
+                        </span>
+                    </div>
+
+                    @foreach (var order in dayGroup.Orders)
+                    {
+                        var taskName = CakerStreet.Business.Services.BakerWorkTimeService.GetTaskStatusName(order.TaskStatus);
+                        var badgeClass = order.TaskStatus switch
+                        {
+                            1 => "task-badge-topper",
+                            11 => "task-badge-filling",
+                            12 => "task-badge-icing",
+                            22 => "task-badge-decoration",
+                            33 => "task-badge-finishing",
+                            44 => "task-badge-delivery",
+                            _ => "task-badge-unknown"
+                        };
+                        var mins = order.TotalMinutes;
+                        var durationStr = mins > 0 ? $"{mins / 60:D2}:{mins % 60:D2}" : "--:--";
+                        var imgSrc = !string.IsNullOrEmpty(order.ProductImage) ? cdnBase + order.ProductImage : "";
+
+                        <div class="order-row">
+                            @if (!string.IsNullOrEmpty(imgSrc))
+                            {
+                                <img src="@imgSrc" alt="@order.ProductName" class="order-img" />
+                            }
+                            <div class="order-info">
+                                <div class="product-name">@order.ProductName</div>
+                                <a href="/printorder/@order.OrderId" target="_blank" class="order-id-link">Order #@order.OrderId</a>
+                                <span class="task-badge @badgeClass">@taskName</span>
+                            </div>
+                            <div class="time-info">
+                                @if (order.StartDate.HasValue)
+                                {
+                                    <span>@order.StartDate.Value.ToString("HH:mm")</span>
+                                    <span> → </span>
+                                    <span>@(order.EndDate.HasValue ? order.EndDate.Value.ToString("HH:mm") : "...")</span>
+                                    <span class="duration"> (@durationStr)</span>
+                                }
+                                else
+                                {
+                                    <span>No time recorded</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>

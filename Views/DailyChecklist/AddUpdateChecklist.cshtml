@@ -1,0 +1,335 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var todayDate = (DateTime)ViewBag.TodayDate;
+    var staffList = ViewBag.StaffList as List<CakerStreet.Business.Services.BakeryStaffItem> ?? new();
+    var openingChecks = ViewBag.OpeningChecks as List<CakerStreet.Business.Services.DairyCheckItem> ?? new();
+    var closingChecks = ViewBag.ClosingChecks as List<CakerStreet.Business.Services.DairyCheckItem> ?? new();
+    var openingTasks = ViewBag.OpeningTasks as List<CakerStreet.Business.Services.DairyTaskItem> ?? new();
+    var closingTasks = ViewBag.ClosingTasks as List<CakerStreet.Business.Services.DairyTaskItem> ?? new();
+
+    var savedOpening = ViewBag.SavedOpening as CakerStreet.Business.Services.SavedStaffDairyCheck;
+    var savedClosing = ViewBag.SavedClosing as CakerStreet.Business.Services.SavedStaffDairyCheck;
+    var savedOpeningTasks = ViewBag.SavedOpeningTasks as Dictionary<long, string> ?? new();
+    var savedClosingTasks = ViewBag.SavedClosingTasks as Dictionary<long, string> ?? new();
+}
+
+@section Head {
+    <style type="text/css">
+        .ul_checklist {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .ul_checklist > li {
+            margin: 0 0 10px;
+            line-height: 18px;
+            font-size: 14px;
+        }
+        .ul_checklist > li::before {
+            content: " - ";
+        }
+        .ul_checktasklist li:first-child {
+            text-align: right;
+            font-weight: bold;
+        }
+        .headertext {
+            display: table;
+            margin-bottom: 10px;
+            width: 100%;
+            background-color: #ddd;
+            line-height: 34px;
+            padding: 0 10px;
+            text-align: right;
+        }
+        .ul_checktasklist {
+            display: table-row;
+        }
+        .ul_checktasklist li {
+            display: table-cell;
+            vertical-align: middle;
+            padding: 5px;
+        }
+        .headertext label {
+            float: left;
+        }
+        .inventoryWrapper .innerhead {
+            display: table;
+            width: 100%;
+        }
+        .normallink, .normallink:hover, .normallink:focus {
+            font-size: 14px;
+            text-decoration: underline;
+            color: #fff;
+        }
+        .div_QuestionMain_outer {
+            display: table;
+            margin: 0px auto 20px;
+            width: 100%;
+        }
+        ol, ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .div_QuestionMain > ul.UL_QuestionMain {
+            display: table;
+            width: 100%;
+        }
+        .div_QuestionMain_outer li {
+            line-height: 30px;
+        }
+        .div_QuestionMain > ul.UL_QuestionMain li {
+            float: left;
+            line-height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            position: relative;
+            padding: 5px 0 5px 90px;
+        }
+        .div_QuestionMainList_outer, .div_ResultMain {
+            display: table;
+            width: 100%;
+        }
+        .UL_ResultMain {
+            display: table-row;
+            line-height: 20px;
+        }
+        .UL_ResultMain.headertext {
+            background-color: #ccc;
+            font-weight: bold;
+        }
+        .UL_ResultMain > li {
+            display: table-cell;
+            padding: 10px 7px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .padding-top-mobile {
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+        }
+        .alert-success {
+            margin-top: 15px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+}
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                <div class="orderWrappernew">
+                    <div class="innerhead">
+                        <div class="col-md-12">
+                            <h2>
+                                Daily Checks - Opening and Closing
+                                <a href="/dailydairychecklists" class="pull-right normallink">Back</a>
+                            </h2>
+                        </div>
+                    </div>
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse4" aria-expanded="true">
+                        
+                        <!-- Static Checklists Parity Display -->
+                        <div class="col-md-6 col-sm-12 checklist_outer">
+                            <div class="form-group">
+                                <p><strong>Opening Check</strong></p>
+                            </div>
+                            <div class="form-group">
+                                <ul class="ul_checklist">
+                                    @foreach (var check in openingChecks)
+                                    {
+                                        <li>@check.CheckTitle</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-sm-12 checklist_outer">
+                            <div class="form-group">
+                                <p><strong>Closing Check</strong></p>
+                            </div>
+                            <div class="form-group">
+                                <ul class="ul_checklist">
+                                    @foreach (var check in closingChecks)
+                                    {
+                                        <li>@check.CheckTitle</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        <!-- Main Inputs -->
+                        <div class="form-group" style="margin-top: 30px;">
+                            
+                            <!-- Opening Form -->
+                            <div class="col-md-6 col-sm-12" style="border-right: 1px solid #eee; padding-right: 20px;">
+                                <form action="/addupdopeningnclosingchecks/submit" method="post" onsubmit="return validateOpening();">
+                                    <input type="hidden" name="checkType" value="1" />
+                                    <input type="hidden" name="dateStr" value="@todayDate.ToString("dd-MM-yyyy")" />
+
+                                    <div class="headertext">
+                                        <label>Opening Check</label>
+                                        <input type="text" id="txtOpeningDate" value="@todayDate.ToString("dd/MM/yyyy")" class="form-control" style="width:115px;float: right;margin-top: 3px;" />
+                                    </div>
+                                    <div class="clearfix"></div>
+
+                                    <div class="form-group">
+                                        <label>Choose Staff*</label>
+                                        <select name="staffId" id="ddlOpeningStaff" class="form-control" required>
+                                            <option value="">Select Staff</option>
+                                            @foreach (var staff in staffList)
+                                            {
+                                                var isSelected = savedOpening != null && savedOpening.CustomerId == staff.Id ? "selected" : "";
+                                                <option value="@staff.Id" @isSelected>@staff.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        @foreach (var task in openingTasks)
+                                        {
+                                            var val = savedOpeningTasks.TryGetValue(task.TaskId, out var inputVal) ? inputVal : "";
+                                            <ul class="ul_checktasklist">
+                                                <li>@task.TaskTitle:</li>
+                                                <li>
+                                                    <input type="text" name="task_@task.TaskId" value="@val" class="form-control" style="width:80px;display:inline" required />
+                                                    <span> °C</span>
+                                                </li>
+                                            </ul>
+                                        }
+                                    </div>
+
+                                    <div class="form-group">
+                                        <input type="checkbox" name="allDone" value="true" id="chkOpeningAllDone" @(savedOpening != null && savedOpening.ChecklistDone ? "checked" : "") /> Checklist All Done
+                                        <span id="errOpeningDone" class="text-danger small" style="display:none; block;">please select the checklist</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Any problems or changes – what did you do?</label>
+                                        <textarea name="problem" placeholder="Problem If Any" class="form-control" style="height:70px;">@(savedOpening?.ProblemDuringChecklist ?? "")</textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-black square">Submit</button>
+                                        @if (savedOpening != null)
+                                        {
+                                            <a href="/addupdopeningnclosingchecks" class="btn btn-primary btn-xs">Back</a>
+                                        }
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Closing Form -->
+                            <div class="col-md-6 col-sm-12" style="padding-left: 20px;">
+                                <form action="/addupdopeningnclosingchecks/submit" method="post" onsubmit="return validateClosing();">
+                                    <input type="hidden" name="checkType" value="2" />
+                                    <input type="hidden" name="dateStr" value="@todayDate.ToString("dd-MM-yyyy")" />
+
+                                    <div class="headertext">
+                                        <label>Closing Checks</label>
+                                        <input type="text" id="txtClosingDate" value="@todayDate.ToString("dd/MM/yyyy")" class="form-control" style="width:115px;float: right;margin-top: 3px;" />
+                                    </div>
+                                    <div class="clearfix"></div>
+
+                                    <div class="form-group">
+                                        <label>Choose Staff*</label>
+                                        <select name="staffId" id="ddlClosingStaff" class="form-control" required>
+                                            <option value="">Select Staff</option>
+                                            @foreach (var staff in staffList)
+                                            {
+                                                var isSelected = savedClosing != null && savedClosing.CustomerId == staff.Id ? "selected" : "";
+                                                <option value="@staff.Id" @isSelected>@staff.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        @foreach (var task in closingTasks)
+                                        {
+                                            var val = savedClosingTasks.TryGetValue(task.TaskId, out var inputVal) ? inputVal : "";
+                                            <ul class="ul_checktasklist">
+                                                <li>@task.TaskTitle:</li>
+                                                <li>
+                                                    <input type="text" name="task_@task.TaskId" value="@val" class="form-control" style="width:80px;display:inline" required />
+                                                    <span> °C</span>
+                                                </li>
+                                            </ul>
+                                        }
+                                    </div>
+
+                                    <div class="form-group">
+                                        <input type="checkbox" name="allDone" value="true" id="chkClosingAllDone" @(savedClosing != null && savedClosing.ChecklistDone ? "checked" : "") /> Checklist All Done
+                                        <span id="errClosingDone" class="text-danger small" style="display:none; block;">please select the checklist</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Any problems or changes – what did you do?</label>
+                                        <textarea name="problem" placeholder="Problem If Any" class="form-control" style="height:70px;">@(savedClosing?.ProblemDuringChecklist ?? "")</textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-black square">Submit</button>
+                                        @if (savedClosing != null)
+                                        {
+                                            <a href="/addupdopeningnclosingchecks" class="btn btn-primary btn-xs">Back</a>
+                                        }
+                                    </div>
+                                </form>
+                            </div>
+
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+                        {
+                            <div class="alert alert-success">
+                                @ViewBag.SuccessMessage
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#txtOpeningDate, #txtClosingDate").datepicker({
+            dateFormat: "dd/mm/yy"
+        });
+
+        $("#txtOpeningDate, #txtClosingDate").change(function () {
+            var inputDate = $(this).val();
+            // Expected format: dd/MM/yyyy or dd-MM-yyyy. Convert to dd-MM-yyyy.
+            var formatted = inputDate.replace(/\//g, "-");
+            window.location.href = "/addupdopeningnclosingchecks/" + formatted;
+        });
+    });
+
+    function validateOpening() {
+        if (!$("#chkOpeningAllDone").is(":checked")) {
+            $("#errOpeningDone").show();
+            return false;
+        }
+        $("#errOpeningDone").hide();
+        return true;
+    }
+
+    function validateClosing() {
+        if (!$("#chkClosingAllDone").is(":checked")) {
+            $("#errClosingDone").show();
+            return false;
+        }
+        $("#errClosingDone").hide();
+        return true;
+    }
+</script>

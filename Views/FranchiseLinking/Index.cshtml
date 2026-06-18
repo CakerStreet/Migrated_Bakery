@@ -1,0 +1,985 @@
+@using CakerStreet.Business.Services
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var franchises = ViewBag.Franchises as List<FranchiseItem> ?? new List<FranchiseItem>();
+    var sections = ViewBag.Sections as List<FranchiseCategoryItem> ?? new List<FranchiseCategoryItem>();
+    var categories = ViewBag.Categories as List<FranchiseCategoryItem> ?? new List<FranchiseCategoryItem>();
+    var selectedFranchiseId = (long)ViewBag.SelectedFranchiseId;
+    var selectedSectionId = (long)ViewBag.SelectedSectionId;
+    var selectedCategoryId = (long)ViewBag.SelectedCategoryId;
+    var selectedCat = ViewBag.SelectedCat as FranchiseCategoryItem;
+    var filter = (int)ViewBag.Filter;
+    var linkedDetails = ViewBag.LinkedDetails as List<ProductFranchiseLinkingDetail> ?? new List<ProductFranchiseLinkingDetail>();
+    var productSuppliers = ViewBag.ProductSuppliers as Dictionary<long, List<FranchiseSupplierItem>> ?? new Dictionary<long, List<FranchiseSupplierItem>>();
+    var counts = ((int allCount, int pendingCount, int underDeliveryCount, int deliveredCount)?)ViewBag.Counts ?? (0, 0, 0, 0);
+    
+    bool isService = selectedCat?.IsService ?? false;
+}
+
+@section Head {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+        .orderWrappernew {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-top: 20px;
+        }
+        .innerhead h2 {
+            font-size: 22px;
+            margin: 0;
+            color: #2b2d42;
+            font-weight: 600;
+        }
+        .normallink {
+            color: #d90429;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .normallink:hover {
+            color: #ef233c;
+            text-decoration: underline;
+        }
+        .ui-autocomplete {
+            z-index: 1100 !important;
+        }
+        .ui-menu-item img {
+            max-width: 40px;
+            max-height: 40px;
+            margin-right: 10px;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+        .ui-menu-item span {
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .badge-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-pending { background-color: #ffe3e3; color: #d90429; }
+        .badge-delivery { background-color: #fff3cd; color: #856404; }
+        .badge-completed { background-color: #d4edda; color: #155724; }
+        .linked-item-row {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .linked-item-row:hover {
+            background-color: #f1f3f5;
+        }
+        .details-form-cell {
+            background-color: #ffffff;
+            padding: 15px !important;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="orderWrappernew">
+                <div class="innerhead d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                    <h2>Link Product With Franchise</h2>
+                    <a href="/manageproductwithfranchise" class="btn btn-outline-secondary btn-sm">Back</a>
+                </div>
+
+                @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @ViewBag.SuccessMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @ViewBag.ErrorMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="form-horizontal">
+                    <!-- Dropdowns Selection Row -->
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label text-end fw-bold">Select Franchise: <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <select id="ddlFranchise" class="form-select" onchange="onFranchiseChange(this.value)">
+                                <option value="0">--Select Franchise--</option>
+                                @foreach (var item in franchises)
+                                {
+                                    <option value="@item.Id" selected="@(selectedFranchiseId == item.Id ? "selected" : null)">@item.Title</option>
+                                }
+                                <option value="-1" selected="@(selectedFranchiseId == -1 ? "selected" : null)">--Add New Franchise--</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- New Franchise Panel -->
+                    <div id="dvNewFranchise" style="display: @(selectedFranchiseId == -1 ? "block" : "none");" class="card bg-light p-3 mb-4">
+                        <form asp-action="SaveFranchise" method="post">
+                            <h5 class="card-title mb-3">Create New Franchise</h5>
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label text-end">Franchise Title: <span class="text-danger">*</span></label>
+                                <div class="col-sm-4">
+                                    <input type="text" name="title" class="form-control" placeholder="Franchise Title" required />
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label text-end">Select Status: <span class="text-danger">*</span></label>
+                                <div class="col-sm-4">
+                                    <select name="status" class="form-select" required>
+                                        <option value="0">--Select Status--</option>
+                                        <option value="1">Under Proposal</option>
+                                        <option value="2">Approved</option>
+                                        <option value="3">Disapproved</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-offset-3 col-sm-4">
+                                    <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    @if (selectedFranchiseId > 0)
+                    {
+                        <!-- Select Section -->
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label text-end fw-bold">
+                                Select Section: <span class="text-danger">*</span>
+                                <br />
+                                <a href="/managesection" target="_blank" class="normallink small">Manage</a>
+                            </label>
+                            <div class="col-sm-4">
+                                <select id="ddlSection" class="form-select" onchange="onSectionChange(this.value)">
+                                    <option value="0">--Select Section--</option>
+                                    @foreach (var item in sections)
+                                    {
+                                        <option value="@item.Id" selected="@(selectedSectionId == item.Id ? "selected" : null)">@item.Title</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+                    @if (selectedFranchiseId > 0 && selectedSectionId > 0)
+                    {
+                        <!-- Select Category -->
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label text-end fw-bold">
+                                Select Category: <span class="text-danger">*</span>
+                                <br />
+                                <a href="/managesection" target="_blank" class="normallink small">Manage</a>
+                            </label>
+                            <div class="col-sm-4">
+                                <select id="ddlCategory" class="form-select" onchange="onCategoryChange(this.value)">
+                                    <option value="0">--Select Category--</option>
+                                    @foreach (var item in categories)
+                                    {
+                                        <option value="@item.Id" selected="@(selectedCategoryId == item.Id ? "selected" : null)">@item.Title</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+                    @if (selectedFranchiseId > 0 && selectedCategoryId > 0)
+                    {
+                        <!-- Search & Link Product Form -->
+                        <div class="card p-3 mb-4 bg-light">
+                            <h5 class="fw-bold mb-3">Link New @(isService ? "Service" : "Product")</h5>
+                            
+                            @if (!isService)
+                            {
+                                <div class="row mb-3">
+                                    <div class="col-sm-offset-3 col-sm-8 d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="rbType" id="rbKeyword" checked value="0" />
+                                            <label class="form-check-label" for="rbKeyword">Keyword</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="rbType" id="rbTag" value="1" />
+                                            <label class="form-check-label" for="rbTag">Tag</label>
+                                        </div>
+                                        <div>
+                                            <a href="#" class="normallink text-decoration-none" data-bs-toggle="modal" data-bs-target="#modalSelectProduct">Select Product from list</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="row mb-3">
+                                    <div class="col-sm-offset-3 col-sm-8">
+                                        <a href="#" class="normallink text-decoration-none" data-bs-toggle="modal" data-bs-target="#modalSelectService">Select Services from list</a>
+                                    </div>
+                                </div>
+                            }
+
+                            <form asp-action="LinkProduct" method="post" id="formLinkProduct">
+                                <input type="hidden" name="franchiseid" value="@selectedFranchiseId" />
+                                <input type="hidden" name="sectionid" value="@selectedSectionId" />
+                                <input type="hidden" name="catid" value="@selectedCategoryId" />
+                                <input type="hidden" name="isService" id="hfIsService" value="@(isService ? "1" : "0")" />
+                                <input type="hidden" name="productId" id="hfProductID" />
+
+                                <div class="row mb-3 align-items-center">
+                                    <label class="col-sm-3 col-form-label text-end">Search @(isService ? "Service" : "Product"): <span class="text-danger">*</span></label>
+                                    <div class="col-sm-6">
+                                        <input type="text" id="txtSearchProduct" class="form-control" placeholder="Search @(isService ? "Service" : "Product")" required />
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <button type="submit" class="btn btn-primary btn-sm">Link Item</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Filter Status Banners -->
+                        @if (counts.allCount > 0)
+                        {
+                            <div class="d-flex gap-4 mb-4 justify-content-center border-top border-bottom py-2 bg-light">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="filterGroup" id="filterAll" checked="@(filter == 0)" onclick="onFilterChange(0)" />
+                                    <label class="form-check-label fw-bold" for="filterAll">All (@counts.allCount)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input text-danger" type="radio" name="filterGroup" id="filterPending" checked="@(filter == 1)" onclick="onFilterChange(1)" />
+                                    <label class="form-check-label fw-bold text-danger" for="filterPending">Pending (@counts.pendingCount)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input text-warning" type="radio" name="filterGroup" id="filterDelivery" checked="@(filter == 2)" onclick="onFilterChange(2)" />
+                                    <label class="form-check-label fw-bold text-warning" for="filterDelivery">Under Delivery (@counts.underDeliveryCount)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input text-success" type="radio" name="filterGroup" id="filterCompleted" checked="@(filter == 3)" onclick="onFilterChange(3)" />
+                                    <label class="form-check-label fw-bold text-success" for="filterCompleted">Completed (@counts.deliveredCount)</label>
+                                </div>
+                            </div>
+
+                            <!-- List of Linked Items -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th colspan="3" class="d-flex justify-content-between align-items-center">
+                                                <span>Linked Product Details</span>
+                                                <button type="button" class="btn btn-xs btn-outline-light" id="ancShowHide">Show/Hide Actions</button>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var details in linkedDetails)
+                                        {
+                                            <tr class="linked-item-row rowsummary_@details.ProductId" data-id="@details.ProductId">
+                                                <td style="width: 100px; text-align: center;">
+                                                    @if (!string.IsNullOrEmpty(details.ProductImage))
+                                                    {
+                                                        string imageFolder = details.IsService ? "upload/service_images" : "upload/Product_Images";
+                                                        <img src="@(ViewBag.CdnBase + imageFolder + "/resized_80_80/" + details.ProductImage)" style="max-width: 80px; max-height: 80px; border-radius: 4px;" alt="Image" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <img src="/images/blankImages/img75.jpg" style="max-width: 80px;" alt="Blank" />
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <h5 class="fw-bold mb-1 text-dark">@details.ProductName @details.ServiceRecommended</h5>
+                                                    @if (details.IsService)
+                                                    {
+                                                        <p class="mb-1 text-muted small">@details.ServiceDesc</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="mb-1 text-muted small">SKU: <strong>@details.ProductCode</strong></p>
+                                                    }
+                                                    <div class="d-flex gap-2 align-items-center mt-2">
+                                                        <span class="badge-status @(details.Ordered == 0 ? "badge-pending" : (details.Delivered == 0 ? "badge-delivery" : "badge-completed"))">
+                                                            @(details.Ordered == 0 ? "Pending" : (details.Delivered == 0 ? "Under Delivery" : "Delivered"))
+                                                        </span>
+                                                        <span class="text-secondary small">Notes: @details.Notes</span>
+                                                        <button type="button" class="btn btn-xs btn-outline-primary ms-2" onclick="notesDiv(@details.Id)">View / Add Notes</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <!-- Detailed Edit Form for Linked Item -->
+                                            <tr class="rowform_@details.ProductId" style="display: none;">
+                                                <td colspan="2" class="details-form-cell">
+                                                    <div class="row g-3">
+                                                        <!-- Left Column Supplier Info -->
+                                                        <div class="col-md-6">
+                                                            @if (!details.IsService)
+                                                            {
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-bold">Supplier:</label>
+                                                                    <select class="form-select ddlSupplier ddlSupplier_@details.ProductId" data-pid="@details.ProductId">
+                                                                        <option value="0">--Select Supplier--</option>
+                                                                        @if (productSuppliers.ContainsKey(details.ProductId))
+                                                                        {
+                                                                            foreach (var s in productSuppliers[details.ProductId])
+                                                                            {
+                                                                                <option value="@s.SupplierId" selected="@(details.SupplierId == s.SupplierId ? "selected" : null)">@s.SupplierName</option>
+                                                                            }
+                                                                        }
+                                                                        <option value="-2" selected="@(details.SupplierId == -2 ? "selected" : null)">--Other Supplier--</option>
+                                                                        <option value="-1" selected="@(details.SupplierId == -1 ? "selected" : null)">--Already Instock--</option>
+                                                                    </select>
+                                                                    <p class="text-muted small mt-1" id="SuppRemarks_@details.ProductId">@details.SupplierRemarks</p>
+                                                                </div>
+                                                            }
+
+                                                            <!-- Alternate Supplier Input -->
+                                                            <div class="pnlAlternateSupplier_@details.ProductId mb-3" style="display: @(details.SupplierId == -2 ? "block" : "none");">
+                                                                <label class="form-label fw-bold">Supplier Name:</label>
+                                                                <input type="text" class="form-control txtAlternateSupplier_@details.ProductId" value="@details.AlternateSupplierName" placeholder="Supplier Name" />
+                                                                <label class="form-label fw-bold mt-2">Remarks:</label>
+                                                                <textarea class="form-control txtRemarks_@details.ProductId" placeholder="Remarks">@details.AlternateSupplierRemarks</textarea>
+                                                            </div>
+
+                                                            <!-- Instock Image Input -->
+                                                            <div class="pnlImage_@details.ProductId mb-3" style="display: @(details.SupplierId == -1 ? "block" : "none");">
+                                                                <label class="form-label fw-bold">Browse Image:</label>
+                                                                <div class="input-group">
+                                                                    <input type="file" class="form-control" id="fuImage_@details.ProductId" accept="image/*" />
+                                                                    <button type="button" class="btn btn-danger btnUpload" data-fid="@selectedFranchiseId" data-catid="@selectedCategoryId" data-pid="@details.ProductId">Upload</button>
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <a href="/upload/supplierImages/@details.SupplierImage" class="hlSuppImage_@details.ProductId" target="_blank" style="display: @(string.IsNullOrEmpty(details.SupplierImage) ? "none" : "block");">
+                                                                        <img src="/upload/supplierImages/resized_150_150/@details.SupplierImage" class="imgSupplier_@details.ProductId" style="max-width: 150px; border-radius: 4px; border: 1px solid #ddd;" />
+                                                                    </a>
+                                                                    <input id="hfImage_@details.ProductId" value="@details.SupplierImage" type="hidden" />
+                                                                </div>
+                                                                <label class="form-label fw-bold mt-2">Item Remarks:</label>
+                                                                <textarea class="form-control txtRemarks_Instock_@details.ProductId" placeholder="Remarks">@details.AlternateSupplierRemarks</textarea>
+                                                            </div>
+
+                                                            <!-- Supplier cost fields -->
+                                                            <div class="pnlSupplierDetail_@details.ProductId" style="display: @(details.SupplierId == -1 ? "none" : "block");">
+                                                                <div class="row g-2">
+                                                                    <div class="col-sm-4">
+                                                                        <label class="form-label fw-bold">Price:</label>
+                                                                        <div class="input-group input-group-sm">
+                                                                            <span class="input-group-text">&pound;</span>
+                                                                            <input type="text" class="form-control stock txtPrice_@details.ProductId" data-pid="@details.ProductId" value="@details.Price.ToString("G29")" @(details.IsService ? "disabled" : null) />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-sm-4">
+                                                                        <label class="form-label fw-bold">Min Stock Req:</label>
+                                                                        <input type="number" class="form-control form-control-sm stock txtMinStockReq_@details.ProductId" data-pid="@details.ProductId" value="@details.MinStockReq" />
+                                                                    </div>
+                                                                    <div class="col-sm-4">
+                                                                        <label class="form-label fw-bold">Total Investment:</label>
+                                                                        <div class="input-group input-group-sm">
+                                                                            <span class="input-group-text">&pound;</span>
+                                                                            <input type="text" class="form-control txtTotalInvestment_@details.ProductId" value="@details.TotalInvestment.ToString("G29")" disabled />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Right Column Ordered/Delivered Info -->
+                                                        <div class="col-md-6 border-start ps-3">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold d-block">Ordered:</label>
+                                                                <div class="form-check form-check-inline">
+                                                                    <input class="form-check-input rbOrder_Yes" type="radio" name="order_@details.ProductId" id="orderYes_@details.ProductId" data-pid="@details.ProductId" checked="@(details.Ordered == 1)" />
+                                                                    <label class="form-check-label" for="orderYes_@details.ProductId">Yes</label>
+                                                                </div>
+                                                                <div class="form-check form-check-inline">
+                                                                    <input class="form-check-input rbOrder_No" type="radio" name="order_@details.ProductId" id="orderNo_@details.ProductId" data-pid="@details.ProductId" checked="@(details.Ordered == 0)" />
+                                                                    <label class="form-check-label" for="orderNo_@details.ProductId">No</label>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="dvOrderDate_@details.ProductId mb-3" style="display: @(details.Ordered == 1 ? "block" : "none");">
+                                                                <label class="form-label fw-bold">Order Date:</label>
+                                                                <input type="date" class="form-control txtOrderDate_@details.ProductId" value="@(details.OrderDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
+                                                            </div>
+
+                                                            <div class="dvDelivered_@details.ProductId mb-3" style="display: @(details.Ordered == 1 ? "block" : "none");">
+                                                                <label class="form-label fw-bold d-block">Delivered:</label>
+                                                                <div class="form-check form-check-inline">
+                                                                    <input class="form-check-input rbDeliver_Yes" type="radio" name="deliver_@details.ProductId" id="deliverYes_@details.ProductId" data-pid="@details.ProductId" checked="@(details.Delivered == 1)" />
+                                                                    <label class="form-check-label" for="deliverYes_@details.ProductId">Yes</label>
+                                                                </div>
+                                                                <div class="form-check form-check-inline">
+                                                                    <input class="form-check-input rbDeliver_No" type="radio" name="deliver_@details.ProductId" id="deliverNo_@details.ProductId" data-pid="@details.ProductId" checked="@(details.Delivered == 0)" />
+                                                                    <label class="form-check-label" for="deliverNo_@details.ProductId">No</label>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="dvDeliveredDate_@details.ProductId mb-3" style="display: @(details.Ordered == 1 && details.Delivered == 1 ? "block" : "none");">
+                                                                <label class="form-label fw-bold">Delivered Date:</label>
+                                                                <input type="date" class="form-control txtDeliverDate_@details.ProductId" value="@(details.DeliveryDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
+                                                            </div>
+
+                                                            <div class="dvReceivedBy_@details.ProductId mb-3" style="display: @(details.Ordered == 1 && details.Delivered == 1 ? "block" : "none");">
+                                                                <label class="form-label fw-bold">Received By:</label>
+                                                                <input type="text" class="form-control txtRecBy_@details.ProductId" value="@details.DeliveryReceivedBy" />
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Action Buttons for linked product -->
+                                                        <div class="col-12 text-end border-top pt-2 mt-3">
+                                                            <button type="button" class="btn btn-success btn-sm ancUpdate" data-id="@details.Id" data-pid="@details.ProductId" data-service="@(details.IsService ? "1" : "0")" data-fid="@selectedFranchiseId" data-catid="@selectedCategoryId">Save Changes</button>
+                                                            <button type="button" class="btn btn-outline-danger btn-sm ancUnlink" data-pid="@details.ProductId" data-fid="@selectedFranchiseId" data-catid="@selectedCategoryId">Unlink Item</button>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mt-4 text-center">No linked items found under this category. Please link a product or service above.</div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Select Product from list -->
+<div class="modal fade" id="modalSelectProduct" tabindex="-1" aria-labelledby="modalSelectProductLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-action="LinkSelectedProducts" method="post">
+                <input type="hidden" name="franchiseid" value="@selectedFranchiseId" />
+                <input type="hidden" name="sectionid" value="@selectedSectionId" />
+                <input type="hidden" name="catid" value="@selectedCategoryId" />
+
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="modalSelectProductLabel">Search and Add Products</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label text-end fw-bold">Select Product Type:</label>
+                        <div class="col-sm-4">
+                            <select id="ddlProductType" class="form-select" onchange="onModalFilterChange()">
+                                <option value="0">--Select Product Type--</option>
+                                <option value="2">Accessories</option>
+                                <option value="4">Cake Toppers</option>
+                                <option value="5">Cutters / Moulds</option>
+                                <option value="7">Packaging</option>
+                                <option value="8">Supplies</option>
+                                <option value="9">Appliances & Tools</option>
+                                <option value="10">Shop Setup</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label text-end fw-bold">Select Tag:</label>
+                        <div class="col-sm-6">
+                            <input type="text" id="modalProductTags" class="form-control" placeholder="Search by tags..." />
+                            <input type="hidden" id="modal_tagID" value="0" />
+                        </div>
+                    </div>
+
+                    <div style="height: 350px; overflow-y: scroll; border: 1px solid #dee2e6; border-radius: 4px;" class="p-2 mb-3 bg-light">
+                        <table class="table table-sm table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="chkAllProducts" /></th>
+                                    <th>Title</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblModalProducts">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">Select Product Type or search tags to load products</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Link Selected Products</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Select Services from list -->
+<div class="modal fade" id="modalSelectService" tabindex="-1" aria-labelledby="modalSelectServiceLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-action="LinkSelectedServices" method="post">
+                <input type="hidden" name="franchiseid" value="@selectedFranchiseId" />
+                <input type="hidden" name="sectionid" value="@selectedSectionId" />
+                <input type="hidden" name="catid" value="@selectedCategoryId" />
+
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="modalSelectServiceLabel">Search and Add Services</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label text-end fw-bold">Select Category:</label>
+                        <div class="col-sm-6">
+                            <select id="ddlServiceCatgory" class="form-select" onchange="onModalServiceChange(this.value)">
+                                <option value="-1">--Select Category--</option>
+                                <option value="0">--All Categories--</option>
+                                @foreach (var item in ViewBag.ServiceCategories as List<FranchiseCategoryItem> ?? new List<FranchiseCategoryItem>())
+                                {
+                                    <option value="@item.Id">@item.Title</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="height: 350px; overflow-y: scroll; border: 1px solid #dee2e6; border-radius: 4px;" class="p-2 mb-3 bg-light">
+                        <table class="table table-sm table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="chkAllServices" /></th>
+                                    <th>Title</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblModalServices">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">Select Service Category to load services</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Link Selected Services</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="hdGlobalUrl" value="" />
+<input type="hidden" id="hdCustGlobalUrl" value="@ViewBag.CdnBase" />
+
+@section FooterScripts {
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script>
+        function onFranchiseChange(val) {
+            if (val == "-1") {
+                $("#dvNewFranchise").show();
+            } else {
+                $("#dvNewFranchise").hide();
+                window.location.href = `/linkproductwithfranchise?franchiseid=${val}`;
+            }
+        }
+
+        function onSectionChange(val) {
+            var fid = $("#ddlFranchise").val();
+            window.location.href = `/linkproductwithfranchise?franchiseid=${fid}&sectionid=${val}`;
+        }
+
+        function onCategoryChange(val) {
+            var fid = $("#ddlFranchise").val();
+            var sid = $("#ddlSection").val();
+            window.location.href = `/linkproductwithfranchise?franchiseid=${fid}&sectionid=${sid}&catid=${val}`;
+        }
+
+        function onFilterChange(val) {
+            var fid = $("#ddlFranchise").val();
+            var sid = $("#ddlSection").val();
+            var cid = $("#ddlCategory").val();
+            window.location.href = `/linkproductwithfranchise?franchiseid=${fid}&sectionid=${sid}&catid=${cid}&filter=${val}`;
+        }
+
+        function notesDiv(id) {
+            window.open(`/franchisenotes/${id}`, 'notes_popup', 'height=580,width=600,scrollbars=yes');
+        }
+
+        $(document).ready(function() {
+            // Toggles
+            var formRowsVisible = false;
+            $("#ancShowHide").on("click", function() {
+                if (formRowsVisible) {
+                    $("[class^='rowform_']").hide();
+                    formRowsVisible = false;
+                } else {
+                    $("[class^='rowform_']").show();
+                    formRowsVisible = true;
+                }
+            });
+
+            // Toggle individual row on click of summary row
+            $(".linked-item-row").on("click", function(e) {
+                if ($(e.target).closest('button, a').length === 0) {
+                    var pid = $(this).attr("data-id");
+                    $(".rowform_" + pid).toggle();
+                }
+            });
+
+            // Auto-update Investment fields
+            $("body").on("keyup", ".stock", function () {
+                var pid = $(this).attr("data-pid");
+                var price = parseFloat($(".txtPrice_" + pid).val()) || 0;
+                var min = parseInt($(".txtMinStockReq_" + pid).val()) || 0;
+                $(".txtTotalInvestment_" + pid).val((price * min).toFixed(2));
+            });
+
+            // Ordered show/hide
+            $("body").on("click", ".rbOrder_Yes", function () {
+                var pid = $(this).attr("data-pid");
+                $(".dvOrderDate_" + pid).show();
+                $(".dvDelivered_" + pid).show();
+                if ($("#deliverYes_" + pid).is(":checked")) {
+                    $(".dvDeliveredDate_" + pid).show();
+                    $(".dvReceivedBy_" + pid).show();
+                } else {
+                    $(".dvDeliveredDate_" + pid).hide();
+                    $(".dvReceivedBy_" + pid).hide();
+                }
+            });
+
+            $("body").on("click", ".rbOrder_No", function () {
+                var pid = $(this).attr("data-pid");
+                $(".dvOrderDate_" + pid).hide();
+                $(".dvDelivered_" + pid).hide();
+                $(".dvDeliveredDate_" + pid).hide();
+                $(".dvReceivedBy_" + pid).hide();
+            });
+
+            // Delivered show/hide
+            $("body").on("click", ".rbDeliver_Yes", function () {
+                var pid = $(this).attr("data-pid");
+                $(".dvDeliveredDate_" + pid).show();
+                $(".dvReceivedBy_" + pid).show();
+            });
+
+            $("body").on("click", ".rbDeliver_No", function () {
+                var pid = $(this).attr("data-pid");
+                $(".dvDeliveredDate_" + pid).hide();
+                $(".dvReceivedBy_" + pid).hide();
+            });
+
+            // Supplier change dropdown AJAX Cost retrieval
+            $("body").on("change", ".ddlSupplier", function () {
+                var pid = $(this).attr("data-pid");
+                var selid = parseInt($(this).val());
+                
+                $(`#SuppRemarks_${pid}`).html("");
+
+                if (selid == -1) { // Instock
+                    $(`.pnlImage_${pid}`).show();
+                    $(`.pnlSupplierDetail_${pid}`).hide();
+                    $(`.pnlAlternateSupplier_${pid}`).hide();
+                } else if (selid == -2) { // Alternate Supplier
+                    $(`.pnlImage_${pid}`).hide();
+                    $(`.pnlSupplierDetail_${pid}`).show();
+                    $(`.pnlAlternateSupplier_${pid}`).show();
+                } else {
+                    $(`.pnlImage_${pid}`).hide();
+                    $(`.pnlSupplierDetail_${pid}`).show();
+                    $(`.pnlAlternateSupplier_${pid}`).hide();
+
+                    if (selid > 0) {
+                        $.ajax({
+                            type: "POST",
+                            url: "/webservices.aspx/getsuppliercostdetail",
+                            data: JSON.stringify({ sid: selid, pid: parseInt(pid) }),
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (msg) {
+                                var ep = msg.d;
+                                $(`.txtPrice_${pid}`).val(ep.Cost);
+                                $(`.txtMinStockReq_${pid}`).val(ep.Min_Qty);
+                                $(`.txtTotalInvestment_${pid}`).val(ep.Total_Investment);
+                                $(`#SuppRemarks_${pid}`).html(ep.Remarks);
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Save Linked Item Changes
+            $("body").on("click", ".ancUpdate", function() {
+                var id = $(this).attr("data-id");
+                var pid = $(this).attr("data-pid");
+                var isservice = parseInt($(this).attr("data-service"));
+                var fid = $(this).attr("data-fid");
+                var catid = $(this).attr("data-catid");
+
+                var supplierVal = parseInt($(`.ddlSupplier_${pid}`).val()) || 0;
+                var priceVal = parseFloat($(`.txtPrice_${pid}`).val()) || 0;
+                var minStockVal = parseInt($(`.txtMinStockReq_${pid}`).val()) || 0;
+                var totalInvestVal = parseFloat($(`.txtTotalInvestment_${pid}`).val()) || 0;
+                var orderedVal = $(`#orderYes_${pid}`).is(":checked") ? 1 : 0;
+                var orderDateVal = $(`.txtOrderDate_${pid}`).val() || null;
+                var deliveredVal = $(`#deliverYes_${pid}`).is(":checked") ? 1 : 0;
+                var deliveryDateVal = $(`.txtDeliverDate_${pid}`).val() || null;
+                var recByVal = $(`.txtRecBy_${pid}`).val() || "";
+                var altNameVal = $(`.txtAlternateSupplier_${pid}`).val() || "";
+                var altRemarksVal = $(`.txtRemarks_${pid}`).val() || "";
+
+                if (supplierVal === -1) {
+                    altRemarksVal = $(`.txtRemarks_Instock_${pid}`).val() || "";
+                }
+
+                var ep = {
+                    ID: parseInt(id),
+                    SupplierId: supplierVal,
+                    Price: priceVal,
+                    Min_StockReq: minStockVal,
+                    Total_Investment: totalInvestVal,
+                    Ordered: orderedVal,
+                    Order_Date: orderDateVal,
+                    Delivered: deliveredVal,
+                    Delivery_Date: deliveryDateVal,
+                    Delivery_ReceivedBy: recByVal,
+                    Alternate_SupplierName: altNameVal,
+                    Alternate_SupplierRemarks: altRemarksVal
+                };
+
+                $.ajax({
+                    type: "POST",
+                    url: "/webservices.aspx/UpdatelnkItemtempfranchise",
+                    data: JSON.stringify({ ep: ep }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        if (msg.d === 1) {
+                            alert("Item details updated successfully.");
+                            window.location.reload();
+                        } else {
+                            alert("Failed to update item details.");
+                        }
+                    }
+                });
+            });
+
+            // Unlink item
+            $("body").on("click", ".ancUnlink", function () {
+                if (confirm("Are you sure to unlink this item?")) {
+                    var fid = parseInt($(this).attr("data-fid"));
+                    var catid = parseInt($(this).attr("data-catid"));
+                    var pid = parseInt($(this).attr("data-pid"));
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/webservices.aspx/unlinkfranchiseitem",
+                        data: JSON.stringify({ fid: fid, catid: catid, pid: pid, sid: pid }),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function (msg) {
+                            if (msg.d === 1) {
+                                alert("Item has been unlinked successfully.");
+                                window.location.reload();
+                            } else {
+                                alert("Failed to unlink item.");
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Instock Upload Handler
+            $("body").on("click", "a.btnUpload", function () {
+                var fid = parseInt($(this).attr("data-fid"));
+                var catid = parseInt($(this).attr("data-catid"));
+                var pid = parseInt($(this).attr("data-pid"));
+                var fu = $("#fuImage_" + pid);
+
+                if (fu.val() == "") {
+                    alert("Please browse image");
+                    return;
+                }
+
+                var formdata = new FormData();
+                var fileUpload = $(fu).get(0);
+                var files = fileUpload.files;
+                for (var i = 0; i < files.length; i++) {
+                    formdata.append("file", files[i]);
+                }
+
+                formdata.append("pid", pid);
+                formdata.append("catid", catid);
+                formdata.append("fid", fid);
+                formdata.append("supplierid", -1);
+                formdata.append("oldImage", $("#hfImage_" + pid).val());
+                formdata.append("remarks", $(".txtRemarks_Instock_" + pid).val());
+
+                $.ajax({
+                    url: "/linkproductwithfranchise/upload",
+                    type: 'POST',
+                    data: formdata,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        $(`.imgSupplier_${pid}`).attr("src", data.image_url);
+                        $(`.hlSuppImage_${pid}`).attr("href", data.image_link).show();
+                        $(`#hfImage_${pid}`).val(data.image_name);
+                        alert("Image has been uploaded successfully.");
+                    },
+                    error: function () {
+                        alert("Error while uploading file");
+                    }
+                });
+            });
+
+            // Autocomplete Search linking setup
+            var isSrv = $("#hfIsService").val() === "1";
+            var upload_folder = isSrv ? "/upload/service_images/resized_80_80/" : "/upload/Product_images/resized_80_80/";
+
+            $('#txtSearchProduct').autocomplete({
+                minChars: 1,
+                select: function (event, ui) {
+                    event.preventDefault();
+                    $("#txtSearchProduct").val(ui.item.label);
+                    $("#hfProductID").val(ui.item.value);
+                    return false;
+                },
+                html: true,
+                open: function (event, ui) {
+                    $(".ui-autocomplete").css("z-index", 1100);
+                },
+                source: function (request, response) {
+                    var searchType = 0;
+                    if ($("#rbTag").is(':checked')) searchType = 1;
+                    
+                    $.ajax({
+                        url: "/linkproductwithfranchise.aspx/GetProductList",
+                        type: "POST",
+                        dataType: "json",
+                        data: JSON.stringify({ 
+                            keyword: request.term, 
+                            searchType: searchType.toString(), 
+                            IsService: isSrv ? 1 : 0 
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+                            response($.map(data.d, function (item) {
+                                return {
+                                    label: item.product_name,
+                                    value: item.product_id,
+                                    img: $("#hdCustGlobalUrl").val() + upload_folder + item.product_image1
+                                };
+                            }));
+                        }
+                    });
+                }
+            }).autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li><div><img src='" + item.img + "'><span>" + item.label + "</span></div></li>").appendTo(ul);
+            };
+
+            // Modal Multi-Checkboxes Selection
+            $("#chkAllProducts").on("click", function() {
+                $("#tblModalProducts input:checkbox").prop("checked", $(this).prop("checked"));
+            });
+
+            $("#chkAllServices").on("click", function() {
+                $("#tblModalServices input:checkbox").prop("checked", $(this).prop("checked"));
+            });
+
+            // Autocomplete in Product Modal for Tags
+            $('#modalProductTags').autocomplete({
+                minChars: 1,
+                select: function (event, ui) {
+                    event.preventDefault();
+                    $("#modalProductTags").val(ui.item.label);
+                    $("#modal_tagID").val(ui.item.value);
+                    onModalFilterChange();
+                    return false;
+                },
+                html: true,
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/linkproductwithfranchise.aspx/GettagList",
+                        type: "POST",
+                        dataType: "json",
+                        data: JSON.stringify({ keyword: request.term, searchType: "1" }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+                            response($.map(data.d, function (item) {
+                                return {
+                                    label: item.product_name,
+                                    value: item.product_id
+                                };
+                            }));
+                        }
+                    });
+                }
+            });
+        });
+
+        // Trigger loading items in Select Product Modal
+        function onModalFilterChange() {
+            var prdType = parseInt($("#ddlProductType").val()) || 0;
+            var tagId = parseInt($("#modal_tagID").val()) || 0;
+
+            if (prdType === 0 && tagId === 0) return;
+
+            $.ajax({
+                url: "/linkproductwithfranchise/GetProductsByFilter",
+                type: "GET",
+                data: {
+                    prdType: prdType,
+                    tagId: tagId,
+                    fid: $("#ddlFranchise").val(),
+                    catId: $("#ddlCategory").val()
+                },
+                success: function(list) {
+                    var html = "";
+                    if (list.length === 0) {
+                        html = "<tr><td colspan='2' class='text-center text-muted'>No products found matching filters</td></tr>";
+                    } else {
+                        var imgBase = $("#hdCustGlobalUrl").val() + "/upload/Product_images/resized_80_80/";
+                        $.each(list, function(index, item) {
+                            html += `
+                                <tr>
+                                    <td><input type="checkbox" name="selectedProducts" value="${item.id}" /></td>
+                                    <td>${item.title}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    $("#tblModalProducts").html(html);
+                }
+            });
+        }
+
+        // Trigger loading items in Select Service Modal
+        function onModalServiceChange(val) {
+            var catId = parseInt(val);
+            if (catId === -1) return;
+
+            $.ajax({
+                url: "/linkproductwithfranchise/GetServicesByCat",
+                type: "GET",
+                data: {
+                    serviceCatId: catId,
+                    fid: $("#ddlFranchise").val()
+                },
+                success: function(list) {
+                    var html = "";
+                    if (list.length === 0) {
+                        html = "<tr><td colspan='2' class='text-center text-muted'>No services found matching selection</td></tr>";
+                    } else {
+                        $.each(list, function(index, item) {
+                            html += `
+                                <tr>
+                                    <td><input type="checkbox" name="selectedServices" value="${item.id}" /></td>
+                                    <td>${item.title}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    $("#tblModalServices").html(html);
+                }
+            });
+        }
+    </script>
+}

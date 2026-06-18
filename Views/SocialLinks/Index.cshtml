@@ -1,0 +1,126 @@
+@{
+    ViewData["Title"] = "Manage Social Links";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.SocialLinkItem> ?? new List<CakerStreet.Business.Services.SocialLinkItem>();
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Social Links</h2>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+        <div class="clearfix"></div>
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+                <div class="table prdlstouter" id="socialLinksTable">
+                    <table class="table table-bordred table-striped">
+                        <thead>
+                            <tr>
+                                <th class="name headertext">Name</th>
+                                <th class="Email headertext">URL</th>
+                                <th class="Pwd headertext">Display Order</th>
+                                <th class="action headertext">Active</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblBody">
+                            @foreach (var item in items)
+                            {
+                                <tr class="rowtext">
+                                    <td class="name">
+                                        <input type="hidden" class="hfID" value="@item.Id" />
+                                        <input type="hidden" class="hfName" value="@item.Name" />
+                                        <span class="lblName">@item.Name</span>
+                                    </td>
+                                    <td class="Email">
+                                        <input type="text" class="form-control txtURL" value="@item.LinkURL" placeholder="Enter URL" />
+                                    </td>
+                                    <td class="Pwd">
+                                        <input type="text" class="form-control txtDisplayOrder" value="@item.DisplayOrder" style="max-width:80px;" />
+                                    </td>
+                                    <td class="action">
+                                        <select class="form-control ddlActive" style="max-width:100px;">
+                                            <option value="1" @(item.IsActivated ? "selected" : "")>Yes</option>
+                                            <option value="0" @(!item.IsActivated ? "selected" : "")>No</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="divbtnmain_outer">
+                    <a href="javascript:void(0);" class="btn btn-lg btn-black square" onclick="saveAll();">Save All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success');
+        $div.addClass(isSuccess ? 'alert-success' : 'alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(); }, 4000);
+    }
+
+    // ─── Save All ───────────────────────────────────────────────────────────────
+
+    function saveAll() {
+        var items = [];
+
+        $('#tblBody tr.rowtext').each(function () {
+            var $row = $(this);
+            var displayOrder = parseInt($row.find('.txtDisplayOrder').val()) || 1;
+
+            items.push({
+                Id: parseInt($row.find('.hfID').val()) || 0,
+                Name: $row.find('.hfName').val(),
+                LinkURL: $row.find('.txtURL').val().trim(),
+                DisplayOrder: displayOrder,
+                IsActivated: $row.find('.ddlActive').val() === '1'
+            });
+        });
+
+        if (items.length === 0) {
+            alert('No items to save.');
+            return;
+        }
+
+        $.ajax({
+            url: '/managesociallinks/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                    // Reload to get updated IDs for newly inserted records
+                    setTimeout(function () { location.reload(); }, 1500);
+                } else {
+                    showMessage(r.message || 'Failed to save.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving.', false);
+            }
+        });
+    }
+</script>
+}

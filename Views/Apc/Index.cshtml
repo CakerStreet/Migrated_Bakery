@@ -1,0 +1,404 @@
+@using CakerStreet.Business.Services
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Book An APC";
+
+    var orderId = ViewBag.OrderId as long?;
+    var details = ViewBag.OrderDetails as ApcOrderDetails;
+    var history = ViewBag.BookingHistory as List<ApcBookingLog> ?? new List<ApcBookingLog>();
+    var apcCreds = ViewBag.ApcCredentials as ApcBakeryCredentials;
+    var channel = ViewBag.Channel as int? ?? -1;
+    var showBottomValues = ViewBag.ShowBottomValues as bool? ?? false;
+    var showDhlBooking = ViewBag.ShowDhlBooking as bool? ?? false;
+    var dhlRates = ViewBag.DhlRates as List<DhlRateQuote> ?? new List<DhlRateQuote>();
+}
+
+<style>
+    .carrier-card {
+        background: linear-gradient(135deg, #1e1e2e 0%, #151522 100%);
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        border: 1px solid #2d2d44;
+        margin-bottom: 24px;
+        color: #e0e0e0;
+    }
+    .carrier-card h3 {
+        color: #ffffff;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #3d3d5c;
+        padding-bottom: 10px;
+        font-size: 1.25rem;
+    }
+    .form-group label {
+        color: #a0a0c0;
+        font-weight: 500;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+    }
+    .form-control {
+        background-color: #252538 !important;
+        border: 1px solid #3d3d5c !important;
+        color: #ffffff !important;
+        border-radius: 6px !important;
+        padding: 10px 14px !important;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus {
+        border-color: #7070ff !important;
+        box-shadow: 0 0 0 3px rgba(112, 112, 255, 0.25) !important;
+    }
+    .btn-premium {
+        background: linear-gradient(90deg, #aa041c 0%, #d9534f 100%);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 10px 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .btn-premium:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(217, 83, 79, 0.4);
+    }
+    .btn-secondary-premium {
+        background-color: #3b3b54;
+        border: 1px solid #4e4e6e;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 10px 20px;
+        transition: all 0.3s ease;
+    }
+    .btn-secondary-premium:hover {
+        background-color: #484869;
+        transform: translateY(-1px);
+    }
+    .history-banner {
+        background-color: rgba(255, 204, 204, 0.1);
+        border: 1px solid #ff4d4d;
+        color: #ff9999;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .alert-custom {
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+    }
+    .alert-success-custom {
+        background-color: rgba(46, 204, 113, 0.1);
+        border: 1px solid #2ecc71;
+        color: #2ecc71;
+    }
+    .alert-danger-custom {
+        background-color: rgba(231, 76, 60, 0.1);
+        border: 1px solid #e74c3c;
+        color: #e74c3c;
+    }
+</style>
+
+<div class="container-fluid p-4">
+    <div class="row mb-3">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2 class="text-white font-weight-bold">
+                Book An APC / DHL Parcel Integration
+            </h2>
+            <a href="/manageordermenifest" class="btn btn-secondary-premium">
+                Order Manifest
+            </a>
+        </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-custom alert-success-custom">
+            @Html.Raw(TempData["SuccessMessage"])
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-custom alert-danger-custom">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-custom alert-danger-custom">
+            @ViewBag.ErrorMessage
+        </div>
+    }
+
+    <!-- Booking History / Status Alert -->
+    @if (history.Any())
+    {
+        <div class="history-banner">
+            <h5 class="font-weight-bold mb-2"><i class="fa fa-info-circle"></i> Previous Bookings Detected</h5>
+            <ul class="mb-0">
+                @foreach (var log in history)
+                {
+                    <li>Already Booked on <strong>@log.CreatedOn.ToString("dd/MM/yyyy HH:mm")</strong> via <strong>@log.Carrier</strong></li>
+                }
+            </ul>
+        </div>
+    }
+
+    <!-- Main Entry Panel -->
+    <div class="row">
+        <!-- Booking Form Section -->
+        <div class="col-lg-8 col-md-12">
+            <div class="carrier-card">
+                <h3>Carrier Channel Selection</h3>
+                <form asp-action="ViewOrder" method="post">
+                    <div class="row align-items-end">
+                        <div class="col-md-4 form-group">
+                            <label for="txtStartDate">Booking Date</label>
+                            <input type="text" id="txtStartDate" name="bookingDate" class="form-control" value="@DateTime.Today.ToString("dd/MM/yyyy")" placeholder="dd/mm/yyyy" required />
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label for="txtOrderId">Order ID</label>
+                            <input type="number" id="txtOrderId" name="orderID" class="form-control" value="@(orderId?.ToString() ?? "")" placeholder="Order ID" required />
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label for="drpapctype">APC Channel</label>
+                            <select id="drpapctype" name="channel" class="form-control" required>
+                                <option value="-1" selected="@(channel == -1)">-- Select APC Channel --</option>
+                                <option value="1" selected="@(channel == 1)">HYPASHIP</option>
+                                <option value="2" selected="@(channel == 2)">DHL PARCEL</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <button type="submit" class="btn btn-premium w-100">View Order</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            @if (showBottomValues && details != null)
+            {
+                <div class="carrier-card">
+                    <h3>Booking Specifications & Addresses</h3>
+
+                    <!-- APC HYPASHIP Form -->
+                    @if (channel == 1)
+                    {
+                        <div class="alert alert-info bg-dark border-secondary text-light mb-4">
+                            <strong><i class="fa fa-info-circle"></i> APC Channel Selected (Stubbed Mode)</strong>
+                            <p class="mb-0 text-muted">Bookings are dispatched to the mock APC Hypaship sandbox database. No live shipment is produced.</p>
+                        </div>
+                        
+                        <form asp-action="BookApc" method="post">
+                            <input type="hidden" name="orderId" value="@details.OrderId" />
+                            <input type="hidden" name="displayOrderId" value="@details.DisplayOrderId" />
+
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Product Name</label>
+                                    <input type="text" name="prdName" class="form-control" value="@details.ProductName" required />
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>Product Value (£)</label>
+                                    <input type="number" name="price" step="0.01" class="form-control" value="@details.ProductPrice" required />
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>APC Service</label>
+                                    <select name="serviceCode" class="form-control" required>
+                                        <option value="APCND16">ND16</option>
+                                        <option value="APCNS12">NS12</option>
+                                        <option value="APCNS09">NS09</option>
+                                        <option value="APCNS10">NS10</option>
+                                        <option value="APCLW16">LW16</option>
+                                        <option value="APCNC16">NC16</option>
+                                        <option value="APCXS16">XS16</option>
+                                        <option value="APCZN16">ZN16</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Customer Full Name</label>
+                                    <input type="text" name="fullName" class="form-control" value="@details.FirstName @details.LastName" required />
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Customer Email</label>
+                                    <input type="email" name="email" class="form-control" value="@details.Email" required />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Address Line 1</label>
+                                <input type="text" name="address1" class="form-control" value="@details.Address1" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Address Line 2</label>
+                                <input type="text" name="address2" class="form-control" value="@details.Address2" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 form-group">
+                                    <label>Postal Code</label>
+                                    <input type="text" name="zip" class="form-control" value="@details.Zip" required />
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    <label>Contact No</label>
+                                    <input type="text" name="phone" class="form-control" value="@details.Phone" required />
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    <label>City</label>
+                                    <input type="text" name="city" class="form-control" value="@details.City" required />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>County</label>
+                                    <input type="text" name="county" class="form-control" value="@details.County" />
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>Country Code</label>
+                                    <input type="text" class="form-control" value="GB" disabled />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Delivery Instructions</label>
+                                <textarea name="instructions" rows="2" class="form-control">PERISHABLE GOODS TRY NEIGHBORS BEFORE LEAVING AT SAFE PLACE</textarea>
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <button type="submit" class="btn btn-premium btn-lg">Book APC</button>
+                            </div>
+                        </form>
+                    }
+
+                    <!-- DHL PARCEL Form -->
+                    @if (channel == 2)
+                    {
+                        <div class="alert alert-info bg-dark border-secondary text-light mb-4">
+                            <strong><i class="fa fa-info-circle"></i> DHL Parcel Selected (Stubbed Mode)</strong>
+                            <p class="mb-0 text-muted">Retrieves mock shipping rates and processes stubbed collection dispatches to DHL system.</p>
+                        </div>
+
+                        <form asp-action="GetDhlRates" method="post" class="mb-4">
+                            <input type="hidden" name="orderId" value="@details.OrderId" />
+                            <input type="hidden" name="channel" value="2" />
+                            <input type="hidden" name="zip" value="@details.Zip" />
+                            <input type="hidden" name="city" value="@details.City" />
+                            <input type="hidden" name="price" value="@details.ProductPrice" />
+
+                            <div class="row align-items-center">
+                                <div class="col-md-9">
+                                    <p class="text-muted mb-0">Retrieve rates based on weight and dimensions (pre-filled inside DHL stubs).</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-premium w-100">Get DHL Rates</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        @if (showDhlBooking)
+                        {
+                            <hr class="border-secondary" />
+
+                            <form asp-action="BookDhl" method="post">
+                                <input type="hidden" name="orderId" value="@details.OrderId" />
+                                <input type="hidden" name="displayOrderId" value="@details.DisplayOrderId" />
+                                <input type="hidden" name="fullName" value="@details.FirstName @details.LastName" />
+
+                                <div class="row align-items-end">
+                                    <div class="col-md-8 form-group">
+                                        <label for="drpserviceType">Select DHL Service Type</label>
+                                        <select id="drpserviceType" name="serviceTypeCode" class="form-control" required>
+                                            @foreach (var rate in dhlRates)
+                                            {
+                                                <option value="@rate.ServiceTypeCode">@rate.ServiceTypeName : £@rate.TotalCharge.ToString("0.00")</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <button type="submit" class="btn btn-premium w-100">Book at DHL PARCEL</button>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Tracking & Actions Sidebar -->
+        <div class="col-lg-4 col-md-12">
+            <div class="carrier-card">
+                <h3>Track or Cancel Shipment</h3>
+                <p class="text-muted small">Perform label downloads, cancellations, or tracking checks on generated Waybills / Order IDs.</p>
+                
+                <div class="form-group mb-3">
+                    <label for="txtRecOrderId">Carrier Order ID / Waybill</label>
+                    <input type="text" id="txtRecOrderId" class="form-control" placeholder="Order ID or Waybill Number" />
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" onclick="submitCarrierAction('label')" class="btn btn-premium w-100 mb-2">
+                        <i class="fa fa-file-pdf-o"></i> Generate Label (PDF)
+                    </button>
+                    <button type="button" onclick="submitCarrierAction('track')" class="btn btn-secondary-premium w-100 mb-2">
+                        <i class="fa fa-search"></i> Track Order
+                    </button>
+                    <button type="button" onclick="submitCarrierAction('cancel')" class="btn btn-secondary-premium w-100 btn-danger-hover">
+                        <i class="fa fa-times"></i> Cancel Order
+                    </button>
+                </div>
+            </div>
+
+            <!-- Credentials Indicator (Info Box) -->
+            <div class="carrier-card bg-transparent border-secondary text-muted">
+                <h4 class="text-white" style="font-size: 1rem;"><i class="fa fa-cog"></i> Configuration State</h4>
+                <p class="small mb-2">Credentials pulled from the database for the active bakery webshop:</p>
+                <table class="table table-sm table-dark text-muted border-0 mb-0" style="font-size: 0.85rem;">
+                    <tbody>
+                        <tr>
+                            <td class="border-0">Bakery Email:</td>
+                            <td class="border-0 text-white">@(apcCreds?.ApiEmailId ?? "Not Found")</td>
+                        </tr>
+                        <tr>
+                            <td class="border-0">Company Name:</td>
+                            <td class="border-0 text-white text-wrap">@(apcCreds?.CompanyName ?? "Not Found")</td>
+                        </tr>
+                        <tr>
+                            <td class="border-0">Credentials Source:</td>
+                            <td class="border-0 text-info">tbl_Bakery_APC</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forms for carrier actions trigger -->
+<form id="carrierActionForm" method="post" style="display:none;">
+    <input type="hidden" name="orderId" value="@(orderId ?? 0)" />
+    <input type="hidden" name="recOrderId" id="recOrderIdVal" />
+</form>
+
+<script>
+    function submitCarrierAction(actionName) {
+        var recId = document.getElementById("txtRecOrderId").value;
+        if (!recId) {
+            alert("Please enter a Carrier Order ID or Waybill first.");
+            return;
+        }
+        var form = document.getElementById("carrierActionForm");
+        form.action = "/businessapc/" + actionName;
+        document.getElementById("recOrderIdVal").value = recId;
+        form.submit();
+    }
+</script>

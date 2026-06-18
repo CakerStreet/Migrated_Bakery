@@ -1,0 +1,159 @@
+@{
+    ViewData["Title"] = "Manage Delivery Route Charges";
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Controllers.DeliveryRouteChargesController.ChargeTemplate>
+        ?? new List<CakerStreet.Business.Controllers.DeliveryRouteChargesController.ChargeTemplate>();
+    var bands = ViewBag.Bands as List<CakerStreet.Business.Controllers.DeliveryRouteChargesController.ChargeBand>
+        ?? new List<CakerStreet.Business.Controllers.DeliveryRouteChargesController.ChargeBand>();
+    var selectedId = (long)(ViewBag.SelectedTemplateId ?? 0L);
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style>
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .band-table input { width: 80px; text-align: center; }
+        .band-table select { width: 120px; }
+        .band-table td { vertical-align: middle; text-align: center; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Delivery Route Charges</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+        <div class="clearfix"></div>
+
+        <div class="col-md-10">
+            <div class="form-group">
+                <label style="font-weight:bold;">Charge Template</label>
+                <select id="drpTemplate" class="form-control" style="max-width:300px;display:inline-block;">
+                    <option value="0">--Select Template--</option>
+                    @foreach (var t in templates)
+                    {
+                        <option value="@t.Id" @(t.Id == selectedId ? "selected" : "")>@t.Title</option>
+                    }
+                </select>
+                <button type="button" class="btn btn-primary btn-sm" onclick="showAddTemplate();" style="margin-left:10px;">+ New Template</button>
+            </div>
+
+            @* ─── Add/Edit Template Popup ─────────────────────── *@
+            <div id="divTemplateForm" style="display:none;margin:10px 0;padding:10px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px;">
+                <input type="hidden" id="hfTemplateId" value="0" />
+                <label>Title:</label>
+                <input type="text" id="txtTemplateTitle" class="form-control" style="max-width:200px;display:inline-block;" />
+                <label style="margin-left:10px;">Order:</label>
+                <input type="text" id="txtTemplateOrder" class="form-control" style="max-width:60px;display:inline-block;" value="1" />
+                <button type="button" class="btn btn-danger btn-sm" style="margin-left:10px;" onclick="saveTemplate();">Save</button>
+                <button type="button" class="btn btn-default btn-sm" onclick="$('#divTemplateForm').hide();">Cancel</button>
+            </div>
+
+            @* ─── Charge Bands ─────────────────────────────────── *@
+            @if (selectedId > 0)
+            {
+                <h4 style="margin-top:20px;">Distance Charge Bands</h4>
+                <p><small>Configure pricing tiers based on delivery distance (miles).</small></p>
+
+                <table class="table table-bordered band-table" id="tblBands">
+                    <thead>
+                        <tr>
+                            <th>Up To (miles)</th>
+                            <th>Charge (£)</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (bands.Count > 0)
+                        {
+                            foreach (var b in bands)
+                            {
+                                <tr data-id="@b.Id">
+                                    <td><input type="text" class="form-control input-sm txt-max" value="@b.MaxDistance.ToString("0.##")" /></td>
+                                    <td><input type="text" class="form-control input-sm txt-amount" value="@b.Amount.ToString("0.00")" /></td>
+                                    <td>
+                                        <select class="form-control input-sm drp-type">
+                                            <option value="1" @(b.PriceType == 1 ? "selected" : "")>Fixed</option>
+                                            <option value="2" @(b.PriceType == 2 ? "selected" : "")>Per Mile</option>
+                                        </select>
+                                    </td>
+                                    <td><a href="javascript:void(0);" class="text-danger" onclick="$(this).closest('tr').remove();">Remove</a></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr data-id="0">
+                                <td><input type="text" class="form-control input-sm txt-max" value="5" /></td>
+                                <td><input type="text" class="form-control input-sm txt-amount" value="5.00" /></td>
+                                <td>
+                                    <select class="form-control input-sm drp-type">
+                                        <option value="1" selected>Fixed</option>
+                                        <option value="2">Per Mile</option>
+                                    </select>
+                                </td>
+                                <td><a href="javascript:void(0);" class="text-danger" onclick="$(this).closest('tr').remove();">Remove</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <button type="button" class="btn btn-default btn-sm" onclick="addBandRow();">+ Add Band</button>
+                <button type="button" class="btn btn-danger" style="margin-left:15px;" onclick="saveBands();">Save Charges</button>
+            }
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script>
+function showMessage(msg, ok) { var $d=$('#divMessage'); $d.removeClass('alert-danger alert-success alert-msg').addClass(ok?'alert alert-success':'alert alert-danger').text(msg).fadeIn(); setTimeout(function(){$d.fadeOut(function(){$(this).addClass('alert-msg');});},4000); }
+
+$('#drpTemplate').on('change', function() {
+    var v = $(this).val();
+    window.location.href = v !== '0' ? '/managedeliveryroutecharges?ID=' + v : '/managedeliveryroutecharges';
+});
+
+function showAddTemplate() { $('#hfTemplateId').val('0'); $('#txtTemplateTitle').val(''); $('#txtTemplateOrder').val('1'); $('#divTemplateForm').show(); }
+
+function saveTemplate() {
+    var title = $.trim($('#txtTemplateTitle').val());
+    if (!title) { alert('Enter template title'); return; }
+    $.post('/managedeliveryroutecharges/savetemplate', { id: $('#hfTemplateId').val(), title: title, displayOrder: $('#txtTemplateOrder').val() }, function(r) {
+        if (r.success) { window.location.href = '/managedeliveryroutecharges?ID=' + r.templateId; }
+        else { showMessage(r.message, false); }
+    });
+}
+
+function addBandRow() {
+    var lastMax = 0;
+    $('#tblBands tbody tr:last .txt-max').each(function() { lastMax = parseFloat($(this).val()) || 0; });
+    var html = '<tr data-id="0"><td><input type="text" class="form-control input-sm txt-max" value="' + (lastMax + 10) + '" /></td><td><input type="text" class="form-control input-sm txt-amount" value="3.00" /></td><td><select class="form-control input-sm drp-type"><option value="1">Fixed</option><option value="2" selected>Per Mile</option></select></td><td><a href="javascript:void(0);" class="text-danger" onclick="$(this).closest(\'tr\').remove();">Remove</a></td></tr>';
+    $('#tblBands tbody').append(html);
+}
+
+function saveBands() {
+    var bands = [];
+    $('#tblBands tbody tr').each(function() {
+        bands.push({
+            id: parseInt($(this).data('id')) || 0,
+            minDistance: 0,
+            maxDistance: parseFloat($(this).find('.txt-max').val()) || 0,
+            amount: parseFloat($(this).find('.txt-amount').val()) || 0,
+            priceType: parseInt($(this).find('.drp-type').val()) || 1
+        });
+    });
+    if (bands.length === 0) { alert('Add at least one band.'); return; }
+    $.ajax({ url: '/managedeliveryroutecharges/savebands', type: 'POST', contentType: 'application/json', data: JSON.stringify({ templateId: @selectedId, bands: bands }),
+        success: function(r) { showMessage(r.message, r.success); },
+        error: function() { showMessage('Save failed.', false); }
+    });
+}
+</script>
+}

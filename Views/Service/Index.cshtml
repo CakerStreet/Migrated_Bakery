@@ -1,0 +1,357 @@
+@using CakerStreet.Business.Services
+@{
+    ViewData["Title"] = "Manage Services";
+    var result = ViewBag.Result as ServiceListResult ?? new ServiceListResult();
+    var filterStatus = ViewBag.FilterStatus as int? ?? 0;
+    var searchKeyword = ViewBag.SearchKeyword as string ?? "";
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+}
+
+@section Head {
+    <link href="/bakery_content/css/sellcss.css?ver=1.01" rel="stylesheet" />
+    <style type="text/css">
+        .filter-radio {
+            list-style: none;
+            padding-left: 0;
+            display: inline-flex;
+            margin-bottom: 0;
+            margin-top: 5px;
+        }
+        .filter-radio li {
+            margin-right: 15px;
+            display: inline-block;
+        }
+        .filter-radio input[type="radio"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .filter-radio label {
+            font-weight: normal;
+            vertical-align: middle;
+            margin-bottom: 0;
+        }
+        .middleSection {
+            width: 100%;
+        }
+        .bg-red {
+            background-color: #df3f42 !important;
+            color: #fff !important;
+            border-color: #df3f42 !important;
+        }
+        .bg-black {
+            background-color: #000 !important;
+            color: #fff !important;
+            border-color: #000 !important;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Services</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        @if (!string.IsNullOrEmpty(Context.Request.Query["msg"]))
+        {
+            <div id="div_topmessagepnl" class="alert alert-danger">
+                @Context.Request.Query["msg"]
+            </div>
+        }
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                <!-- Filters panel -->
+                <div id="dvFilter" class="col-md-12 form-group flush" style="margin-bottom: 15px;">
+                    <!-- Bulk Actions -->
+                    <div class="col-md-3">
+                        <div class="btn-group" id="actionbutton">
+                            <button class="btn btn-danger bg-red" type="button">
+                                Action on <span id="spnfilterselected">0</span> selected
+                            </button>
+                            <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false" style="padding: 6px 12px;">
+                                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul role="menu" class="dropdown-menu">
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('inactive');">Set as Inactive</a></li>
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('active');">Set as Active</a></li>
+                                <li><a href="javascript:void(0);" onclick="submitBulkAction('delete');">Remove Item(s)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Filter Status -->
+                    <div class="col-md-5">
+                        <ul class="filter-radio" id="rdBtnFilterstatus">
+                            <li>
+                                <input type="radio" name="statusFilter" id="statusAll" value="0" @(filterStatus == 0 ? "checked" : "") onchange="onFilterChange();" />
+                                <label for="statusAll">All</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="statusFilter" id="statusActive" value="1" @(filterStatus == 1 ? "checked" : "") onchange="onFilterChange();" />
+                                <label for="statusActive">Active</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="statusFilter" id="statusInactive" value="2" @(filterStatus == 2 ? "checked" : "") onchange="onFilterChange();" />
+                                <label for="statusInactive">Inactive</label>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Keyword Search -->
+                    <div class="col-md-3" id="div_search">
+                        <div style="display: flex;">
+                            <input type="text" id="txtsearch" class="form-control input-sm" placeholder="Search keyword" value="@searchKeyword" />
+                            <button id="btnSearch" class="btn btn-danger btn-sm" style="margin-left: 5px;" onclick="onSearchClick();">Go</button>
+                            <button id="btnviewall" class="btn btn-danger btn-sm @(string.IsNullOrEmpty(searchKeyword) ? "hide" : "")" style="margin-left: 5px;" onclick="clearSearch();">X</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add New Service Top Button -->
+                <div class="col-md-12 form-group flush" style="margin-bottom: 15px;">
+                    <a id="hpAddNewItem" href="/addnewservice" class="btn btn-danger bg-red btn-lg square">Add New Service</a>
+                </div>
+                <div class="clearfix"></div>
+
+                <!-- Main Grid -->
+                <form id="frmBulkAction" action="/manageservices/bulkaction" method="post">
+                    <input type="hidden" name="actionType" id="hidBulkAction" value="" />
+                    <div class="table prdlstouter" id="our_products" style="display: @(result.Items.Count > 0 ? "block" : "none"); margin-top: 15px;">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th id="thchkheader" class="chk headertext" style="text-align: center; width: 45px;">
+                                        <input type="checkbox" onchange="chkuncheckbyheader();" id="chk" />
+                                    </th>
+                                    <th class="status">Status</th>
+                                    <th class="img" style="width: 80px;">&nbsp;</th>
+                                    <th class="name">Title</th>
+                                    <th class="sku">Category</th>
+                                    <th class="price" style="width: 100px;">Price</th>
+                                    <th class="sort">Recurring Type</th>
+                                    <th id="thSold" class="sold" style="text-align: center;">Recommended</th>
+                                    <th id="thAction" class="action" style="min-width: 150px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < result.Items.Count; i++)
+                                {
+                                    var item = result.Items[i];
+                                    <tr class="rowtext" id="row_@item.ServiceId">
+                                        <td class="chk" style="text-align: center;">
+                                            <input type="checkbox" name="selectedIds" value="@item.ServiceId" data-id="@item.ServiceId" onchange="onRowCheckChange();" />
+                                        </td>
+                                        <td>
+                                            @(item.IsActive ? "Active" : "Inactive")<br />
+                                            @item.ModifiedOn.ToString("dd/MM/yy")
+                                        </td>
+                                        <td class="img">
+                                            <a href="/editservice?serviceID=@item.ServiceId" class="ancPrdName">
+                                                @if (!string.IsNullOrEmpty(item.Image))
+                                                {
+                                                    <img id="imgPrd_@item.ServiceId" src="/upload/service_images/resized_300_300/@item.Image" style="max-height: 60px; max-width: 60px; border-width: 0px;" />
+                                                }
+                                                else
+                                                {
+                                                    <img id="imgPrd_@item.ServiceId" src="/images/blankImages/img75.jpg" style="max-height: 60px; max-width: 60px; border-width: 0px;" />
+                                                }
+                                            </a>
+                                        </td>
+                                        <td class="name">
+                                            @item.Name
+                                        </td>
+                                        <td class="sku">
+                                            @item.ParentCat -> @item.ChildCat
+                                        </td>
+                                        <td class="price">
+                                            £@item.MarketPrice.ToString("0.00")
+                                        </td>
+                                        <td class="sort">
+                                            @(item.RecurringOrOnline == 2 ? "One Time" : "Recurring")
+                                            @(item.RecurringOrOnline == 1 ? $"({item.RecurringMode})" : "")
+                                        </td>
+                                        <td class="sold text-center">
+                                            @(item.IsRecommend ? "Yes" : "No")
+                                        </td>
+                                        <td class="action">
+                                            <div class="btn-group">
+                                                <a href="/editservice?serviceID=@item.ServiceId" class="btn edtBtn smalledit">Edit</a>
+                                                <button data-toggle="dropdown" class="btn dropdown-toggle btnedit" type="button" aria-expanded="false">
+                                                    <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                                <ul role="menu" class="dropdown-menu">
+                                                    <li><a href="/editservice?serviceID=@item.ServiceId">Edit Item</a></li>
+                                                    <li>
+                                                        <a href="javascript:void(0);" onclick="removeSingleItem(@item.ServiceId);">Remove Item</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Bottom Buttons Row -->
+                    <div class="divbtnmain_outer" id="divbtnmain_outer" style="margin-top: 15px;">
+                        <div class="btn-group">
+                            <a id="hlAddNewItem" href="/addnewservice" class="btn btn-danger bg-red btn-lg square">Add New Service</a>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Paging Control -->
+                @if (result.TotalPages > 1)
+                {
+                    <div class="pagination pagination-right" id="pnlPaging" style="margin-top: 20px;">
+                        <div class="paging_outer">
+                            <ul class="left">
+                                <li><a href="@GetPagingUrl(1)">First</a></li>
+                                <li><a href="@GetPagingUrl(Math.Max(1, currentPage - 1))">&laquo; Prev</a></li>
+                            </ul>
+                            <ul class="numbering">
+                                @for (int i = 1; i <= result.TotalPages; i++)
+                                {
+                                    <li class="@(i == currentPage ? "active" : "")">
+                                        <a href="@GetPagingUrl(i)">@i</a>
+                                    </li>
+                                }
+                            </ul>
+                            <ul class="right">
+                                <li><a href="@GetPagingUrl(Math.Min(result.TotalPages, currentPage + 1))">Next &raquo;</a></li>
+                                <li><a href="@GetPagingUrl(result.TotalPages)">Last</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                @if (result.Items.Count == 0)
+                {
+                    <div id="dvMsg" class="alert alert-error" style="margin-top: 15px;">
+                        No Products Found
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="frmSingleRemove" action="/manageservices/remove" method="post">
+    <input type="hidden" name="serviceID" id="removeServiceID" value="" />
+</form>
+
+@section FooterScripts {
+    <script type="text/javascript">
+        function chkuncheckbyheader() {
+            var checked = $('#chk').is(':checked');
+            $('.rowtext .chk input[type="checkbox"]').prop('checked', checked);
+            onRowCheckChange();
+        }
+
+        function onRowCheckChange() {
+            var count = $('.rowtext .chk input[type="checkbox"]:checked').length;
+            $('#spnfilterselected').text(count);
+        }
+
+        function submitBulkAction(action) {
+            var count = $('.rowtext .chk input[type="checkbox"]:checked').length;
+            if (count === 0) {
+                alert("Please select at least one item.");
+                return;
+            }
+
+            if (action === 'delete') {
+                if (!confirm("Are you sure you want to remove selected item(s)?")) {
+                    return;
+                }
+            }
+
+            $('#hidBulkAction').val(action);
+            $('#frmBulkAction').submit();
+        }
+
+        function removeSingleItem(id) {
+            if (confirm("Are you sure you want to remove this item?")) {
+                $('#removeServiceID').val(id);
+                $('#frmSingleRemove').submit();
+            }
+        }
+
+        function onFilterChange() {
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function onSearchClick() {
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function clearSearch() {
+            $('#txtsearch').val('');
+            var url = buildFilterUrl(1);
+            window.location.href = url;
+        }
+
+        function buildFilterUrl(pageNo) {
+            var url = '/manageservices';
+            if (pageNo > 1) {
+                url += '/page-' + pageNo;
+            }
+
+            var queryParams = [];
+            var search = $('#txtsearch').val();
+            if (search) {
+                var escaped = search.replace(/\//g, '').replace(/&/g, '').replace(/,/g, '').replace(/:/g, '').replace(/\?/g, '').replace(/'/g, '').replace(/\(/g, '').replace(/\)/g, '').replace(/"/g, '').replace(/ /g, '+').toLowerCase();
+                queryParams.push('search=' + escaped);
+            }
+
+            var filterStatus = $('input[name="statusFilter"]:checked').val() || '0';
+            if (filterStatus !== '0') {
+                queryParams.push('filterstatus=' + filterStatus);
+            }
+
+            if (queryParams.length > 0) {
+                url += '?' + queryParams.join('&');
+            }
+
+            return url;
+        }
+    </script>
+}
+
+@functions {
+    public string GetPagingUrl(int pageNo)
+    {
+        var url = $"/manageservices";
+        if (pageNo > 1)
+        {
+            url += $"/page-{pageNo}";
+        }
+        var queryParams = new List<string>();
+        if (!string.IsNullOrEmpty(ViewBag.SearchKeyword))
+        {
+            queryParams.Add($"search={Uri.EscapeDataString(ViewBag.SearchKeyword)}");
+        }
+        if (ViewBag.FilterStatus != 0)
+        {
+            queryParams.Add($"filterstatus={ViewBag.FilterStatus}");
+        }
+        if (queryParams.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParams);
+        }
+        return url;
+    }
+}

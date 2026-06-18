@@ -1,0 +1,21 @@
+@{
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Print</title>
+    <link href="@(cdnBase)bakery_content/bakery_content/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        @@media print {
+            body { margin: 0; padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    @RenderBody()
+</body>
+</html>

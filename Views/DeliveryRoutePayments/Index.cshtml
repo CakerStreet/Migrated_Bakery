@@ -1,0 +1,234 @@
+@{
+    ViewData["Title"] = "Manage Delivery Route Payments";
+    var drivers = ViewBag.Drivers as List<CakerStreet.Business.Services.DriverDropdownItem> ?? new List<CakerStreet.Business.Services.DriverDropdownItem>();
+    var result = ViewBag.RoutePayments as CakerStreet.Business.Services.RoutePaymentListResult ?? new CakerStreet.Business.Services.RoutePaymentListResult();
+    var fromDate = ViewBag.FromDate as string ?? DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd");
+    var toDate = ViewBag.ToDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var selectedDriverId = (int)(ViewBag.SelectedDriverId ?? -1);
+    var selectedStatus = (int)(ViewBag.SelectedStatus ?? -1);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var paymentsEnabled = (bool)(ViewBag.PaymentsEnabled ?? false);
+}
+
+@section Head {
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .route-payments-filter { margin-bottom: 15px; }
+        .route-payments-filter label { margin-right: 5px; font-weight: 600; }
+        .route-payments-filter input[type="date"],
+        .route-payments-filter select { margin-right: 10px; }
+        .badge-paid { background-color: #5cb85c; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; }
+        .badge-unpaid { background-color: #d9534f; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; }
+        .total-unpaid { font-size: 16px; font-weight: bold; color: #d9534f; margin: 10px 0; }
+        .paging-nav { text-align: center; margin-top: 15px; }
+        .paging-nav a { margin: 0 3px; padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #333; }
+        .paging-nav a.active { background-color: #d9534f; color: #fff; border-color: #d9534f; }
+        .paging-nav a.disabled { color: #ccc; pointer-events: none; }
+        .btn-markpaid { margin-top: 10px; }
+        .feature-warning { color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 8px 12px; border-radius: 4px; margin-top: 10px; font-size: 13px; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Delivery Route Payments</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        @* ─── Filters ────────────────────────────────────────────────────────── *@
+        <div class="route-payments-filter">
+            <form method="get" action="/managedeliveryroutespayments" style="display: inline;">
+                <label for="from">From:</label>
+                <input type="date" id="from" name="from" value="@fromDate" />
+                <label for="to">To:</label>
+                <input type="date" id="to" name="to" value="@toDate" />
+
+                <label for="driverID">Driver:</label>
+                <select id="driverID" name="driverID">
+                    <option value="-1">--Select Driver--</option>
+                    @foreach (var driver in drivers)
+                    {
+                        var sel = driver.Id == selectedDriverId ? "selected" : "";
+                        <option value="@driver.Id" @sel>@driver.Name</option>
+                    }
+                    <option value="0" @(selectedDriverId == 0 ? "selected" : "")>--Unlinked--</option>
+                </select>
+
+                <label for="status">Status:</label>
+                <select id="status" name="status">
+                    <option value="-1" @(selectedStatus == -1 ? "selected" : "")>All</option>
+                    <option value="0" @(selectedStatus == 0 ? "selected" : "")>Unpaid</option>
+                    <option value="1" @(selectedStatus == 1 ? "selected" : "")>Paid</option>
+                </select>
+
+                <button type="submit" class="btn btn-danger btn-sm">Go</button>
+            </form>
+        </div>
+
+        <div class="clearfix"></div>
+
+        @* ─── Total Unpaid ───────────────────────────────────────────────────── *@
+        @if (result.TotalUnpaidAmount > 0)
+        {
+            <div class="total-unpaid">
+                Total Unpaid: &pound;@result.TotalUnpaidAmount.ToString("0.00")
+            </div>
+        }
+
+        @* ─── Results Table ──────────────────────────────────────────────────── *@
+        @if (result.Items.Count == 0)
+        {
+            <div class="alert alert-info">No routes found for the selected filters.</div>
+        }
+        else
+        {
+            <div class="table prdlstouter">
+                <table class="table table-bordred table-striped" id="tblRoutePayments">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="chkSelectAll" onclick="toggleSelectAll(this);" /></th>
+                            <th>Route Title</th>
+                            <th>Date</th>
+                            <th>Driver</th>
+                            <th>Charges (&pound;)</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in result.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!item.IsChargePaid)
+                                    {
+                                        <input type="checkbox" class="chk-route" value="@item.RouteId" />
+                                    }
+                                </td>
+                                <td>@item.RouteTitle</td>
+                                <td>@item.RouteDate.ToString("dd/MM/yyyy")</td>
+                                <td>@item.DriverName</td>
+                                <td>@item.DriverCharges.ToString("0.00")</td>
+                                <td>
+                                    @if (item.IsChargePaid)
+                                    {
+                                        <span class="badge-paid">Paid</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-unpaid">Unpaid</span>
+                                    }
+                                </td>
+                                <td>@item.PaidRemarks</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @* ─── Mark as Paid Button ────────────────────────────────────────── *@
+            <div>
+                <button type="button" class="btn btn-success btn-markpaid" onclick="markAsPaid();">
+                    Mark as Paid
+                </button>
+                @if (!paymentsEnabled)
+                {
+                    <div class="feature-warning">
+                        <strong>Note:</strong> Route payments are currently in read-only migration mode. The "Mark as Paid" action is disabled.
+                    </div>
+                }
+            </div>
+
+            @* ─── Pagination ─────────────────────────────────────────────────── *@
+            @if (result.TotalPages > 1)
+            {
+                <div class="paging-nav">
+                    @{
+                        var baseUrl = $"/managedeliveryroutespayments?from={fromDate}&to={toDate}&driverID={selectedDriverId}&status={selectedStatus}";
+                    }
+
+                    @if (currentPage > 1)
+                    {
+                        <a href="@(baseUrl)&pageno=@(currentPage - 1)">&laquo; Prev</a>
+                    }
+                    else
+                    {
+                        <a class="disabled">&laquo; Prev</a>
+                    }
+
+                    @for (int i = 1; i <= result.TotalPages; i++)
+                    {
+                        if (i == currentPage)
+                        {
+                            <a class="active">@i</a>
+                        }
+                        else if (i <= 2 || i > result.TotalPages - 2 || (i >= currentPage - 2 && i <= currentPage + 2))
+                        {
+                            <a href="@(baseUrl)&pageno=@i">@i</a>
+                        }
+                        else if (i == 3 || i == result.TotalPages - 2)
+                        {
+                            <a class="disabled">...</a>
+                        }
+                    }
+
+                    @if (currentPage < result.TotalPages)
+                    {
+                        <a href="@(baseUrl)&pageno=@(currentPage + 1)">Next &raquo;</a>
+                    }
+                    else
+                    {
+                        <a class="disabled">Next &raquo;</a>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function toggleSelectAll(el) {
+        var checkboxes = document.querySelectorAll('.chk-route');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = el.checked;
+        }
+    }
+
+    function markAsPaid() {
+        var selected = [];
+        var checkboxes = document.querySelectorAll('.chk-route:checked');
+        for (var i = 0; i < checkboxes.length; i++) {
+            selected.push(parseInt(checkboxes[i].value));
+        }
+
+        if (selected.length === 0) {
+            alert('Please select at least one unpaid route.');
+            return;
+        }
+
+        var remarks = prompt('Enter payment remarks/transaction ID (optional):') || '';
+
+        $.ajax({
+            url: '/managedeliveryroutespayments/markpaid',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ routeIds: selected, remarks: remarks }),
+            success: function (r) {
+                if (r.success) {
+                    alert('Routes marked as paid successfully.');
+                    location.reload();
+                } else {
+                    alert(r.message || 'Failed to mark routes as paid.');
+                }
+            },
+            error: function () {
+                alert('An error occurred. Please try again.');
+            }
+        });
+    }
+</script>
+}

@@ -1,0 +1,408 @@
+@{
+    ViewData["Title"] = "Manage Allergen Matrix";
+}
+
+@section Head {
+    <link href="@(ViewBag.CdnBase)bakery_content/bakery_content/css/sellcss.css" rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal { font-weight: normal; }
+        .img img { max-height: 60px; max-width: 60px; }
+        .table.prdlstouter { margin-top: 20px; }
+        .normallink {
+            color: #DF3F42;
+            text-decoration: underline;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .normallink:hover {
+            color: #b32d30;
+            text-decoration: underline;
+        }
+        .btn-red {
+            background-color: #DF3F42;
+            border-color: #DF3F42;
+            color: #fff;
+        }
+        .btn-red:hover, .btn-red:focus {
+            background-color: #b32d30;
+            border-color: #b32d30;
+            color: #fff;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="clearfix"></div>
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1 col-xs-1">
+                    <a data-toggle="collapse" href="#collapse2" aria-expanded="true">
+                        <span class="glyphicon glyphicon-minus" style="color: white; font-size: 16px; top: 12px;"></span>
+                    </a>
+                </div>
+                <div class="col-md-11 col-xs-11" style="padding-left: 0;">
+                    <h2>Manage Recipe Ingredients & Allergens</h2>
+                </div>
+            </div>
+
+            <div class="col-md-12 panel-collapse collapse in" id="collapse2" aria-expanded="true" style="padding-top: 15px;">
+                <div id="divMessage" class="alert alert-msg" style="display: none; margin: 10px 0;"></div>
+                
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Select Type *</label>
+                        <div class="col-sm-3">
+                            <select class="form-control" id="ddlType" onchange="onTypeChanged();">
+                                <option value="0">--Select Type--</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Select Dietary *</label>
+                        <div class="col-sm-3">
+                            <select class="form-control" id="ddlDietary" onchange="onDietaryChanged();" disabled>
+                                <option value="0">--Select Dietary--</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Select Sponge *</label>
+                        <div class="col-sm-3">
+                            <select class="form-control" id="ddlSponge" onchange="onSpongeChanged();" disabled>
+                                <option value="0">--Select Sponge--</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Select Filling *</label>
+                        <div class="col-sm-3">
+                            <select class="form-control" id="ddlFilling" onchange="onFillingChanged();" disabled>
+                                <option value="0">--Select Filling--</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Matrix Grid Section -->
+                    <div id="matrixSection" style="display: none;">
+                        <div class="table prdlstouter" id="our_products">
+                            <table class="table table-bordred table-striped">
+                                <thead>
+                                    <tr>
+                                        <th class="name">Ingredient</th>
+                                        <th class="name">Allergens - Optional</th>
+                                        <th class="action" style="width:100px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tblMatrixBody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="col-sm-12" style="margin-top: 10px; margin-bottom: 15px; padding-left: 0;">
+                            <a href="javascript:void(0);" class="normallink" onclick="addRow();">+ Add More</a>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-3" style="padding-left: 0;">
+                                <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm" onclick="saveMatrix();">Save Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    var deletedIds = [];
+
+    // ─── Init: Load Cake Types ──────────────────────────────────────────────────
+
+    $(document).ready(function () {
+        loadCakeTypes();
+    });
+
+    function loadCakeTypes() {
+        $.get('/manageallergenmatrix/caketypes', function (r) {
+            if (r.success && r.data) {
+                var $ddl = $('#ddlType');
+                $ddl.find('option:gt(0)').remove();
+                $.each(r.data, function (i, item) {
+                    $ddl.append('<option value="' + item.id + '">' + item.name + '</option>');
+                });
+            }
+        });
+    }
+
+    // ─── Cascading Dropdown Handlers ────────────────────────────────────────────
+
+    function onTypeChanged() {
+        var val = $('#ddlType').val();
+        deletedIds = [];
+
+        // Reset downstream
+        resetDropdown('#ddlDietary', '--Select Dietary--');
+        resetDropdown('#ddlSponge', '--Select Sponge--');
+        resetDropdown('#ddlFilling', '--Select Filling--');
+        $('#ddlSponge').prop('disabled', true);
+        $('#ddlFilling').prop('disabled', true);
+
+        if (val !== '0') {
+            $('#ddlDietary').prop('disabled', false);
+            loadFlavours('2200', '#ddlDietary', '--Select Dietary--');
+            loadMatrix();
+        } else {
+            $('#ddlDietary').prop('disabled', true);
+            hideMatrix();
+        }
+    }
+
+    function onDietaryChanged() {
+        var val = $('#ddlDietary').val();
+        deletedIds = [];
+
+        // Reset downstream
+        resetDropdown('#ddlSponge', '--Select Sponge--');
+        resetDropdown('#ddlFilling', '--Select Filling--');
+        $('#ddlFilling').prop('disabled', true);
+
+        if (val !== '0') {
+            $('#ddlSponge').prop('disabled', false);
+            loadFlavours('2201', '#ddlSponge', '--Select Sponge--');
+        } else {
+            $('#ddlSponge').prop('disabled', true);
+        }
+
+        loadMatrix();
+    }
+
+    function onSpongeChanged() {
+        var val = $('#ddlSponge').val();
+        deletedIds = [];
+
+        // Reset downstream
+        resetDropdown('#ddlFilling', '--Select Filling--');
+
+        if (val !== '0') {
+            $('#ddlFilling').prop('disabled', false);
+            loadFlavours('2202', '#ddlFilling', '--Select Filling--');
+        } else {
+            $('#ddlFilling').prop('disabled', true);
+        }
+
+        loadMatrix();
+    }
+
+    function onFillingChanged() {
+        deletedIds = [];
+        loadMatrix();
+    }
+
+    function resetDropdown(selector, defaultText) {
+        $(selector).find('option:gt(0)').remove();
+        $(selector).val('0');
+        if ($(selector).find('option').length === 1) {
+            $(selector).find('option:first').text(defaultText);
+        }
+    }
+
+    function loadFlavours(parentId, selector, defaultText) {
+        $.get('/manageallergenmatrix/flavours?parentId=' + parentId, function (r) {
+            if (r.success && r.data) {
+                var $ddl = $(selector);
+                $ddl.find('option:gt(0)').remove();
+                $.each(r.data, function (i, item) {
+                    $ddl.append('<option value="' + item.id + '">' + item.name + '</option>');
+                });
+            }
+        });
+    }
+
+    // ─── Matrix Grid ────────────────────────────────────────────────────────────
+
+    function loadMatrix() {
+        var cakeTypeId = $('#ddlType').val();
+        if (cakeTypeId === '0') {
+            hideMatrix();
+            return;
+        }
+
+        var dietaryId = $('#ddlDietary').val() || '0';
+        var spongeId = $('#ddlSponge').val() || '0';
+        var fillingId = $('#ddlFilling').val() || '0';
+
+        $.get('/manageallergenmatrix/matrix', {
+            cakeTypeId: cakeTypeId,
+            dietaryId: dietaryId,
+            spongeId: spongeId,
+            fillingId: fillingId
+        }, function (r) {
+            if (r.success) {
+                renderMatrix(r.data);
+                $('#matrixSection').show();
+            }
+        });
+    }
+
+    function renderMatrix(rows) {
+        var $tbody = $('#tblMatrixBody');
+        $tbody.empty();
+
+        if (rows.length === 0) {
+            // Add one empty row by default
+            addRow();
+            return;
+        }
+
+        $.each(rows, function (i, row) {
+            appendRow(row.allergenMatrixID, row.cakeTypeID, row.flvID1, row.flvID2, row.flvID3, row.ingredient, row.allergens, i + 1);
+        });
+    }
+
+    function appendRow(matrixId, cakeTypeId, flvId1, flvId2, flvId3, ingredient, allergens, rowNum) {
+        var $tbody = $('#tblMatrixBody');
+        var num = rowNum || ($tbody.find('tr').length + 1);
+
+        var html = '<tr class="matrixRow rowtext">' +
+            '<td class="name">' +
+                '<input type="hidden" class="hfID" value="' + num + '" />' +
+                '<input type="hidden" class="hfMatrixID" value="' + (matrixId || 0) + '" />' +
+                '<input type="hidden" class="hfCakeTypeID" value="' + (cakeTypeId || 0) + '" />' +
+                '<input type="hidden" class="hfFlvID1" value="' + (flvId1 || 0) + '" />' +
+                '<input type="hidden" class="hfFlvID2" value="' + (flvId2 || 0) + '" />' +
+                '<input type="hidden" class="hfFlvID3" value="' + (flvId3 || 0) + '" />' +
+                '<input type="text" class="form-control input-sm txtIngredient" style="max-width:150px; display:inline;" value="' + escapeHtml(ingredient || '') + '" placeholder="Enter Ingredient" />' +
+            '</td>' +
+            '<td class="name"><input type="text" class="form-control input-sm txtAllergens" style="max-width:150px; display:inline;" value="' + escapeHtml(allergens || '') + '" placeholder="Enter Allergens" /></td>' +
+            '<td class="action"><a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="deleteMatrixRow(this);">Delete</a></td>' +
+            '</tr>';
+
+        $tbody.append(html);
+    }
+
+    function addRow() {
+        var cakeTypeId = $('#ddlType').val() || '0';
+        var dietaryId = $('#ddlDietary').val() || '0';
+        var spongeId = $('#ddlSponge').val() || '0';
+        var fillingId = $('#ddlFilling').val() || '0';
+
+        appendRow(0, cakeTypeId, dietaryId, spongeId, fillingId, '', '');
+        renumberRows();
+    }
+
+    function deleteMatrixRow(btn) {
+        var $row = $(btn).closest('tr');
+        var matrixId = parseInt($row.find('.hfMatrixID').val());
+
+        if (matrixId > 0) {
+            deletedIds.push(matrixId);
+        }
+
+        $row.fadeOut(300, function () {
+            $(this).remove();
+            renumberRows();
+        });
+    }
+
+    function renumberRows() {
+        $('#tblMatrixBody tr.matrixRow').each(function (i) {
+            $(this).find('.hfID').val(i + 1);
+        });
+    }
+
+    function hideMatrix() {
+        $('#matrixSection').hide();
+        $('#tblMatrixBody').empty();
+    }
+
+    // ─── Save ───────────────────────────────────────────────────────────────────
+
+    function saveMatrix() {
+        var items = [];
+        var valid = true;
+
+        $('#tblMatrixBody tr.matrixRow').each(function () {
+            var $row = $(this);
+            var ingredient = $row.find('.txtIngredient').val().trim();
+            var allergens = $row.find('.txtAllergens').val().trim();
+
+            if (!ingredient && !allergens) {
+                // Skip empty rows
+                return true;
+            }
+
+            if (!ingredient) {
+                var index = $row.index() + 1;
+                alert('Please enter Ingredient for row ' + index);
+                valid = false;
+                return false;
+            }
+
+            items.push({
+                allergenMatrixID: parseInt($row.find('.hfMatrixID').val()) || 0,
+                cakeTypeID: parseInt($row.find('.hfCakeTypeID').val()) || parseInt($('#ddlType').val()),
+                flvID1: parseInt($row.find('.hfFlvID1').val()) || parseInt($('#ddlDietary').val() || '0'),
+                flvID2: parseInt($row.find('.hfFlvID2').val()) || parseInt($('#ddlSponge').val() || '0'),
+                flvID3: parseInt($row.find('.hfFlvID3').val()) || parseInt($('#ddlFilling').val() || '0'),
+                ingredient: ingredient,
+                allergens: allergens
+            });
+        });
+
+        if (!valid) return;
+
+        if (items.length === 0 && deletedIds.length === 0) {
+            alert('No items to save.');
+            return;
+        }
+
+        var payload = {
+            items: items,
+            deletedIds: deletedIds.join(',')
+        };
+
+        $.ajax({
+            url: '/manageallergenmatrix/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                    deletedIds = [];
+                    // Reload matrix to get updated IDs
+                    loadMatrix();
+                } else {
+                    showMessage(r.message || 'Failed to save.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving.', false);
+            }
+        });
+    }
+
+    // ─── Helpers ────────────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success');
+        $div.addClass(isSuccess ? 'alert-success' : 'alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(); }, 4000);
+    }
+
+    // Escape HTML helper
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+</script>
+}

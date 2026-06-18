@@ -1,0 +1,131 @@
+@model CakerStreet.Business.Services.OrderDetailResult
+@{
+    Layout = null;
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var isShopInvoice = (bool)(ViewBag.IsShopInvoice ?? false);
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Order Invoice #@Model.OrderId</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; margin: 0; padding: 20px; }
+        .invoice-header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .invoice-header h1 { margin: 0; font-size: 20px; }
+        .invoice-header .order-num { color: #666; font-size: 14px; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .invoice-table th { background: #f5f5f5; text-align: left; padding: 8px; border: 1px solid #ddd; font-size: 12px; }
+        .invoice-table td { padding: 8px; border: 1px solid #ddd; vertical-align: top; }
+        .invoice-table .text-right { text-align: right; }
+        .summary-table { width: 300px; margin-left: auto; margin-top: 15px; }
+        .summary-table td { padding: 5px 8px; }
+        .summary-table .total-row { font-weight: bold; font-size: 15px; border-top: 2px solid #333; }
+        .two-col { display: flex; gap: 30px; margin-bottom: 15px; }
+        .two-col .col { flex: 1; }
+        .two-col h3 { margin: 0 0 5px 0; font-size: 13px; color: #666; text-transform: uppercase; }
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @@media print { body { padding: 0; } .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom:15px;">
+        <button onclick="window.print();" style="padding:8px 16px;font-size:14px;cursor:pointer;">Print Invoice</button>
+        <button onclick="window.close();" style="padding:8px 16px;font-size:14px;cursor:pointer;margin-left:10px;">Close</button>
+    </div>
+
+    <div class="invoice-header">
+        <h1>@(isShopInvoice ? "Shop Invoice" : "Order Invoice")</h1>
+        <span class="order-num">Order #@Model.OrderId</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span>Date: @(Model.OrderDate != DateTime.MinValue ? Model.OrderDate.ToString("dd MMM yyyy") : "—")</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span class="status-badge @(Model.Status >= 1 ? "status-confirmed" : "status-pending")">
+            @(Model.Status switch { 0 => "Pending", 1 => "Confirmed", 2 => "Processing", 3 => "Dispatched", 4 => "Delivered", 5 => "Cancelled", _ => "Unknown" })
+        </span>
+    </div>
+
+    <div class="two-col">
+        <div class="col">
+            <h3>Customer</h3>
+            <strong>@Model.CustomerName</strong><br />
+            @if (!string.IsNullOrEmpty(Model.CustomerEmail))
+            {<text>@Model.CustomerEmail<br /></text>}
+            @if (!string.IsNullOrEmpty(Model.ShippingPhone))
+            {<text>@Model.ShippingPhone</text>}
+        </div>
+        <div class="col">
+            <h3>Delivery / Collection</h3>
+            @if (!string.IsNullOrEmpty(Model.ShippingAddress))
+            {<text>@Model.ShippingAddress<br /></text>}
+            @if (!string.IsNullOrEmpty(Model.ShippingZip))
+            {<text>@Model.ShippingZip<br /></text>}
+            @if (Model.CollectionDate != DateTime.MinValue)
+            {<text><strong>Date:</strong> @Model.CollectionDate.ToString("dd MMM yyyy")<br /></text>}
+            @if (!string.IsNullOrEmpty(Model.CollectionRemarks))
+            {<text><strong>Notes:</strong> @Model.CollectionRemarks</text>}
+        </div>
+    </div>
+
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="width:5%;">#</th>
+                <th style="width:40%;">Item</th>
+                <th style="width:15%;">Details</th>
+                <th style="width:10%;">Qty</th>
+                <th style="width:15%;" class="text-right">Price</th>
+                <th style="width:15%;" class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.LineItems != null)
+            {
+                int row = 0;
+                foreach (var item in Model.LineItems)
+                {
+                    row++;
+                    <tr>
+                        <td>@row</td>
+                        <td>@item.ProductName</td>
+                        <td>
+                            @foreach (var attr in item.Attributes)
+                            {
+                                <small>@attr.Title: @attr.Value</small><br />
+                            }
+                        </td>
+                        <td>@item.Quantity</td>
+                        <td class="text-right">£@item.UnitPrice.ToString("0.00")</td>
+                        <td class="text-right">£@item.TotalPrice.ToString("0.00")</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <table class="summary-table">
+        <tr>
+            <td>Subtotal:</td>
+            <td class="text-right">£@((Model.TotalPrice - Model.ShippingCost).ToString("0.00"))</td>
+        </tr>
+        @if (Model.ShippingCost > 0)
+        {
+            <tr>
+                <td>Delivery:</td>
+                <td class="text-right">£@Model.ShippingCost.ToString("0.00")</td>
+            </tr>
+        }
+        <tr class="total-row">
+            <td>Total:</td>
+            <td class="text-right">£@Model.TotalPrice.ToString("0.00")</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p>Invoice generated from CakerStreet Business Portal — @DateTime.Now.ToString("dd MMM yyyy HH:mm")</p>
+    </div>
+</body>
+</html>

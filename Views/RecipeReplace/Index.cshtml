@@ -1,0 +1,155 @@
+@using CakerStreet.Business.Services
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Ingredient Keywords";
+    var logs = ViewBag.Logs as List<RecipeReplaceLog> ?? new List<RecipeReplaceLog>();
+    string searchKeyword = ViewBag.SearchKeyword as string ?? "";
+}
+
+<link href="~/css/inventory.css" rel="stylesheet" />
+<style>
+    .replace-panel {
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+</style>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="innerhead">
+            <h2 style="display: inline-block;">Manage Ingredient Keywords</h2>
+            <div class="btn-group pull-right" style="margin-top: 15px; margin-right: 15px;">
+                <button class="btn btn-danger bg-black" type="button">Manage</button>
+                <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button">
+                    <span class="caret"></span>
+                </button>
+                <ul role="menu" class="dropdown-menu">
+                    <li><a href="/managereceipe">Manage Recipe</a></li>
+                    <li><a href="/manageingredient">Manage Ingredients</a></li>
+                    <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                    <li><a href="/webstorecategory">Manage Ingredients Category</a></li>
+                    <li><a href="/managereceipematrix">Recipe Matrix</a></li>
+                </ul>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+        {
+            <div class="alert alert-success">
+                @ViewBag.SuccessMessage
+            </div>
+        }
+
+        <div class="inventoryWrapper">
+            <!-- Find & Replace Control Panel -->
+            <div class="replace-panel">
+                <h3>Global Find and Replace</h3>
+                <form method="post" action="/managereceipe-findandreplace/save" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">From Text:</label>
+                        <div class="col-sm-4">
+                            <input type="text" name="fromText" class="form-control input-sm" style="text-transform: lowercase;" required />
+                        </div>
+                        <label class="col-sm-2 control-label">To Text:</label>
+                        <div class="col-sm-4">
+                            <input type="text" name="toText" class="form-control input-sm" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="submit" class="btn btn-danger btn-sm bg-red">Replace Globally</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- List Search Filters -->
+            <form method="get" action="/managereceipe-findandreplace" class="row form-group">
+                <div class="col-sm-4">
+                    <div class="input-group">
+                        <input type="text" name="search" value="@searchKeyword" class="form-control input-sm" placeholder="Search keywords..." />
+                        <span class="input-group-btn">
+                            <button type="submit" class="btn btn-danger btn-sm">Search</button>
+                            @if (!string.IsNullOrEmpty(searchKeyword))
+                            {
+                                <a href="/managereceipe-findandreplace" class="btn btn-default btn-sm">Clear</a>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Logs grid Form -->
+            <form id="deleteForm" method="post" action="/managereceipe-findandreplace/delete">
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="submitDelete();">Delete Selected</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="logsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px; text-align: center;">
+                                    <input type="checkbox" onchange="toggleSelectAll(this);" />
+                                </th>
+                                <th>From Text</th>
+                                <th>To Text</th>
+                                <th style="width: 180px;">Created On</th>
+                                <th style="width: 150px;">Created By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (logs.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-danger">No Replacement Logs Found</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var log in logs)
+                                {
+                                    <tr>
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" name="selectedIds" value="@log.RedirectId" class="row-checkbox" />
+                                        </td>
+                                        <td>@log.SourceUrl</td>
+                                        <td>@log.DestinationUrl</td>
+                                        <td>@log.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                        <td>@log.CreatedBy</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSelectAll(masterChk) {
+        var chks = document.querySelectorAll(".row-checkbox");
+        chks.forEach(function (chk) {
+            chk.checked = masterChk.checked;
+        });
+    }
+
+    function submitDelete() {
+        var checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
+        if (checkedCount === 0) {
+            alert("Please select at least one item to delete!");
+            return;
+        }
+
+        if (confirm("Are you sure you want to delete selected log(s)?")) {
+            document.getElementById("deleteForm").submit();
+        }
+    }
+</script>

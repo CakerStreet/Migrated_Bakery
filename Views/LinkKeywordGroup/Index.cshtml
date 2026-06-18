@@ -1,0 +1,174 @@
+@using CakerStreet.Business.Controllers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var items = ViewBag.Items as List<LinkKeywordGroupController.KeywordGroupItem> ?? new();
+    var successMsg = ViewBag.SuccessMsg as string;
+    var errorMsg = ViewBag.ErrorMsg as string;
+    var cdnBase = ViewBag.CdnBase as string ?? "";
+}
+
+@section head {
+    <link href="/css/sellcss.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal
+        {
+            font-weight: normal;
+        }
+        .img img {
+            max-height: 60px;
+            max-width: 60px;
+        }
+        .table.prdlstouter {
+            margin-top: 20px;
+        }
+        .ui-menu img{
+            width:40px;
+            height:40px;
+        }
+        .ui-menu li span{
+            font-size:1em;
+            padding:0 0 10px 10px;
+            margin:0 0 10px 0 !important;
+            white-space:nowrap;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse3" aria-expanded="true"><span class="glyphicon glyphicon-minus"></span></a>
+                </div>
+                <div class="col-md-11">
+                    <h2>Link Keyword With Ingredient Grp</h2>
+                </div>
+            </div>
+            
+            <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+                <div class="col-md-12 caln">
+                    <a><img id="imgPrd" style="max-width: 150px; max-height: 150px; display: none;" /></a>
+                </div>
+                <div class="clearfix"></div>
+                
+                <form action="/linkkeywordwithgroup/save" method="post" id="saveForm">
+                    <div class="col-md-12 top-margin">
+                        <div class="col-md-3 raln">
+                            <input type="text" name="txtKeyword" id="txtKeyword" class="form-control input-sm" placeholder="Enter Keyword" required="required" />
+                        </div>
+                        <div class="col-md-3 raln">
+                            <input type="text" id="txtSearchTopper" class="form-control input-sm" placeholder="Search Ingredient" required="required" />
+                            <input type="hidden" name="hfTopperID" id="hfTopperID" />
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-danger btn-sm">Submit</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="clearfix"></div>
+                
+                @if (!string.IsNullOrEmpty(successMsg))
+                {
+                    <div class="alert alert-success" style="margin: 10px;">@successMsg</div>
+                }
+                @if (!string.IsNullOrEmpty(errorMsg))
+                {
+                    <div class="alert alert-danger" style="margin: 10px;">@errorMsg</div>
+                }
+                
+                <div class="clearfix"></div>
+                
+                <div class="col-md-12">
+                    @if (items.Count > 0)
+                    {
+                        <div class="table prdlstouter">
+                            <table class="table table-bordred table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Keyword</th>
+                                        <th class="name">Ingredient Name</th>
+                                        <th class="action"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in items)
+                                    {
+                                        <tr class="rowtext">
+                                            <td class="name">@item.Keyword</td>
+                                            <td class="name">
+                                                @if (!string.IsNullOrEmpty(item.IngredientImg))
+                                                {
+                                                    <img src="https://cakerstreet1.s3.amazonaws.com/bakery_content/upload/receipeBookIngredient/resized_80_80/@item.IngredientImg" style="border-width:0px; max-height: 50px; max-width: 50px;" />
+                                                }
+                                                else
+                                                {
+                                                    <img src="https://cakerstreet1.s3.amazonaws.com/bakery_content/images/blankImages/img75.jpg" style="border-width:0px; max-height: 50px; max-width: 50px;" />
+                                                }
+                                                @item.IngredientName
+                                            </td>
+                                            <td class="action">
+                                                <form action="/linkkeywordwithgroup/delete" method="post" onsubmit="return confirm('Are you sure to delete this item?')" style="display:inline;">
+                                                    <input type="hidden" name="rowId" value="@item.RowId" />
+                                                    <button type="submit" class="btn btn-danger btn-red btn-sm btn-savelist">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#txtSearchTopper').autocomplete({
+            minLength: 1,
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#txtSearchTopper").val(ui.item.label);
+                $("#hfTopperID").val(ui.item.value);
+                if (ui.item.img) {
+                    $("#imgPrd").attr("src", ui.item.img).show();
+                }
+                return false;
+            },
+            open: function () {
+                $(".ui-autocomplete").css("z-index", 1000);
+            },
+            source: function (request, response) {
+                $.ajax({
+                    url: "/linkkeywordwithgroup/GetIngredientGrp",
+                    type: "POST",
+                    dataType: "json",
+                    data: JSON.stringify({ keyword: request.term }),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data) {
+                        response($.map(data.d, function (item) {
+                            return {
+                                label: item.receipeBookIngredientGrp_ingredient,
+                                value: item.receipeBookIngredientGrp_ID,
+                                img: item.receipeBookIngredientGrp_Img ? "https://cakerstreet1.s3.amazonaws.com/bakery_content/upload/receipeBookIngredient/resized_80_80/" + item.receipeBookIngredientGrp_Img : ""
+                            };
+                        }))
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Autocomplete error:", error);
+                    }
+                });
+            }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            var imgHtml = item.img ? "<img src='" + item.img + "'>" : "";
+            return $("<li><div>" + imgHtml + "<span>" + item.label + "</span></div></li>").appendTo(ul);
+        };
+    });
+</script>

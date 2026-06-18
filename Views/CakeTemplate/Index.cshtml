@@ -1,0 +1,271 @@
+@{
+    ViewData["Title"] = "Manage Cake Templates";
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Controllers.CakeTemplateController.TemplateItem>
+        ?? new List<CakerStreet.Business.Controllers.CakeTemplateController.TemplateItem>();
+    var shapes = ViewBag.Shapes as List<CakerStreet.Business.Controllers.CakeTemplateController.LookupItem>
+        ?? new List<CakerStreet.Business.Controllers.CakeTemplateController.LookupItem>();
+    var cakeTypes = ViewBag.CakeTypes as List<CakerStreet.Business.Controllers.CakeTemplateController.LookupItem>
+        ?? new List<CakerStreet.Business.Controllers.CakeTemplateController.LookupItem>();
+    var sizes = ViewBag.Sizes as List<CakerStreet.Business.Controllers.CakeTemplateController.SizeItem>
+        ?? new List<CakerStreet.Business.Controllers.CakeTemplateController.SizeItem>();
+    var cakeFor = (int)(ViewBag.CakeFor ?? 0);
+    var selectedTemplateId = (long)(ViewBag.SelectedTemplateId ?? 0L);
+    var selectedTemplate = ViewBag.SelectedTemplate as CakerStreet.Business.Controllers.CakeTemplateController.TemplateDetail;
+    var isAdmin = (bool)(ViewBag.IsAdmin ?? false);
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .template-form .form-group { margin-bottom: 12px; }
+        .template-form label { font-weight: bold; }
+        .max250 { max-width: 250px; display: inline-block; }
+        .headertext { font-weight: bold; font-size: 14px; }
+        .size-row { padding: 5px 0; border-bottom: 1px solid #eee; }
+        .size-row .form-control { display: inline-block; width: auto; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Cake Templates</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Template For Selector ──────────────────────────────────────── *@
+                <div class="col-md-8 template-form">
+                    <div class="form-group">
+                        <label>Template For</label>
+                        <select id="drpCakeFor" class="form-control max250" style="display:inline-block;">
+                            <option value="0" @(cakeFor == 0 ? "selected" : "")>Cakes</option>
+                            <option value="1" @(cakeFor == 1 ? "selected" : "")>Cupcakes</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <span class="headertext">Create New Specification Template</span>
+                        &nbsp;&nbsp;&nbsp;<span>OR</span>&nbsp;&nbsp;&nbsp;
+                        <select id="drpTemplate" class="form-control max250" style="display:inline-block;">
+                            <option value="0">--Select from saved Templates--</option>
+                            @foreach (var t in templates)
+                            {
+                                <option value="@t.Id" @(t.Id == selectedTemplateId ? "selected" : "")>@t.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (isAdmin && selectedTemplateId > 0)
+                    {
+                        <div class="form-group">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteTemplate();">Delete Template</button>
+                        </div>
+                    }
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Template Form ──────────────────────────────────────────────── *@
+                <div class="col-md-8 template-form" style="margin-top:15px;">
+                    <div class="form-group">
+                        <label>Template Name *</label>
+                        <input type="text" id="txtTemplateName" class="form-control" placeholder="Enter template name"
+                               value="@(selectedTemplate?.Name ?? "")" />
+                    </div>
+
+                    <div class="form-group col-md-4 no-left-padding">
+                        <label>Cake Shape *</label>
+                        <select id="drpShape" class="form-control">
+                            <option value="-1">--Select Shape--</option>
+                            @foreach (var s in shapes)
+                            {
+                                <option value="@s.Id" @(selectedTemplate != null && s.Id == selectedTemplate.ShapeId ? "selected" : "")>@s.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-4 no-left-padding">
+                        <label>Cake Type *</label>
+                        <select id="drpType" class="form-control">
+                            <option value="-1">--Select Type--</option>
+                            @foreach (var ct in cakeTypes)
+                            {
+                                <option value="@ct.Id" @(selectedTemplate != null && ct.Id == selectedTemplate.TypeId ? "selected" : "")>@ct.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-4 no-left-padding">
+                        <label>Preparation Day *</label>
+                        <select id="drpPrepDay" class="form-control">
+                            <option value="0">--Select Days / Hours--</option>
+                            <option value="-2" @(selectedTemplate?.PreparationDay == -2 ? "selected" : "")>Same day (+ 2 hours)</option>
+                            <option value="-4" @(selectedTemplate?.PreparationDay == -4 ? "selected" : "")>Same day (+ 4 hours)</option>
+                            <option value="-6" @(selectedTemplate?.PreparationDay == -6 ? "selected" : "")>Same day (+ 6 hours)</option>
+                            <option value="1" @(selectedTemplate?.PreparationDay == 1 ? "selected" : "")>+1 day</option>
+                            <option value="2" @(selectedTemplate?.PreparationDay == 2 ? "selected" : "")>+2 days</option>
+                            <option value="3" @(selectedTemplate?.PreparationDay == 3 ? "selected" : "")>+3 days</option>
+                            <option value="4" @(selectedTemplate?.PreparationDay == 4 ? "selected" : "")>+4 days</option>
+                            <option value="5" @(selectedTemplate?.PreparationDay == 5 ? "selected" : "")>+5 days</option>
+                            <option value="6" @(selectedTemplate?.PreparationDay == 6 ? "selected" : "")>+6 days</option>
+                            <option value="7" @(selectedTemplate?.PreparationDay == 7 ? "selected" : "")>+7 days</option>
+                        </select>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    <div class="form-group">
+                        <label>Collection</label><br />
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="chkCollection" @(selectedTemplate?.Collection == true ? "checked" : "") />
+                            Collection
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Delivery</label><br />
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="chkDelivery" @(selectedTemplate?.Delivery == true ? "checked" : "") />
+                            Hand Delivery
+                        </label>
+                        <span id="spanMiles" style="@(selectedTemplate?.Delivery == true ? "" : "display:none;")">
+                            &nbsp; Upto <input type="text" id="txtMiles" class="form-control" style="width:60px;display:inline-block;" 
+                                               value="@(selectedTemplate?.DeliveryMiles ?? "")" placeholder="20" /> Miles
+                        </span>
+                        <br />
+                        <label class="checkbox-inline" style="margin-top:5px;">
+                            <input type="checkbox" id="chkPostal" @(selectedTemplate?.PostalDelivery == true ? "checked" : "") />
+                            Postal Delivery
+                        </label>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    @* ─── Sizes ──────────────────────────────────────────────────────── *@
+                    <div class="form-group" style="margin-top:15px;">
+                        <label><u>Sizes</u></label>
+                        <p><small>Available sizes for this template:</small></p>
+                        <div id="divSizes">
+                            @foreach (var sz in sizes)
+                            {
+                                <div class="size-row">
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox" class="chk-size" value="@sz.Id" checked />
+                                        @sz.Title
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="clearfix"></div>
+
+                    <div class="form-group" style="margin-top:20px;">
+                        <button type="button" class="btn btn-danger" onclick="saveTemplate();">Save Template</button>
+                        <a href="/mywebstore" class="btn btn-default">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // Template For change
+    $('#drpCakeFor').on('change', function () {
+        var val = $(this).val();
+        window.location.href = '/editCaketemplate' + (val === '1' ? '?cakefor=1' : '');
+    });
+
+    // Template selection change
+    $('#drpTemplate').on('change', function () {
+        var val = $(this).val();
+        if (val !== '0') {
+            window.location.href = '/editCaketemplate?cakefor=@cakeFor&templateID=' + val;
+        } else {
+            window.location.href = '/editCaketemplate?cakefor=@cakeFor';
+        }
+    });
+
+    // Delivery checkbox toggle
+    $('#chkDelivery').on('change', function () {
+        if ($(this).is(':checked')) {
+            $('#spanMiles').show();
+        } else {
+            $('#spanMiles').hide();
+        }
+    });
+
+    function saveTemplate() {
+        var name = $.trim($('#txtTemplateName').val());
+        if (name === '') { alert('Template name is required.'); return; }
+
+        var shapeId = $('#drpShape').val();
+        if (shapeId === '-1') { alert('Please select a cake shape.'); return; }
+
+        var typeId = $('#drpType').val();
+        if (typeId === '-1') { alert('Please select a cake type.'); return; }
+
+        $.post('/editCaketemplate/save', {
+            templateId: @selectedTemplateId,
+            templateName: name,
+            cakeFor: @cakeFor,
+            shapeId: shapeId,
+            typeId: typeId,
+            preparationDay: $('#drpPrepDay').val(),
+            collection: $('#chkCollection').is(':checked'),
+            delivery: $('#chkDelivery').is(':checked'),
+            deliveryMiles: $('#txtMiles').val(),
+            postalDelivery: $('#chkPostal').is(':checked')
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                if (r.templateId && r.templateId > 0) {
+                    setTimeout(function () {
+                        window.location.href = '/editCaketemplate?cakefor=@cakeFor&templateID=' + r.templateId;
+                    }, 1000);
+                }
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+
+    function deleteTemplate() {
+        if (!confirm('Are you sure you want to delete this template?')) return;
+        $.post('/editCaketemplate/delete', { templateId: @selectedTemplateId }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { window.location.href = '/editCaketemplate?cakefor=@cakeFor'; }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred.', false);
+        });
+    }
+</script>
+}

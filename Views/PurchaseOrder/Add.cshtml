@@ -1,0 +1,305 @@
+@{
+    var isEdit = (bool)(ViewBag.IsEdit ?? false);
+    ViewData["Title"] = isEdit ? "Update Purchase Order" : "Add New Purchase Order";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var poDetail = ViewBag.PODetail as CakerStreet.Business.Services.PODetailModel;
+    var supplier = ViewBag.Supplier as CakerStreet.Business.Services.SupplierDetailModel;
+    var invoiceNo = ViewBag.InvoiceNo as string ?? "";
+}
+
+@section Head {
+    <link href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .supplier-detail { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .po-items-table th, .po-items-table td { vertical-align: middle !important; font-size: 12px; }
+        .po-items-table input { width: 100%; font-size: 12px; }
+        .po-items-table .qty-col { width: 60px; }
+        .po-items-table .rate-col { width: 80px; }
+        .po-items-table .disc-col { width: 70px; }
+        .po-items-table .vat-col { width: 60px; }
+        .totals-row td { font-weight: bold; background: #f9f9f9; }
+        .ui-autocomplete { max-height: 200px; overflow-y: auto; overflow-x: hidden; z-index: 9999; }
+    </style>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+}
+
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>@ViewData["Title"]</h4>
+            </div>
+            <div class="panel-body">
+                <input type="hidden" id="hfPOID" value="@(poDetail?.PO_ID ?? 0)" />
+                <input type="hidden" id="hfSupplierID" value="@(supplier?.SupplierId ?? 0)" />
+
+                @* === SUPPLIER SEARCH === *@
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Search Supplier</label>
+                            <input type="text" id="txtSearchSupplier" class="form-control" placeholder="Type supplier name..." value="@(supplier?.SupplierName ?? "")" />
+                        </div>
+                    </div>
+                </div>
+
+                @* === SUPPLIER DETAILS === *@
+                <div class="supplier-detail" id="dvSupplierDetail" style="@(supplier == null ? "display:none;" : "")">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Supplier:</strong> <span id="spnSupplierName">@(supplier?.SupplierName ?? "")</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Address:</strong> <span id="spnSupplierAddress">@(supplier?.Supplier_AddressDetail ?? "")</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Remarks:</strong> <span id="spnSupplierRemarks">@(supplier?.Supplier_Remarks ?? "")</span>
+                        </div>
+                    </div>
+                </div>
+
+                @* === PO DATE & INVOICE === *@
+                <div class="row" style="margin-top:15px;">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>PO Date</label>
+                            <input type="text" id="txtPoDate" class="form-control" value="@(poDetail != null ? poDetail.PO_Date.ToString("dd/MM/yyyy") : DateTime.Now.ToString("dd/MM/yyyy"))" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Invoice Number</label>
+                            <input type="text" id="txtInvoiceNo" class="form-control" value="@invoiceNo" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                @* === LINE ITEMS TABLE === *@
+                <div style="margin-top:15px;">
+                    <h5>Line Items</h5>
+                    <table class="table table-bordered po-items-table" id="tblLineItems">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Code</th>
+                                <th class="qty-col">Qty</th>
+                                <th class="rate-col">Rate</th>
+                                <th>Amount</th>
+                                <th class="disc-col">Discount</th>
+                                <th>Subtotal</th>
+                                <th class="vat-col">VAT%</th>
+                                <th>VAT</th>
+                                <th>Net Total</th>
+                                <th style="width:40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyItems">
+                            @if (poDetail != null && poDetail.LineItems.Count > 0)
+                            {
+                                foreach (var item in poDetail.LineItems)
+                                {
+                                    <tr class="item-row">
+                                        <td><input type="text" class="prd-name" value="@item.ProductName" /><input type="hidden" class="prd-id" value="@item.POdet_PrdID" /><input type="hidden" class="prd-reqid" value="@item.PrdStockRequest_Id" /></td>
+                                        <td><input type="text" class="prd-code" value="@item.ProductCode" readonly /></td>
+                                        <td><input type="number" class="prd-qty" value="@item.POdet_Qty" onchange="calcRow(this)" /></td>
+                                        <td><input type="number" step="0.01" class="prd-rate" value="@item.POdet_RatePerItem" onchange="calcRow(this)" /></td>
+                                        <td><input type="text" class="prd-amount" value="@item.POdet_Amount.ToString("0.00")" readonly /></td>
+                                        <td><input type="number" step="0.01" class="prd-disc" value="@item.POdet_disc" onchange="calcRow(this)" /></td>
+                                        <td><input type="text" class="prd-subtotal" value="@item.POdet_Subtotal.ToString("0.00")" readonly /></td>
+                                        <td><input type="number" step="0.01" class="prd-vatper" value="@item.POdet_VatPer" onchange="calcRow(this)" /></td>
+                                        <td><input type="text" class="prd-vat" value="@item.POdet_Vat.ToString("0.00")" readonly /></td>
+                                        <td><input type="text" class="prd-nettotal" value="@item.POdet_NetTotal.ToString("0.00")" readonly /></td>
+                                        <td><button class="btn btn-xs btn-danger" onclick="removeRow(this)">X</button></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="totals-row">
+                                <td colspan="2"><strong>Totals</strong></td>
+                                <td id="totalQty">0</td>
+                                <td></td>
+                                <td id="totalAmount">0.00</td>
+                                <td id="totalDisc">0.00</td>
+                                <td id="totalSubtotal">0.00</td>
+                                <td></td>
+                                <td id="totalVat">0.00</td>
+                                <td id="totalNet">0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-info" onclick="addRow()">+ Add Row</button>
+                </div>
+
+                @* === SAVE BUTTON === *@
+                <div style="margin-top:20px;">
+                    <button type="button" class="btn btn-danger" id="btnSave" onclick="savePO()">Save Purchase Order</button>
+                    <a href="/managepurchaseorder" class="btn btn-default" style="margin-left:10px;">Cancel</a>
+                </div>
+
+                <div id="dvMessage" class="alert" style="display:none; margin-top:15px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    $(function () {
+        $('#txtPoDate').datepicker({ dateFormat: 'dd/mm/yy' });
+
+        // Supplier autocomplete
+        $('#txtSearchSupplier').autocomplete({
+            source: function (request, response) {
+                $.get('/addpurchaseorder/suppliers', { keyword: request.term }, function (data) {
+                    response($.map(data, function (item) {
+                        return { label: item.supplierName, value: item.supplierName, id: item.supplierId };
+                    }));
+                });
+            },
+            minLength: 2,
+            select: function (event, ui) {
+                $('#hfSupplierID').val(ui.item.id);
+                loadSupplierDetail(ui.item.id);
+            }
+        });
+
+        calcTotals();
+    });
+
+    function loadSupplierDetail(id) {
+        $.get('/addpurchaseorder/supplierdetail/' + id, function (data) {
+            if (data && data.supplierId) {
+                $('#spnSupplierName').text(data.supplierName);
+                $('#spnSupplierAddress').text(data.supplier_AddressDetail);
+                $('#spnSupplierRemarks').text(data.supplier_Remarks);
+                $('#dvSupplierDetail').show();
+            }
+        });
+    }
+
+    function addRow() {
+        var html = '<tr class="item-row">' +
+            '<td><input type="text" class="prd-name" /><input type="hidden" class="prd-id" value="0" /><input type="hidden" class="prd-reqid" value="0" /></td>' +
+            '<td><input type="text" class="prd-code" readonly /></td>' +
+            '<td><input type="number" class="prd-qty" value="0" onchange="calcRow(this)" /></td>' +
+            '<td><input type="number" step="0.01" class="prd-rate" value="0" onchange="calcRow(this)" /></td>' +
+            '<td><input type="text" class="prd-amount" value="0.00" readonly /></td>' +
+            '<td><input type="number" step="0.01" class="prd-disc" value="0" onchange="calcRow(this)" /></td>' +
+            '<td><input type="text" class="prd-subtotal" value="0.00" readonly /></td>' +
+            '<td><input type="number" step="0.01" class="prd-vatper" value="0" onchange="calcRow(this)" /></td>' +
+            '<td><input type="text" class="prd-vat" value="0.00" readonly /></td>' +
+            '<td><input type="text" class="prd-nettotal" value="0.00" readonly /></td>' +
+            '<td><button class="btn btn-xs btn-danger" onclick="removeRow(this)">X</button></td>' +
+            '</tr>';
+        $('#tbodyItems').append(html);
+    }
+
+    function removeRow(btn) {
+        $(btn).closest('tr').remove();
+        calcTotals();
+    }
+
+    function calcRow(el) {
+        var row = $(el).closest('tr');
+        var qty = parseFloat(row.find('.prd-qty').val()) || 0;
+        var rate = parseFloat(row.find('.prd-rate').val()) || 0;
+        var disc = parseFloat(row.find('.prd-disc').val()) || 0;
+        var vatPer = parseFloat(row.find('.prd-vatper').val()) || 0;
+
+        var amount = qty * rate;
+        var subtotal = amount - disc;
+        var vat = subtotal * (vatPer / 100);
+        var netTotal = subtotal + vat;
+
+        row.find('.prd-amount').val(amount.toFixed(2));
+        row.find('.prd-subtotal').val(subtotal.toFixed(2));
+        row.find('.prd-vat').val(vat.toFixed(2));
+        row.find('.prd-nettotal').val(netTotal.toFixed(2));
+
+        calcTotals();
+    }
+
+    function calcTotals() {
+        var totalQty = 0, totalAmt = 0, totalDisc = 0, totalSub = 0, totalVat = 0, totalNet = 0;
+        $('#tbodyItems .item-row').each(function () {
+            totalQty += parseFloat($(this).find('.prd-qty').val()) || 0;
+            totalAmt += parseFloat($(this).find('.prd-amount').val()) || 0;
+            totalDisc += parseFloat($(this).find('.prd-disc').val()) || 0;
+            totalSub += parseFloat($(this).find('.prd-subtotal').val()) || 0;
+            totalVat += parseFloat($(this).find('.prd-vat').val()) || 0;
+            totalNet += parseFloat($(this).find('.prd-nettotal').val()) || 0;
+        });
+        $('#totalQty').text(totalQty);
+        $('#totalAmount').text(totalAmt.toFixed(2));
+        $('#totalDisc').text(totalDisc.toFixed(2));
+        $('#totalSubtotal').text(totalSub.toFixed(2));
+        $('#totalVat').text(totalVat.toFixed(2));
+        $('#totalNet').text(totalNet.toFixed(2));
+    }
+
+    function savePO() {
+        var supplierId = parseInt($('#hfSupplierID').val()) || 0;
+        if (supplierId === 0) { alert('Please select a supplier.'); return; }
+
+        var dateStr = $('#txtPoDate').val();
+        if (!dateStr) { alert('Please enter a PO date.'); return; }
+
+        // Parse dd/MM/yyyy to ISO
+        var parts = dateStr.split('/');
+        var poDate = new Date(parts[2], parts[1] - 1, parts[0]);
+
+        var items = [];
+        $('#tbodyItems .item-row').each(function () {
+            var prdId = parseInt($(this).find('.prd-id').val()) || 0;
+            var qty = parseInt($(this).find('.prd-qty').val()) || 0;
+            if (qty > 0) {
+                items.push({
+                    PrdStockRequest_Id: parseInt($(this).find('.prd-reqid').val()) || 0,
+                    POdet_PrdID: prdId,
+                    POdet_Qty: qty,
+                    POdet_RatePerItem: parseFloat($(this).find('.prd-rate').val()) || 0,
+                    POdet_Amount: parseFloat($(this).find('.prd-amount').val()) || 0,
+                    POdet_disc: parseFloat($(this).find('.prd-disc').val()) || 0,
+                    POdet_Subtotal: parseFloat($(this).find('.prd-subtotal').val()) || 0,
+                    POdet_VatPer: parseFloat($(this).find('.prd-vatper').val()) || 0,
+                    POdet_Vat: parseFloat($(this).find('.prd-vat').val()) || 0,
+                    POdet_NetTotal: parseFloat($(this).find('.prd-nettotal').val()) || 0
+                });
+            }
+        });
+
+        if (items.length === 0) { alert('Please add at least one line item.'); return; }
+
+        var model = {
+            PO_ID: parseInt($('#hfPOID').val()) || 0,
+            PO_SupplierID: supplierId,
+            PO_Date: poDate.toISOString(),
+            lstPOdet: items
+        };
+
+        $('#btnSave').prop('disabled', true).text('Saving...');
+
+        $.ajax({
+            url: '/addpurchaseorder/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(model),
+            success: function (r) {
+                if (r.success) {
+                    $('#dvMessage').removeClass('alert-danger').addClass('alert-success').text(r.message).show();
+                    setTimeout(function () { window.location.href = '/managepurchaseorder?status=0'; }, 1500);
+                } else {
+                    $('#dvMessage').removeClass('alert-success').addClass('alert-danger').text(r.message).show();
+                    $('#btnSave').prop('disabled', false).text('Save Purchase Order');
+                }
+            },
+            error: function () {
+                $('#dvMessage').removeClass('alert-success').addClass('alert-danger').text('An error occurred.').show();
+                $('#btnSave').prop('disabled', false).text('Save Purchase Order');
+            }
+        });
+    }
+</script>
+}

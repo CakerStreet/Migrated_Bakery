@@ -1,0 +1,717 @@
+@{
+    ViewData["Title"] = "Manage Bakery Users";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.BakeryUserItem> ?? new List<CakerStreet.Business.Services.BakeryUserItem>();
+    var totalPages = (int)(ViewBag.TotalPages ?? 0);
+    var totalCount = (int)(ViewBag.TotalCount ?? 0);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var search = ViewBag.Search as string ?? "";
+    var userType = (int)(ViewBag.UserType ?? 1);
+    var staffType = (int)(ViewBag.StaffType ?? 0);
+    var filterStatus = (int)(ViewBag.FilterStatus ?? 0);
+    var loggedInUserType = (int)(ViewBag.LoggedInUserType ?? 0);
+    var showAllTabs = (bool)(ViewBag.ShowAllTabs ?? false);
+    var showStaffFields = (bool)(ViewBag.ShowStaffFields ?? false);
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th {
+            padding: 3px;
+        }
+        .prdlstouter .form-control { padding: 0 5px; }
+        .chkboxouter label { padding: 5px 10px; cursor: pointer; }
+        .chkboxouter input[type="radio"] { margin-right: 4px; }
+        .tab-radio { display: inline-block; margin: 0; padding: 0; list-style: none; }
+        .tab-radio li { float: left; margin-right: 2px; }
+        .tab-radio li a { display: block; padding: 6px 14px; background: #ccc; color: #fff; text-decoration: none; border-radius: 3px 3px 0 0; }
+        .tab-radio li a.active { background: #d9534f; color: #fff; }
+        .tab-radio li a:hover { background: #d9534f; color: #fff; }
+        .subtype-tabs { margin: 10px 0; }
+        .subtype-tabs li { float: left; margin-right: 2px; }
+        .subtype-tabs li a { display: block; padding: 4px 12px; background: #eee; color: #333; text-decoration: none; border-radius: 3px; }
+        .subtype-tabs li a.active { background: #d9534f; color: #fff; }
+        .subtype-tabs li a:hover { background: #d9534f; color: #fff; }
+        .btn-whatsapp { background: #fff url("/img/whatsapp_16.png") no-repeat 3px center; padding: 3px 5px 3px 23px; color: #CF0000; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Bakery Users</h2>
+
+        @* ─── User Type Tabs (Admin/Manager/Staff) ─── *@
+        @if (showAllTabs)
+        {
+            <ul class="tab-radio pull-right" style="margin-top: 5px;">
+                <li><a href="/bakeryuser?usertype=1" class="@(userType == 1 ? "active" : "")">Admin</a></li>
+                <li><a href="/bakeryuser?usertype=2" class="@(userType == 2 ? "active" : "")">Manager</a></li>
+                <li><a href="/bakeryuser?usertype=3" class="@(userType == 3 ? "active" : "")">Staff</a></li>
+            </ul>
+        }
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        @* ─── Staff Sub-Type Tabs (Baker/Delivery/Shop) ─── *@
+        @if (showStaffFields)
+        {
+            <div class="subtype-tabs clearfix" style="margin: 10px 0;">
+                <ul class="tab-radio">
+                    <li><a href="@GetPageUrl(1, search, 3, 0, filterStatus)" class="@(staffType == 0 ? "active" : "")">Baker</a></li>
+                    <li><a href="@GetPageUrl(1, search, 3, 1, filterStatus)" class="@(staffType == 1 ? "active" : "")">Delivery</a></li>
+                    <li><a href="@GetPageUrl(1, search, 3, 2, filterStatus)" class="@(staffType == 2 ? "active" : "")">Shop Staff</a></li>
+                </ul>
+            </div>
+            <div class="clearfix"></div>
+        }
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Filter Bar ─── *@
+                <div class="col-md-12">
+                    <div class="col-md-3">
+                        <div class="btn-group">
+                            <button class="btn btn-danger bg-red" type="button">Action on
+                                <span id="spnfilterselected">0</span> selected</button>
+                            <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                <span class="caret"></span>
+                                <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul role="menu" class="dropdown-menu">
+                                <li><a href="javascript:void(0);" onclick="bulkSetActive();">Set as Active</a></li>
+                                <li><a href="javascript:void(0);" onclick="bulkSetInactive();">Set as Inactive</a></li>
+                                <li><a href="javascript:void(0);" onclick="bulkUpdateRecords();">Update Records</a></li>
+                                <li><a href="javascript:void(0);" onclick="bulkDelete();">Remove</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <ul class="filter-radio" style="list-style:none; padding:0; margin:0;">
+                            <li><label><input type="radio" name="filterstatus" value="0" @(filterStatus == 0 ? "checked" : "") onchange="doFilterStatus(0);" /> All</label></li>
+                            <li><label><input type="radio" name="filterstatus" value="1" @(filterStatus == 1 ? "checked" : "") onchange="doFilterStatus(1);" /> Active</label></li>
+                            <li><label><input type="radio" name="filterstatus" value="2" @(filterStatus == 2 ? "checked" : "") onchange="doFilterStatus(2);" /> Inactive</label></li>
+                        </ul>
+                    </div>
+
+                    <div class="col-md-3">
+                        <input type="text" id="txtsearch" class="form-contro input-sm" placeholder="Search keyword" value="@search" />
+                        <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doSearch();">Go</a>
+                        @if (!string.IsNullOrEmpty(search))
+                        {
+                            <a href="@GetPageUrl(1, "", userType, showStaffFields ? staffType : (int?)null, filterStatus)" class="btn btn-danger btn-sm">X</a>
+                        }
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Data Table ─── *@
+                @if (items.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="chk headertext">
+                                        <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                    </th>
+                                    <th>Name</th>
+                                    <th>Email ID</th>
+                                    <th>Password</th>
+                                    <th>Contact No.</th>
+                                    <th>Type</th>
+                                    @if (showStaffFields)
+                                    {
+                                        <th>Staff Type</th>
+                                        <th>Salary/Hour</th>
+                                        <th>Contribution(%)</th>
+                                        <th>Incentive(%)</th>
+                                        <th>Tanda-ID</th>
+                                        <th>Tanda Pin</th>
+                                        <th>Part-time</th>
+                                        <th>Hide Rota</th>
+                                    }
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in items)
+                                {
+                                    var tempVal = item.IsTemporary ?? 0;
+                                    var isTemp = (tempVal & 1) == 1 ? 1 : 0;
+                                    var isHide = (tempVal & 2) == 2 ? 1 : 0;
+
+                                    <tr class="rowtext" data-id="@item.CustomerId">
+                                        <td class="chk">
+                                            <input type="checkbox" class="chkrow" data-id="@item.CustomerId" onchange="chkuncheckHeadernRowbyrow();" />
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control row-name" value="@item.Name" style="width:120px;" />
+                                        </td>
+                                        <td>@item.Email</td>
+                                        <td>
+                                            <input type="text" class="form-control row-password" value="@item.Password" style="width:100px;" />
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control row-phone" value="@item.Phone" style="width:100px;" />
+                                        </td>
+                                        <td>
+                                            @if (item.UserType == 1)
+                                            {
+                                                <span>Admin</span>
+                                                <input type="hidden" class="row-usertype" value="1" />
+                                            }
+                                            else
+                                            {
+                                                <select class="form-control row-usertype" style="width:100px;">
+                                                    <option value="2" @(item.UserType == 2 ? "selected" : "")>Manager</option>
+                                                    <option value="3" @(item.UserType == 3 ? "selected" : "")>Staff</option>
+                                                </select>
+                                            }
+                                        </td>
+                                        @if (showStaffFields)
+                                        {
+                                            <td>
+                                                <select class="form-control row-stafftype" style="width:100px;">
+                                                    <option value="0" @(item.StaffType == 0 ? "selected" : "")>Baker</option>
+                                                    <option value="1" @(item.StaffType == 1 ? "selected" : "")>Delivery</option>
+                                                    <option value="2" @(item.StaffType == 2 ? "selected" : "")>Shop Staff</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control row-salary" value="@(item.SalaryPerHour?.ToString("0.##") ?? "")" style="width:70px;" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control row-salcontrib" value="@(item.SalaryContributionPer?.ToString("0.##") ?? "")" style="width:70px;" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control row-incentive" value="@(item.IncentivePer?.ToString("0.##") ?? "")" style="width:70px;" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control row-tandaid" value="@(item.TandaId ?? "")" style="width:70px;" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control row-tandapin" value="@(item.TandaPin ?? "")" style="width:70px;" />
+                                            </td>
+                                            <td>
+                                                <select class="form-control row-temp" style="width:70px;">
+                                                    <option value="0" @(isTemp == 0 ? "selected" : "")>No</option>
+                                                    <option value="1" @(isTemp == 1 ? "selected" : "")>Yes</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-control row-hide" style="width:70px;">
+                                                    <option value="0" @(isHide == 0 ? "selected" : "")>No</option>
+                                                    <option value="1" @(isHide == 1 ? "selected" : "")>Yes</option>
+                                                </select>
+                                            </td>
+                                        }
+                                        <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                                        <td>
+                                            <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm btn-savelist" onclick="saveRow(this);">Save</a>
+                                            <a href="javascript:void(0);" class="btn btn-default btn-sm" onclick="removeRow(@item.CustomerId);">Remove</a>
+                                            @* ─── WhatsApp Placeholder Buttons (disabled/hidden behind feature flag) ─── *@
+                                            <a href="javascript:void(0);" class="btn btn-xs btn-danger btn-whatsapp whatsapp-btn" style="display:none; margin-top:3px;" data-action="welcome" data-id="@item.CustomerId">Welcome Msg</a>
+                                            <a href="javascript:void(0);" class="btn btn-xs btn-danger btn-whatsapp whatsapp-btn" style="display:none; margin-top:3px;" data-action="login" data-id="@item.CustomerId">Send Credentials</a>
+                                        </td>
+                                    </tr>
+                                }
+
+                                @* ─── Add New Row ─── *@
+                                <tr class="rowtext" id="addNewRow">
+                                    <td class="chk"></td>
+                                    <td>
+                                        <input type="text" id="txtNewName" class="form-control" placeholder="Enter Name" style="width:120px;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" id="txtNewEmail" class="form-control" placeholder="Enter Email" style="width:200px;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" id="txtNewPassword" class="form-control" placeholder="Password" style="width:100px;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" id="txtNewPhone" class="form-control" placeholder="Contact No." style="width:100px;" />
+                                    </td>
+                                    <td>
+                                        <select id="drpNewUserType" class="form-control" style="width:100px;">
+                                            <option value="2">Manager</option>
+                                            <option value="3">Staff</option>
+                                        </select>
+                                    </td>
+                                    @if (showStaffFields)
+                                    {
+                                        <td colspan="8"></td>
+                                    }
+                                    <td>Active</td>
+                                    <td>
+                                        <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm" onclick="addNewUser();">Submit</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @* ─── Save All Button ─── *@
+                    <div class="divbtnmain_outer" style="margin: 10px 0;">
+                        <a href="javascript:void(0);" class="btn btn-lg btn-black square" onclick="saveAll();">Save All</a>
+                    </div>
+
+                    @* ─── Pagination ─── *@
+                    @if (totalPages > 1)
+                    {
+                        <div class="pagination pagination-right">
+                            <div class="paging_outer">
+                                <ul class="left">
+                                    <li><a href="@GetPageUrl(1, search, userType, showStaffFields ? staffType : (int?)null, filterStatus)">First</a></li>
+                                    <li class="@(currentPage <= 1 ? "disabled" : "")">
+                                        @if (currentPage > 1)
+                                        {
+                                            <a href="@GetPageUrl(currentPage - 1, search, userType, showStaffFields ? staffType : (int?)null, filterStatus)"><img src="/img/prev-arrow.png" alt="Previous" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/prev-arrow.png" alt="Previous" /></span>
+                                        }
+                                    </li>
+                                </ul>
+                                <ul class="numbering">
+                                    @{
+                                        int pageButtonCount = 3;
+                                        int min = currentPage - pageButtonCount;
+                                        int max = currentPage + pageButtonCount;
+                                        if (max > totalPages) min -= (max - totalPages);
+                                        if (min < 1) max += (1 - min);
+                                        bool needDiv = false;
+
+                                        for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            if (i <= 2 || i > totalPages - 2 || (min <= i && i <= max))
+                                            {
+                                                <li class="@(i == currentPage ? "active" : "")">
+                                                    <a href="@GetPageUrl(i, search, userType, showStaffFields ? staffType : (int?)null, filterStatus)">@i</a>
+                                                </li>
+                                                needDiv = true;
+                                            }
+                                            else if (needDiv)
+                                            {
+                                                <li class="disabled"><span>...</span></li>
+                                                needDiv = false;
+                                            }
+                                        }
+                                    }
+                                </ul>
+                                <ul class="right">
+                                    <li class="@(currentPage >= totalPages ? "disabled" : "")">
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <a href="@GetPageUrl(currentPage + 1, search, userType, showStaffFields ? staffType : (int?)null, filterStatus)"><img src="/img/nxt-arrow.png" alt="Next" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/nxt-arrow.png" alt="Next" /></span>
+                                        }
+                                    </li>
+                                    <li><a href="@GetPageUrl(totalPages, search, userType, showStaffFields ? staffType : (int?)null, filterStatus)">Last</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    @* ─── No items: still show Add New row ─── *@
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email ID</th>
+                                    <th>Password</th>
+                                    <th>Contact No.</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="rowtext" id="addNewRowEmpty">
+                                    <td>
+                                        <input type="text" id="txtNewNameEmpty" class="form-control" placeholder="Enter Name" style="width:120px;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" id="txtNewEmailEmpty" class="form-control" placeholder="Enter Email" style="width:200px;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" id="txtNewPasswordEmpty" class="form-control" placeholder="Password" style="width:100px;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" id="txtNewPhoneEmpty" class="form-control" placeholder="Contact No." style="width:100px;" />
+                                    </td>
+                                    <td>
+                                        <select id="drpNewUserTypeEmpty" class="form-control" style="width:100px;">
+                                            <option value="2">Manager</option>
+                                            <option value="3">Staff</option>
+                                        </select>
+                                    </td>
+                                    <td>Active</td>
+                                    <td>
+                                        <a href="javascript:void(0);" class="btn btn-danger btn-red btn-sm" onclick="addNewUserEmpty();">Submit</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info">No users found.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber, string searchVal, int ut, int? ust, int fs)
+    {
+        var url = "/bakeryuser";
+        var queryParts = new List<string>();
+
+        if (ut != 1)
+            queryParts.Add("usertype=" + ut);
+
+        if (ust.HasValue && ut == 3)
+            queryParts.Add("usersubtype=" + ust.Value);
+
+        if (fs != 0)
+            queryParts.Add("filterstatus=" + fs);
+
+        if (!string.IsNullOrEmpty(searchVal))
+            queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+
+        if (pageNumber != 1)
+            queryParts.Add("pageno=" + pageNumber);
+
+        if (queryParts.Count > 0)
+            url += "?" + string.Join("&", queryParts);
+
+        return url;
+    }
+}
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Current page state ─────────────────────────────────────────────────────
+    var currentUserType = @userType;
+    var currentStaffType = @staffType;
+    var currentFilterStatus = @filterStatus;
+    var currentSearch = '@System.Net.WebUtility.UrlEncode(search)';
+    var showStaffFields = @(showStaffFields ? "true" : "false");
+
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+        updateSelectedCount();
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        $('#spnfilterselected').text($('.rowtext .chkrow:checked').length);
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            ids.push($(this).data('id'));
+        });
+        return ids;
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+
+    function doSearch() {
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword === '') {
+            alert('Please enter search keyword');
+            return;
+        }
+        var url = '/bakeryuser?';
+        var params = [];
+        if (currentUserType != 1) params.push('usertype=' + currentUserType);
+        if (currentUserType == 3) params.push('usersubtype=' + currentStaffType);
+        if (currentFilterStatus != 0) params.push('filterstatus=' + currentFilterStatus);
+        params.push('search=' + encodeURIComponent(keyword));
+        window.location.href = url + params.join('&');
+    }
+
+    // ─── Filter Status ──────────────────────────────────────────────────────────
+
+    function doFilterStatus(status) {
+        var url = '/bakeryuser?';
+        var params = [];
+        if (currentUserType != 1) params.push('usertype=' + currentUserType);
+        if (currentUserType == 3) params.push('usersubtype=' + currentStaffType);
+        if (status != 0) params.push('filterstatus=' + status);
+        if (currentSearch) params.push('search=' + currentSearch);
+        window.location.href = url + params.join('&');
+    }
+
+    // ─── Add New User ───────────────────────────────────────────────────────────
+
+    function addNewUser() {
+        var email = $.trim($('#txtNewEmail').val());
+        var name = $.trim($('#txtNewName').val());
+        var password = $.trim($('#txtNewPassword').val());
+        var phone = $.trim($('#txtNewPhone').val());
+        var userTypeVal = $('#drpNewUserType').val();
+
+        if (email === '') { alert('Please enter email.'); return; }
+        if (name === '') { alert('Please enter name.'); return; }
+
+        $.post('/bakeryuser/add', {
+            email: email,
+            name: name,
+            password: password,
+            phone: phone,
+            userType: userTypeVal
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to add user.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while adding user.', false);
+        });
+    }
+
+    function addNewUserEmpty() {
+        var email = $.trim($('#txtNewEmailEmpty').val());
+        var name = $.trim($('#txtNewNameEmpty').val());
+        var password = $.trim($('#txtNewPasswordEmpty').val());
+        var phone = $.trim($('#txtNewPhoneEmpty').val());
+        var userTypeVal = $('#drpNewUserTypeEmpty').val();
+
+        if (email === '') { alert('Please enter email.'); return; }
+        if (name === '') { alert('Please enter name.'); return; }
+
+        $.post('/bakeryuser/add', {
+            email: email,
+            name: name,
+            password: password,
+            phone: phone,
+            userType: userTypeVal
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to add user.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while adding user.', false);
+        });
+    }
+
+    // ─── Save Individual Row (Update) ───────────────────────────────────────────
+
+    function saveRow(btn) {
+        var $row = $(btn).closest('tr');
+        var id = $row.data('id');
+        var name = $row.find('.row-name').val();
+        var password = $row.find('.row-password').val();
+        var phone = $row.find('.row-phone').val();
+        var userTypeVal = $row.find('.row-usertype').val();
+        var staffTypeVal = showStaffFields ? ($row.find('.row-stafftype').val() || 0) : 0;
+
+        var isTemporary = 0;
+        if (showStaffFields) {
+            var tempVal = parseInt($row.find('.row-temp').val()) || 0;
+            var hideVal = parseInt($row.find('.row-hide').val()) || 0;
+            isTemporary = tempVal + (hideVal * 2);
+        }
+
+        $.post('/bakeryuser/update', {
+            Id: id,
+            Name: name,
+            Password: password,
+            Phone: phone,
+            UserType: userTypeVal,
+            StaffType: staffTypeVal,
+            IsTemporary: isTemporary
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to update user.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while updating user.', false);
+        });
+    }
+
+    // ─── Remove Individual Row ──────────────────────────────────────────────────
+
+    function removeRow(id) {
+        if (!confirm('Are you sure you want to remove this user?')) return;
+
+        $.post('/bakeryuser/remove', { id: id }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to remove user.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while removing user.', false);
+        });
+    }
+
+    // ─── Save All (Bulk Save checked rows) ──────────────────────────────────────
+
+    function saveAll() {
+        var items = [];
+        $('.rowtext .chkrow:checked').each(function () {
+            var $row = $(this).closest('tr');
+            var id = $(this).data('id');
+            var item = {
+                Id: id,
+                Name: $row.find('.row-name').val(),
+                Password: $row.find('.row-password').val(),
+                Phone: $row.find('.row-phone').val(),
+                UserType: parseInt($row.find('.row-usertype').val()) || 3,
+                StaffType: showStaffFields ? (parseInt($row.find('.row-stafftype').val()) || 0) : 0,
+                IsTemporary: 0
+            };
+
+            if (showStaffFields) {
+                var tempVal = parseInt($row.find('.row-temp').val()) || 0;
+                var hideVal = parseInt($row.find('.row-hide').val()) || 0;
+                item.IsTemporary = tempVal + (hideVal * 2);
+                item.SalaryPerHour = parseFloat($row.find('.row-salary').val()) || null;
+                item.SalaryContributionPer = parseFloat($row.find('.row-salcontrib').val()) || null;
+                item.IncentivePer = parseFloat($row.find('.row-incentive').val()) || null;
+                item.TandaId = $row.find('.row-tandaid').val() || null;
+                item.TandaPin = $row.find('.row-tandapin').val() || null;
+            }
+
+            items.push(item);
+        });
+
+        if (items.length === 0) {
+            alert('Please select at least one item to save.');
+            return;
+        }
+
+        $.ajax({
+            url: '/bakeryuser/save',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(items),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                    setTimeout(function () { location.reload(); }, 1000);
+                } else {
+                    showMessage(r.message || 'Failed to save records.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving records.', false);
+            }
+        });
+    }
+
+    // ─── Bulk Actions ───────────────────────────────────────────────────────────
+
+    function bulkSetActive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('Please select any item!'); return; }
+        $.post('/bakeryuser/bulkactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkSetInactive() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('Please select any item!'); return; }
+        $.post('/bakeryuser/bulkinactive', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to update.', false);
+            }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkUpdateRecords() {
+        // "Update Records" = same as Save All for checked rows
+        saveAll();
+    }
+
+    function bulkDelete() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('Please select any item!'); return; }
+        if (!confirm('Are you sure to remove selected ' + ids.length + ' item(s)?')) return;
+        $.post('/bakeryuser/bulkdelete', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    // ─── Enter key in search box ────────────────────────────────────────────────
+
+    $(document).ready(function () {
+        $('#txtsearch').on('keypress', function (e) {
+            if (e.which === 13) {
+                doSearch();
+                return false;
+            }
+        });
+    });
+</script>
+}

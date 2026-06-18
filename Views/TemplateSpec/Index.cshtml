@@ -1,0 +1,149 @@
+@{
+    ViewData["Title"] = "Manage Template Specifications";
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Controllers.TemplateSpecController.TemplateItem>
+        ?? new List<CakerStreet.Business.Controllers.TemplateSpecController.TemplateItem>();
+    var cakeFor = (int)(ViewBag.CakeFor ?? -1);
+    var selectedTemplateId = (long)(ViewBag.SelectedTemplateId ?? 0L);
+    var specs = ViewBag.Specs as Dictionary<int, string> ?? new Dictionary<int, string>();
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .spec-form .form-group { margin-bottom: 12px; }
+        .spec-form label { font-weight: bold; }
+        .spec-form textarea { min-height: 80px; }
+        .max250 { max-width: 250px; display: inline-block; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Template Specifications</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                @* ─── Template For + Template Selector ────────────────────────────── *@
+                <div class="col-md-8 spec-form">
+                    <div class="form-group">
+                        <label>Template For</label>
+                        <select id="ddlTemplateFor" class="form-control max250" style="display:inline-block;">
+                            <option value="-1" @(cakeFor == -1 ? "selected" : "")>--Select--</option>
+                            <option value="0" @(cakeFor == 0 ? "selected" : "")>Cakes</option>
+                            <option value="1" @(cakeFor == 1 ? "selected" : "")>Cupcakes</option>
+                        </select>
+                    </div>
+
+                    @if (cakeFor >= 0)
+                    {
+                        <div class="form-group">
+                            <label>Select Template</label>
+                            <select id="drpTemplate" class="form-control max250" style="display:inline-block;">
+                                <option value="0">--Select from saved Templates--</option>
+                                @foreach (var t in templates)
+                                {
+                                    <option value="@t.Id" @(t.Id == selectedTemplateId ? "selected" : "")>@t.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+
+                <div class="clearfix"></div>
+
+                @* ─── Specification Fields ────────────────────────────────────────── *@
+                @if (selectedTemplateId > 0)
+                {
+                    <div class="col-md-8 spec-form" style="margin-top:15px;">
+                        <div class="form-group">
+                            <label>Ingredients</label>
+                            <textarea id="txtIngredients" class="form-control" rows="3">@(specs.ContainsKey(1) ? specs[1] : "")</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Allergens</label>
+                            <textarea id="txtAllergens" class="form-control" rows="3">@(specs.ContainsKey(2) ? specs[2] : "")</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Advice</label>
+                            <textarea id="txtAdvice" class="form-control" rows="3">@(specs.ContainsKey(3) ? specs[3] : "")</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Delivery Details</label>
+                            <textarea id="txtDeliveryDetails" class="form-control" rows="3">@(specs.ContainsKey(4) ? specs[4] : "")</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Storage</label>
+                            <textarea id="txtStorage" class="form-control" rows="3">@(specs.ContainsKey(5) ? specs[5] : "")</textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-top:15px;">
+                            <button type="button" class="btn btn-danger" onclick="saveSpecs();">Save</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    $('#ddlTemplateFor').on('change', function () {
+        var val = $(this).val();
+        if (val === '-1') {
+            window.location.href = '/managespecificationbytemplate';
+        } else {
+            window.location.href = '/managespecificationbytemplate?cakefor=' + val;
+        }
+    });
+
+    $(document).on('change', '#drpTemplate', function () {
+        var val = $(this).val();
+        if (val !== '0') {
+            window.location.href = '/managespecificationbytemplate?templateID=' + val;
+        } else {
+            window.location.href = '/managespecificationbytemplate?cakefor=@cakeFor';
+        }
+    });
+
+    function saveSpecs() {
+        $.post('/managespecificationbytemplate/save', {
+            templateId: @selectedTemplateId,
+            ingredients: $('#txtIngredients').val(),
+            allergens: $('#txtAllergens').val(),
+            advice: $('#txtAdvice').val(),
+            deliveryDetails: $('#txtDeliveryDetails').val(),
+            storage: $('#txtStorage').val()
+        }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving.', false);
+        });
+    }
+</script>
+}

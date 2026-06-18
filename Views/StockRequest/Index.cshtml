@@ -1,0 +1,771 @@
+@{
+    ViewData["Title"] = "Manage Stock Request";
+    var items = ViewBag.Items as List<CakerStreet.Business.Services.StockRequestItem> ?? new List<CakerStreet.Business.Services.StockRequestItem>();
+    var totalPages = (int)(ViewBag.TotalPages ?? 0);
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var search = ViewBag.Search as string ?? "";
+    var status = (int)(ViewBag.Status ?? 0);
+    var userType = ViewBag.UserType as string ?? "";
+    var userId = (int)(ViewBag.UserId ?? 0);
+    var staffList = ViewBag.StaffList as List<CakerStreet.Business.Services.StaffListItem> ?? new List<CakerStreet.Business.Services.StaffListItem>();
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var pendingCount = (int)(ViewBag.PendingCount ?? 0);
+    var poPendingCount = (int)(ViewBag.POPendingCount ?? 0);
+    var poApprovedCount = (int)(ViewBag.POApprovedCount ?? 0);
+    var sentToSupplierCount = (int)(ViewBag.SentToSupplierCount ?? 0);
+    var completedCount = (int)(ViewBag.CompletedCount ?? 0);
+    var declinedCount = (int)(ViewBag.DeclinedCount ?? 0);
+    bool isAdminManager = (userType == "1" || userType == "2");
+}
+
+@section Head {
+    <link href="/css/manageinventory.css" rel="stylesheet" />
+    <link href="/css/bakeryorder.css" rel="stylesheet" />
+    <link href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .filter-radio li { float: left; }
+        .font-weight-normal { font-weight: normal; }
+        .img img { max-height: 60px; max-width: 60px; }
+        .table.prdlstouter { margin-top: 20px; }
+        .ui-menu img { width: 40px; height: 40px; }
+        .ui-menu li span { font-size: 1em; padding: 0 0 10px 10px; margin: 0 0 10px 0 !important; white-space: nowrap; }
+        .action-menu li { border-bottom: 1px dashed #ccc; }
+        .action-menu li:last-child { border: none; }
+        .btn-group { min-width: auto; }
+        .innerhead .btn.dropdown-toggle { height: auto; }
+        .modalPopup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.5); }
+        .modalPopup .modal { display: block; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .chkboxouter label { margin-right: 15px; cursor: pointer; }
+        .chkboxouter input[type="radio"] { margin-right: 4px; }
+        .trReply td { border-top-width: 0px; padding-top: 0px !important; }
+        .divtaskdetail ul { list-style: none; padding: 0; margin: 0; }
+        .liremarks { padding: 5px 0; font-size: 13px; }
+        .liremarksreply { border-bottom: 1px dashed #eee; padding: 5px 0; }
+        .liremarksreply span { display: block; }
+        .liremarksreply span font { font-weight: bold; margin-right: 10px; }
+        .lilnkreply { padding: 5px 0; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <!-- 8.2: Page Header -->
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Stock Request</h2>
+        <div class="btn-group pull-right" style="margin-right:14px;margin-top: -4px;">
+            <button class="btn btn-danger bg-black" type="button" style="padding: 6px;">Manage</button>
+            <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button" aria-expanded="false">
+                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul role="menu" class="dropdown-menu">
+                <li><a href="/managepurchaseorder?status=0">Manage PO</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+
+                <!-- 8.3: Status Filter Radio Tabs -->
+                <div class="col-md-12" style="padding-bottom:10px">
+                    <div class="chkboxouter pull-left">
+                        <label><input type="radio" name="rbStatus" value="0" @(status == 0 ? "checked" : "") onchange="switchStatus(0);" /> Pending (@pendingCount)</label>
+                        <label><input type="radio" name="rbStatus" value="1" @(status == 1 ? "checked" : "") onchange="switchStatus(1);" /> Approved (PO Pending) (@poPendingCount)</label>
+                        <label><input type="radio" name="rbStatus" value="2" @(status == 2 ? "checked" : "") onchange="switchStatus(2);" /> PO Approved (@poApprovedCount)</label>
+                        <label><input type="radio" name="rbStatus" value="3" @(status == 3 ? "checked" : "") onchange="switchStatus(3);" /> PO Sent to Supplier (@sentToSupplierCount)</label>
+                        <label><input type="radio" name="rbStatus" value="4" @(status == 4 ? "checked" : "") onchange="switchStatus(4);" /> PO Completed (@completedCount)</label>
+                        <label><input type="radio" name="rbStatus" value="5" @(status == 5 ? "checked" : "") onchange="switchStatus(5);" /> Declined (@declinedCount)</label>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+
+                <div class="col-md-12">
+                    <!-- 8.4: Action Bar (Approve/Decline bulk - Pending tab, admin/manager only) -->
+                    @if (isAdminManager)
+                    {
+                        <div id="divtopfilters" class="col-md-3" style="@(status != 0 ? "display:none;" : "")">
+                            <div class="btn-group">
+                                <button class="btn btn-danger bg-red" type="button">Action on <span id="spnfilterselected">0</span> selected</button>
+                                <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul role="menu" class="dropdown-menu">
+                                    <li><a href="javascript:void(0);" onclick="bulkApprove();">Approve</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkDecline();">Decline</a></li>
+                                    <li><a href="javascript:void(0);" onclick="bulkDelete();">Remove</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col-md-3">
+                        <input type="text" id="txtsearch" class="form-contro input-sm" placeholder="Search keyword" value="@search" />
+                        <a href="javascript:void(0);" class="btn btn-danger btn-sm" onclick="doSearch();">Go</a>
+                        <a href="/managestockrequest" class="btn btn-danger btn-sm">X</a>
+                    </div>
+
+                    <div class="col-md-2">
+                        <a href="javascript:void(0);" class="btn btn-success btn-sm" onclick="showRequestPopup(0);"><span class="glyphicon glyphicon-plus"></span> New Request</a>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                @if (items.Count == 0)
+                {
+                    <div class="alert alert-danger">No Stock Request Found</div>
+                }
+
+                <!-- 8.5: Table -->
+                @if (items.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="chk headertext">
+                                        <input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" />
+                                    </th>
+                                    <th class="type">Product Name</th>
+                                    <th class="type">PO Status</th>
+                                    <th class="status">Req. Qty</th>
+                                    <th class="Email">Req. Date</th>
+                                    <th class="Pwd1">Req. By</th>
+                                    <th class="Pwd1">Status</th>
+                                    <th class="action">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in items)
+                                {
+                                    var statusText = item.Status switch { 0 => "Pending", 1 => "Approved", 2 => "Query", 3 => "Decline", _ => "Pending" };
+                                    var poStatusHtml = GetPOStatusHtml(item);
+                                    var canEdit = (item.Status == 0 || item.Status == 2);
+                                    var canApprove = isAdminManager && (item.Status == 0 || item.Status == 3);
+                                    var canDecline = isAdminManager && (item.Status == 0 || item.Status == 1);
+                                    var canGeneratePO = isAdminManager && (item.Status == 1 && item.PO_Status == -1);
+                                    var canDelete = isAdminManager;
+
+                                    <tr class="rowtext">
+                                        <td class="chk">
+                                            <input type="checkbox" class="chkrow" data-id="@item.PrdStockRequest_Id" onchange="chkuncheckHeadernRowbyrow();" />
+                                        </td>
+                                        <td class="type">
+                                            @if (!string.IsNullOrEmpty(item.ProductImage))
+                                            {
+                                                <img src="@(cdnBase)upload/Product_images/resized_80_80/@item.ProductImage" style="max-height:40px;max-width:40px;margin-right:5px;" alt="" />
+                                            }
+                                            @item.ProductName
+                                        </td>
+                                        <td class="type" style="color:#CF0000;">@Html.Raw(poStatusHtml)</td>
+                                        <td class="status">@item.Required_Qty</td>
+                                        <td class="Email">@item.Required_Date.ToString("d")</td>
+                                        <td class="Pwd1">@item.ReqUserName</td>
+                                        <td class="Pwd1">@statusText</td>
+                                        <td class="action">
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-default">Action</button>
+                                                <button type="button" class="btn btn-sm btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                                    <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                                <ul class="dropdown-menu action-menu" role="menu">
+                                                    @if (canEdit)
+                                                    {
+                                                        <li><a href="javascript:void(0);" class="text-danger" onclick="showRequestPopup(@item.PrdStockRequest_Id);">Edit</a></li>
+                                                    }
+                                                    <li><a href="javascript:void(0);" onclick="openReplyModal(@item.PrdStockRequest_Id, '@Html.Raw(item.ProductName?.Replace("'", "\\'") ?? "")');">Add Remarks</a></li>
+                                                    @if (canGeneratePO)
+                                                    {
+                                                        <li><a href="/addpurchaseorder?requestid=@item.PrdStockRequest_Id" target="_blank">Generate PO</a></li>
+                                                    }
+                                                    @if (canApprove)
+                                                    {
+                                                        <li><a href="javascript:void(0);" onclick="approveItem(@item.PrdStockRequest_Id);">Approve</a></li>
+                                                    }
+                                                    @if (canDecline)
+                                                    {
+                                                        <li><a href="javascript:void(0);" onclick="declineItem(@item.PrdStockRequest_Id);">Decline</a></li>
+                                                    }
+                                                    @if (canDelete)
+                                                    {
+                                                        <li><a href="javascript:void(0);" onclick="deleteItem(@item.PrdStockRequest_Id);">Remove</a></li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 8.6: Remarks/Reply Thread Row -->
+                                    <tr class="trReply trReply_@item.PrdStockRequest_Id" style="@(string.IsNullOrEmpty(item.Remarks) ? "display:none;" : "")">
+                                        <td colspan="8" style="border-top-width: 0px; padding-top: 0px !important">
+                                            <div id="dvReply_@item.PrdStockRequest_Id" class="divtaskdetail divtaskdetail_bot">
+                                                <ul>
+                                                    @if (!string.IsNullOrEmpty(item.Remarks))
+                                                    {
+                                                        <li class="liremarks_outer col-md-12 col-sm-12 flush">
+                                                            <div class="liremarks col-sm-12">@item.Remarks</div>
+                                                        </li>
+                                                    }
+                                                    <li class="lilnkreply col-md-6 col-sm-5 flush">
+                                                        <a href="javascript:void(0);" class="normallink lnkreplyRemarks" onclick="openReplyModal(@item.PrdStockRequest_Id, '@Html.Raw(item.ProductName?.Replace("'", "\\'") ?? "")');">Reply</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 8.8: Pagination Controls -->
+                    @if (totalPages > 1)
+                    {
+                        <div class="pagination pagination-right">
+                            <div class="paging_outer">
+                                <ul class="left">
+                                    <li><a href="@GetPageUrl(1)">First</a></li>
+                                    <li class="@(currentPage <= 1 ? "disabled" : "")">
+                                        @if (currentPage > 1)
+                                        {
+                                            <a href="@GetPageUrl(currentPage - 1)"><img src="/img/prev-arrow.png" alt="Previous" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/prev-arrow.png" alt="Previous" /></span>
+                                        }
+                                    </li>
+                                </ul>
+                                <ul class="numbering">
+                                    @{
+                                        int pageButtonCount = 3;
+                                        int min = currentPage - pageButtonCount;
+                                        int max = currentPage + pageButtonCount;
+                                        if (max > totalPages) min -= (max - totalPages);
+                                        if (min < 1) max += (1 - min);
+                                        bool needDiv = false;
+
+                                        for (int i = 1; i <= totalPages; i++)
+                                        {
+                                            if (i <= 2 || i > totalPages - 2 || (min <= i && i <= max))
+                                            {
+                                                <li class="@(i == currentPage ? "active" : "")">
+                                                    <a href="@GetPageUrl(i)">@i</a>
+                                                </li>
+                                                needDiv = true;
+                                            }
+                                            else if (needDiv)
+                                            {
+                                                <li class="disabled"><span>...</span></li>
+                                                needDiv = false;
+                                            }
+                                        }
+                                    }
+                                </ul>
+                                <ul class="right">
+                                    <li class="@(currentPage >= totalPages ? "disabled" : "")">
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <a href="@GetPageUrl(currentPage + 1)"><img src="/img/nxt-arrow.png" alt="Next" /></a>
+                                        }
+                                        else
+                                        {
+                                            <span><img src="/img/nxt-arrow.png" alt="Next" /></span>
+                                        }
+                                    </li>
+                                    <li><a href="@GetPageUrl(totalPages)">Last</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 8.7: Create/Edit Modal -->
+<div id="stockRequestModal" class="modalPopup">
+    <div class="modal" aria-hidden="true" aria-labelledby="myModalLabel" role="dialog" tabindex="-1" style="display: block">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"><span id="spHead">Add New</span> Stock Request</h4>
+                    <input type="hidden" id="hfEditID" value="0" />
+                    <input type="hidden" id="hfUserID" value="@userId" />
+                </div>
+                <div class="modal-body">
+                    <div class="form-horizontal" role="form">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Product Type: <span class="text-danger">*</span></label>
+                            <div class="col-sm-4">
+                                <select id="ddlPrdType" class="input-sm form-control" onchange="resetProductSelection();">
+                                    <option value="2">Accessories</option>
+                                    <option value="4">Cake Toppers</option>
+                                    <option value="5">Cutters / Moulds</option>
+                                    <option value="7">Packaging</option>
+                                    <option value="8">Supplies</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Search Product: <span class="text-danger">*</span></label>
+                            <div class="col-sm-4">
+                                <input type="text" id="txtSearchProduct" maxlength="200" placeholder="Search" class="input-sm form-control" />
+                                <input type="hidden" id="hfPrdID" value="" />
+                                <span id="spPrdExists" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Required By: <span class="text-danger">*</span></label>
+                            <div class="col-sm-4">
+                                <select id="ddlUser" class="input-sm form-control">
+                                    <option value="0">Select User</option>
+                                    @foreach (var staff in staffList)
+                                    {
+                                        <option value="@staff.CustomerId">@staff.CustomerName</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div id="dvProductLocations"></div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Required Qty: <span class="text-danger">*</span></label>
+                            <div class="col-sm-3">
+                                <input type="text" id="txtQty" placeholder="Required Qty" class="input-sm form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Required Date: <span class="text-danger">*</span></label>
+                            <div class="col-sm-3">
+                                <input type="text" id="txtRequiredDate" placeholder="Required Date" class="input-sm form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Remarks:</label>
+                            <div class="col-sm-8">
+                                <textarea id="txtRemarks" class="input-sm form-control" placeholder="Enter Remarks"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <input type="button" class="btn btn-sm btn-primary btnAddstock" onclick="saveStockRequest();" value="Submit" />
+                                <input type="button" class="btn btn-sm btn-danger" onclick="closeRequestModal();" value="Close" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reply Modal -->
+<div id="dv_replyonEnquiry" class="modal fade in" style="display: none;" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42;">
+                <h4 class="modal-title" style="color: #fff;">Remarks Reply
+                    <input type="hidden" id="hfInvStockID" />
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="control-label remarksbox" style="font-weight: normal"></label>
+                </div>
+                <div class="form-group">
+                    <textarea rows="2" cols="20" id="txtReplyRemarks" class="form-control" placeholder="Enter Remarks" style="min-height: 100px"></textarea>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="txtReplyName" class="form-control" placeholder="Enter Your Name" value="@(ViewBag.UserName ?? "")" />
+                </div>
+                <div class="form-group">
+                    <input type="button" value="Submit" onclick="submitReply();" class="btn btn-primary updt-acnt" />
+                    <input type="button" value="Close" onclick="closeReplyModal();" class="btn btn-danger updt-acnt" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNumber)
+    {
+        var searchVal = ViewBag.Search as string ?? "";
+        var statusVal = (int)(ViewBag.Status ?? 0);
+        var url = "/managestockrequest";
+        var queryParts = new List<string>();
+
+        if (statusVal != 0)
+        {
+            queryParts.Add("status=" + statusVal);
+        }
+        if (!string.IsNullOrEmpty(searchVal))
+        {
+            queryParts.Add("search=" + System.Net.WebUtility.UrlEncode(searchVal));
+        }
+        if (pageNumber != 1)
+        {
+            queryParts.Add("pageno=" + pageNumber);
+        }
+
+        if (queryParts.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParts);
+        }
+        return url;
+    }
+
+    string GetPOStatusHtml(CakerStreet.Business.Services.StockRequestItem item)
+    {
+        if (item.PO_Status == -1 && item.Status == 1)
+        {
+            return "-";
+        }
+        if (!string.IsNullOrEmpty(item.PO_SysNo) && item.PO_ID.HasValue)
+        {
+            var href = item.PO_Status == 4
+                ? $"/printpurchaseorderitemrecd?id={item.PO_ID}"
+                : $"/printpurchaseorder?id={item.PO_ID}";
+            var link = $"<a target='_blank' style='color:#CF0000;' href='{href}'>{item.PO_SysNo}</a><br/>";
+            var statusText = item.PO_Status switch
+            {
+                0 => "(PO Pending Approvals)",
+                1 => "(PO Approved by 1 dept)",
+                2 => "(PO Approved fully)",
+                3 => "(PO sent to supplier)",
+                4 => "(PO Completed)",
+                _ => ""
+            };
+            return link + statusText;
+        }
+        return "-";
+    }
+}
+
+@section FooterScripts {
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Status Tab Switching ───────────────────────────────────────────────────
+    function switchStatus(s) {
+        var url = '/managestockrequest?status=' + s;
+        var search = $.trim($('#txtsearch').val());
+        if (search !== '') url += '&search=' + encodeURIComponent(search);
+        window.location.href = url;
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+    function doSearch() {
+        var keyword = $.trim($('#txtsearch').val());
+        if (keyword === '') { alert('Please enter search keyword'); return; }
+        var url = '/managestockrequest?status=@status&search=' + encodeURIComponent(keyword);
+        window.location.href = url;
+    }
+    $(document).ready(function () {
+        $('#txtsearch').on('keypress', function (e) {
+            if (e.which === 13) { doSearch(); return false; }
+        });
+        initAutocomplete();
+        $('#txtRequiredDate').datepicker({ dateFormat: 'dd/mm/yy' });
+    });
+
+    // ─── Checkbox Select All / Deselect All ─────────────────────────────────────
+    function chkuncheckbyheader() {
+        if ($('#chkAll').is(':checked')) {
+            $('.rowtext .chkrow').prop('checked', true);
+        } else {
+            $('.rowtext .chkrow').prop('checked', false);
+        }
+        updateSelectedCount();
+    }
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.rowtext .chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        updateSelectedCount();
+    }
+    function updateSelectedCount() {
+        $('#spnfilterselected').text($('.rowtext .chkrow:checked').length);
+    }
+    function getSelectedIds() {
+        var ids = [];
+        $('.rowtext .chkrow:checked').each(function () { ids.push($(this).data('id')); });
+        return ids;
+    }
+</script>
+<script type="text/javascript">
+    // ─── Product Autocomplete ───────────────────────────────────────────────────
+    function initAutocomplete() {
+        $('#txtSearchProduct').autocomplete({
+            minLength: 1,
+            select: function (event, ui) {
+                event.preventDefault();
+                $('#txtSearchProduct').val(ui.item.label);
+                $('#hfPrdID').val(ui.item.value);
+                getStockLocation(ui.item.value);
+                checkPrdInPO(ui.item.value);
+                return false;
+            },
+            html: true,
+            open: function () { $(".ui-autocomplete").css("z-index", 99999); },
+            source: function (request, response) {
+                $.ajax({
+                    url: '/managestockrequest/searchproducts',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { keyword: request.term, prdtype: $('#ddlPrdType').val() },
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.productName,
+                                value: item.productId,
+                                img: '@cdnBase' + 'upload/Product_images/resized_80_80/' + item.productImage
+                            };
+                        }));
+                    },
+                    error: function () { response([]); }
+                });
+            },
+            messages: { noResults: "", results: "" }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            return $("<li><div><img src='" + item.img + "'><span>" + item.label + "</span></div></li>").appendTo(ul);
+        };
+    }
+
+    function resetProductSelection() {
+        $('#hfPrdID').val('');
+        $('#txtSearchProduct').val('');
+        $('#dvProductLocations').html('');
+        $('#spPrdExists').html('');
+    }
+
+    function getStockLocation(pid) {
+        $.get('/managestockrequest/stocklocation', { pid: pid }, function (r) {
+            if (r.success) { $('#dvProductLocations').html(r.html); }
+        });
+    }
+
+    function checkPrdInPO(pid) {
+        $('#spPrdExists').html('');
+        $.get('/managestockrequest/checkpo', { pid: pid }, function (r) {
+            if (r.success && r.html) { $('#spPrdExists').html(r.html); }
+        });
+    }
+</script>
+<script type="text/javascript">
+    // ─── Create/Edit Modal ──────────────────────────────────────────────────────
+    function showRequestPopup(id) {
+        $('#spPrdExists').html('');
+        if (id === 0) {
+            $('#spHead').text('Add New');
+            $('#ddlPrdType').val('2');
+            var uid = $('#hfUserID').val();
+            if ($('#ddlUser option[value="' + uid + '"]').length > 0) {
+                $('#ddlUser').val(uid);
+            }
+            $('#txtSearchProduct').val('');
+            $('#dvProductLocations').html('');
+            $('#txtQty').val('');
+            $('#txtRequiredDate').val('');
+            $('#txtRemarks').val('');
+            $('#hfEditID').val('0');
+            $('#hfPrdID').val('');
+            $('#txtSearchProduct').focus();
+        } else {
+            $('#spHead').text('Edit');
+            loadStockRequestById(id);
+        }
+        $('#stockRequestModal').show();
+    }
+
+    function closeRequestModal() {
+        $('#stockRequestModal').hide();
+    }
+
+    function loadStockRequestById(id) {
+        $.get('/managestockrequest/getbyid', { id: id }, function (r) {
+            if (r.success) {
+                var d = r.data;
+                $('#ddlPrdType').val(d.productType || '2');
+                $('#ddlUser').val(d.req_UserID);
+                $('#txtSearchProduct').val(d.productName);
+                $('#hfPrdID').val(d.product_Id);
+                $('#dvProductLocations').html(d.stockLocationHtml || '');
+                $('#txtQty').val(d.required_Qty);
+                $('#txtRequiredDate').val(d.required_Date);
+                $('#txtRemarks').val(d.remarks || '');
+                $('#hfEditID').val(d.prdStockRequest_Id);
+            } else {
+                alert(r.message || 'Failed to load stock request.');
+            }
+        }).fail(function () {
+            alert('An error occurred while loading stock request.');
+        });
+    }
+
+    function saveStockRequest() {
+        var msg = '';
+        if ($('#ddlUser').val() === '0') { msg += 'Please select Required By.\n'; }
+        if ($('#hfPrdID').val() === '') { msg += 'Please search and select a product.\n'; }
+        if ($('#txtQty').val() === '' || isNaN($('#txtQty').val())) { msg += 'Please enter valid Required Quantity.\n'; }
+        if ($('#txtRequiredDate').val() === '') { msg += 'Please enter Required Date.\n'; }
+
+        if (msg !== '') { alert(msg); return; }
+
+        var data = {
+            PrdStockRequest_Id: parseInt($('#hfEditID').val()),
+            Product_Id: parseInt($('#hfPrdID').val()),
+            Required_Qty: parseInt($('#txtQty').val()),
+            Required_Date: $('#txtRequiredDate').val(),
+            Req_UserID: parseInt($('#ddlUser').val()),
+            Remarks: $('#txtRemarks').val()
+        };
+
+        $.post('/managestockrequest/save', data, function (r) {
+            if (r.success) {
+                closeRequestModal();
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                alert(r.message || 'Failed to save.');
+            }
+        }).fail(function () {
+            alert('An error occurred while saving.');
+        });
+    }
+</script>
+<script type="text/javascript">
+    // ─── Approve / Decline / Delete (single item) ───────────────────────────────
+    function approveItem(id) {
+        $.post('/managestockrequest/approve', { id: id }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to approve.', false);
+            }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function declineItem(id) {
+        $.post('/managestockrequest/decline', { id: id }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to decline.', false);
+            }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function deleteItem(id) {
+        if (!confirm('Are you sure to remove this stock request?')) return;
+        $.post('/managestockrequest/delete', { id: id }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    // ─── Bulk Actions ───────────────────────────────────────────────────────────
+    function bulkApprove() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('please select any item!'); return; }
+        $.post('/managestockrequest/bulkapprove', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else { showMessage(r.message || 'Failed to approve.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkDecline() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('please select any item!'); return; }
+        $.post('/managestockrequest/bulkdecline', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else { showMessage(r.message || 'Failed to decline.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+
+    function bulkDelete() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('please select any item!'); return; }
+        if (!confirm('Are you sure to remove selected ' + ids.length + ' item(s)?')) return;
+        $.post('/managestockrequest/bulkdelete', { ids: ids.join(',') }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else { showMessage(r.message || 'Failed to delete.', false); }
+        }).fail(function () { showMessage('An error occurred.', false); });
+    }
+</script>
+<script type="text/javascript">
+    // ─── Reply Modal ────────────────────────────────────────────────────────────
+    function openReplyModal(id, prdName) {
+        $('#txtReplyRemarks').val('');
+        $('#hfInvStockID').val(id);
+        $('.control-label.remarksbox').html(prdName);
+        $('#dv_replyonEnquiry').show();
+    }
+
+    function closeReplyModal() {
+        $('#hfInvStockID').val('');
+        $('#dv_replyonEnquiry').hide();
+    }
+
+    function submitReply() {
+        var remarks = $.trim($('#txtReplyRemarks').val());
+        var name = $.trim($('#txtReplyName').val());
+        if (remarks === '') { alert('Please enter remarks!'); return; }
+        if (name === '') { alert('Please enter your Name!'); return; }
+
+        var requestId = $('#hfInvStockID').val();
+        $.post('/managestockrequest/savereply', {
+            requestId: requestId,
+            name: name,
+            message: remarks
+        }, function (r) {
+            if (r.success) {
+                alert('Your reply has been saved successfully');
+                var d = r.data;
+                var li = "<li class='liremarks liremarksreply col-md-12 col-sm-12 col-xs-12 flush'><span><font>" + d.name + "</font>" + d.modifiedOn + "</span>" + d.message + "</li>";
+                var $replyDiv = $('#dvReply_' + requestId + ' ul');
+                $replyDiv.find('li:first-child').after(li);
+                $('.trReply_' + requestId).show();
+                $('#txtReplyRemarks').val('');
+                closeReplyModal();
+            } else {
+                alert(r.message || 'Failed to save reply.');
+            }
+        }).fail(function () {
+            alert('An error occurred while saving reply.');
+        });
+    }
+</script>
+}

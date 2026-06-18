@@ -1,0 +1,410 @@
+@{
+    ViewData["Title"] = "Manage Recipe Matrix";
+}
+
+@section Head {
+    <link href="@(ViewBag.CdnBase)bakery_content/bakery_content/css/sellcss.css" rel="stylesheet" />
+    <style type="text/css">
+        span.tbl_outer {
+            margin: 0px auto 0 auto;
+            display: table;
+            font-weight: normal;
+            text-align: center;
+        }
+        .yellobg, .yellobg td {
+            background-color: Yellow !important;
+        }
+        .filter-radio {
+            display: inline-flex;
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+            margin-top: 6px;
+        }
+        .filter-radio li {
+            margin-right: 15px;
+            display: inline-block;
+        }
+        .filter-radio input[type="radio"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .filter-radio label {
+            font-weight: normal;
+            vertical-align: middle;
+            margin-bottom: 0;
+        }
+        .prdlstouter {
+            position: relative;
+            overflow: auto;
+            max-height: 500px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+        }
+        .middleSection {
+            width: 100%;
+        }
+        .bg-black {
+            background-color: #000 !important;
+            color: #fff !important;
+            border-color: #000 !important;
+        }
+        .bg-red {
+            background-color: #DF3F42 !important;
+            color: #fff !important;
+            border-color: #DF3F42 !important;
+        }
+        /* Slanted / Vertical header text styling to fit many columns */
+        .table th.status {
+            vertical-align: bottom;
+            text-align: center;
+            font-size: 11px;
+            padding: 8px 4px;
+            min-width: 60px;
+            white-space: nowrap;
+        }
+        .table th.status .col-title {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            margin: 0 auto;
+            display: block;
+            max-height: 100px;
+            font-weight: bold;
+        }
+        .table td.status {
+            text-align: center;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Receipe Matrix</h2>
+        
+        <div class="btn-group pull-right" style="margin-right:14px; margin-top: -4px;">
+            <button class="btn btn-danger bg-black" type="button" style="padding: 6px;">Manage</button>
+            <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button" aria-expanded="false" style="padding: 6px 12px;">
+                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul role="menu" class="dropdown-menu">
+                <li><a href="/managereceipe">Manage Receipes</a></li>
+                <li><a href="/manageingredient">Manage Ingredients</a></li>
+                <li><a href="/managereceipecategory">Manage Ingredients Category</a></li>
+                <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                <li><a href="/managereceipe-findandreplace">Replace Ingredients</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg" style="display: none; margin: 10px 0;"></div>
+        <div class="clearfix"></div>
+
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                
+                <div class="col-md-12 form-group flush" style="margin-bottom: 15px;">
+                    <!-- Action Button -->
+                    <div class="col-md-3">
+                        <div class="btn-group" id="actionbutton">
+                            <button class="btn btn-danger bg-red" type="button">
+                                Action on <span id="spnfilterselected">0</span> selected
+                            </button>
+                            <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false" style="padding: 6px 12px;">
+                                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul role="menu" class="dropdown-menu">
+                                <li><a href="javascript:void(0);" onclick="removeSelectedRecipes();">Remove Item(s)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Book Filters (Radio) -->
+                    <div class="col-md-6">
+                        <ul class="filter-radio">
+                            <li>
+                                <input type="radio" name="bookFilter" id="radBookAll" value="0" checked onchange="onFilterChanged();" />
+                                <label for="radBookAll">All</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="bookFilter" id="radBookSandwich" value="1" onchange="onFilterChanged();" />
+                                <label for="radBookSandwich">444 Sandwich Book</label>
+                            </li>
+                            <li>
+                                <input type="radio" name="bookFilter" id="radBookSalad" value="2" onchange="onFilterChanged();" />
+                                <label for="radBookSalad">Salad recipes Book</label>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Category Dropdown -->
+                    <div class="col-md-3">
+                        <select class="form-control" id="drpcategories" onchange="onFilterChanged();" style="width: 100%;">
+                            <option value="0">--All Categories--</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+                
+                <!-- Count Label -->
+                <div class="col-md-12 form-group flush">
+                    <div class="col-md-12">
+                        <span id="litcountrec" style="font-weight: bold; color: #555;">Loading recipes and ingredients...</span>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+
+                <!-- Matrix Grid Container -->
+                <div class="prdlstouter container" id="our_products" style="width: 100%;">
+                    <table class="table table-bordred table-striped" id="tblRecipeMatrix">
+                        <thead>
+                            <tr id="trHeader">
+                                <th class="chk headertext" style="width: 50px; vertical-align: middle; text-align: center;">
+                                    <input type="checkbox" id="chkSelectAll" onchange="selectAllRows();" />
+                                </th>
+                                <th class="name" style="min-width: 230px; vertical-align: middle;">
+                                    Receipe
+                                </th>
+                                <!-- Dynamic columns will be injected here -->
+                            </tr>
+                        </thead>
+                        <tbody id="tblMatrixBody">
+                            <!-- Dynamic rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    var columnsCache = [];
+    var rowsCache = [];
+
+    $(document).ready(function () {
+        loadCategories();
+        loadMatrix();
+    });
+
+    // ─── Load Categories ────────────────────────────────────────────────────────
+
+    function loadCategories() {
+        $.get('/managereceipematrix/categories', function (r) {
+            if (r.success && r.data) {
+                var $ddl = $('#drpcategories');
+                $.each(r.data, function (i, item) {
+                    $ddl.append('<option value="' + item.categoryId + '">' + item.categoryName + '</option>');
+                });
+            }
+        });
+    }
+
+    // ─── Load Matrix Grid ───────────────────────────────────────────────────────
+
+    function loadMatrix() {
+        var bookId = $('input[name="bookFilter"]:checked').val() || '0';
+        var catId = $('#drpcategories').val() || '0';
+
+        $('#litcountrec').text('Loading recipes and ingredients...');
+
+        $.get('/managereceipematrix/matrix', { bookId: bookId, catId: catId }, function (r) {
+            if (r.success && r.data) {
+                columnsCache = r.data.columns;
+                rowsCache = r.data.rows;
+                
+                $('#litcountrec').text(r.data.totalRecords + ' receipes found having ' + r.data.totalColumns + ' ingredients');
+                renderMatrix(r.data);
+            } else {
+                $('#litcountrec').text('No recipes found.');
+                $('#tblMatrixBody').empty();
+                $('.dynamic-col-header').remove();
+            }
+        });
+    }
+
+    // ─── Render Dynamic Columns and Rows ────────────────────────────────────────
+
+    function renderMatrix(data) {
+        // 1. Render Column Headers
+        $('.dynamic-col-header').remove();
+        var $trHeader = $('#trHeader');
+        
+        $.each(data.columns, function (i, col) {
+            var thHtml = '<th class="status dynamic-col-header" data-id="' + col.id + '">' +
+                '<span class="col-title">' + escapeHtml(col.title) + '</span>' +
+                '<span class="tbl_outer">(<font class="col-count">0</font>)<br />' +
+                '<input type="checkbox" class="tbl" onchange="highlightByIngredient(this);" /></span>' +
+                '</th>';
+            $trHeader.append(thHtml);
+        });
+
+        // 2. Render Rows
+        var $tbody = $('#tblMatrixBody');
+        $tbody.empty();
+
+        $.each(data.rows, function (i, row) {
+            var recipeId = row.receipeBookReceipe_ID;
+            var recipeTitle = row.receipeBookReceipe_title;
+
+            var trHtml = '<tr class="rowtext" data-id="' + recipeId + '">' +
+                '<td class="chk" style="text-align:center;">' +
+                    '<input type="checkbox" class="chkRowSelect" data-id="' + recipeId + '" onchange="updateSelectedCount();" />' +
+                '</td>' +
+                '<td class="name">' +
+                    '<a target="_blank" href="/managereceipe?ID=' + recipeId + '">' + escapeHtml(recipeTitle) + '</a>' +
+                '</td>';
+
+            // Append dynamic cells
+            $.each(data.columns, function (j, col) {
+                var colKey = col.title + '|' + col.id;
+                var hasIng = row[colKey] === 1;
+                trHtml += '<td class="status" data-text="' + (hasIng ? '1' : '0') + '" data-id="' + col.id + '">' +
+                    (hasIng ? '✔' : '') +
+                    '</td>';
+            });
+
+            trHtml += '</tr>';
+            $tbody.append(trHtml);
+        });
+
+        // 3. Compute Column Counts
+        updateColumnOccurrences();
+    }
+
+    // ─── Helper: Update occurrences counts under each header ────────────────────
+
+    function updateColumnOccurrences() {
+        $('th.dynamic-col-header').each(function () {
+            var colId = $(this).attr('data-id');
+            var count = $('.rowtext td.status[data-id="' + colId + '"][data-text="1"]').length;
+            $(this).find('.col-count').text(count);
+        });
+    }
+
+    // ─── Event Handlers ─────────────────────────────────────────────────────────
+
+    function onFilterChanged() {
+        loadMatrix();
+        $('#chkSelectAll').prop('checked', false);
+        $('#spnfilterselected').text('0');
+    }
+
+    function selectAllRows() {
+        var checked = $('#chkSelectAll').is(':checked');
+        $('.chkRowSelect').prop('checked', checked);
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        var count = $('.chkRowSelect:checked').length;
+        $('#spnfilterselected').text(count);
+    }
+
+    // ─── Save / Delete Operation ────────────────────────────────────────────────
+
+    function removeSelectedRecipes() {
+        var selectedIds = [];
+        $('.chkRowSelect:checked').each(function () {
+            selectedIds.push(parseInt($(this).attr('data-id')));
+        });
+
+        if (selectedIds.length === 0) {
+            alert('please select any item!');
+            return;
+        }
+
+        if (!confirm('Are you sure to remove selected ' + selectedIds.length + ' item(s)?')) {
+            return;
+        }
+
+        $.ajax({
+            url: '/managereceipematrix/remove',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ recipeIds: selectedIds }),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                    loadMatrix();
+                    $('#chkSelectAll').prop('checked', false);
+                    $('#spnfilterselected').text('0');
+                } else {
+                    showMessage(r.message || 'Failed to remove recipes.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred during removal.', false);
+            }
+        });
+    }
+
+    // ─── Highlighting Logic by Ingredients (WebMethod Parity) ─────────────────────
+
+    function highlightByIngredient(chkBox) {
+        var $th = $(chkBox).closest('th');
+        var colId = $th.attr('data-id');
+
+        if ($(chkBox).is(':checked')) {
+            $th.addClass('yellobg');
+            $('.rowtext td.status[data-id="' + colId + '"]').addClass('yellobg');
+        } else {
+            $th.removeClass('yellobg');
+            $('.rowtext td.status[data-id="' + colId + '"]').removeClass('yellobg');
+        }
+
+        // Get all checked ingredient IDs
+        var checkedGroupIds = [];
+        $('th.dynamic-col-header input.tbl:checked').each(function () {
+            checkedGroupIds.push(parseInt($(this).closest('th').attr('data-id')));
+        });
+
+        if (checkedGroupIds.length > 0) {
+            $.ajax({
+                url: '/managereceipematrix/highlight',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ ingredientGroupIds: checkedGroupIds }),
+                success: function (r) {
+                    if (r.success && r.data) {
+                        // Clear row yellow highlights
+                        $('tr.rowtext').removeClass('yellobg');
+                        // Highlight matching rows
+                        $.each(r.data, function (i, recipeId) {
+                            $('tr.rowtext[data-id="' + recipeId + '"]').addClass('yellobg');
+                        });
+                        
+                        alert(r.data.length + ' receipes found');
+                    }
+                }
+            });
+        } else {
+            $('tr.rowtext').removeClass('yellobg');
+        }
+    }
+
+    // ─── Message Helper ─────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success');
+        $div.addClass(isSuccess ? 'alert-success' : 'alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(); }, 4000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+</script>
+}

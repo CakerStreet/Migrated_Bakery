@@ -1,0 +1,250 @@
+@model CakerStreet.Business.Services.ServiceItem
+@{
+    ViewData["Title"] = Model == null ? "Add New Service" : "Edit Service";
+    var parentCategories = ViewBag.ParentCategories as List<ServiceCategoryItem> ?? new List<ServiceCategoryItem>();
+    var subCategories = ViewBag.SubCategories as List<ServiceCategoryItem> ?? new List<ServiceCategoryItem>();
+    var images = ViewBag.Images as List<ServiceImageItem> ?? new List<ServiceImageItem>();
+    long serviceId = ViewBag.ServiceID;
+    int selectedParentCatId = ViewBag.SelectedParentCatId;
+    int selectedSubCatId = ViewBag.SelectedSubCatId;
+}
+
+@section Head {
+    <link href="/bakery_content/css/sellcss.css?ver=1.01" rel="stylesheet" />
+    <link href="/bakery_content/autocomplete/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal {
+            font-weight: normal;
+        }
+        .flush {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .displaynone {
+            display: none;
+        }
+    </style>
+}
+
+<asp:HiddenField ID="hfPrdID" runat="server" ClientIDMode="Static" Value="0" />
+<input type="hidden" id="hfPrdID" value="@serviceId" />
+<input type="hidden" id="hdGlobalUrl" value="" />
+<input type="hidden" id="hdCustGlobalUrl" value="" />
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-7">
+                    <h2>Describe your item</h2>
+                </div>
+                <div class="col-md-5">
+                    <a id="ancBAckButton3" href="/manageservices" class="btn btn-default margin pull-right">Back</a>
+                </div>
+            </div>
+            <div class="col-md-12" style="margin-top: 15px;">
+                <p><strong>Website categories</strong></p>
+                <input type="hidden" id="hfCatIDs" value="@selectedSubCatId" />
+                <div class="form-group form-inline div_catdrps_ListingOuter" id="div_catdrps_ListingOuter">
+                    <select id="ddlCat" class="form-control" data-tid="1">
+                        <option value="-1">--Select Category--</option>
+                        @foreach (var cat in parentCategories)
+                        {
+                            <!option value="@cat.CategoryId" @(cat.CategoryId == selectedParentCatId ? "selected" : "")>@cat.CategoryName</!option>
+                        }
+                    </select>
+
+                    <select id="ddlSubCat" class="form-control" data-tid="2" style="display: @(subCategories.Count > 0 ? "inline-block" : "none");">
+                        <option value="-1">--Select Category--</option>
+                        @foreach (var cat in subCategories)
+                        {
+                            <!option value="@cat.CategoryId" @(cat.CategoryId == selectedSubCatId ? "selected" : "")>@cat.CategoryName</!option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-8">
+                    <p>
+                        <strong>Photos</strong>
+                        <br />
+                        <small>Add at least one photo. Use all five photos to show off your item's finest features.</small>
+                    </p>
+                </div>
+                <div class="clearfix"></div>
+
+                <input type="hidden" id="hdn_Product_Images" />
+                <div class="col-md-12">
+                    <div class="divPrdImg_outer" id="ul_uploadImages">
+                        @if (images.Count > 0)
+                        {
+                            int counter = 0;
+                            foreach (var img in images)
+                            {
+                                counter++;
+                                var guidChk = Guid.NewGuid().ToString().Replace("-", "");
+                                var guidUpload = Guid.NewGuid().ToString().Replace("-", "");
+                                <div class="prdImgbox_outer imgboxouter" data-id="@counter">
+                                    <div data-bid="0" data-tid="@img.ImageName" class="prdImgbox">
+                                        <div style="background-image:url('/upload/service_images/resized_300_300/@img.ImageName'); display:block;" class="PrdImg displaynone">
+                                            &nbsp;
+                                        </div>
+                                        <div style="display:none;" class="addPrdImg">
+                                            <input type="file" id="@guidUpload" name="@guidUpload">
+                                            <img class="loading displaynone" src="/images/loading_wall.gif">
+                                        </div>
+                                        <a style="display:block;" data-bid="0" class="edit displaynone">&nbsp;</a>
+                                        <a style="display:block;" data-bid="0" class="remove displaynone">&nbsp;</a>
+                                        <span style="display:block;" class="spn_radioouter displaynone">
+                                            <input type="radio" @(img.IsDefaultImage ? "checked='checked'" : "") value="@guidChk" name="grp_prdImage" id="@guidChk">
+                                            <label for="@guidChk">Main Image</label>
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                            if (counter < 10)
+                            {
+                                <div data-id="0" class="prdImgbox_outer addnewctrl">
+                                    <div class="prdImgbox" data-tid="0" data-bid="0">
+                                        <div class="addPrdImg addnewctrl">
+                                            <span>+</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 1; i <= 4; i++)
+                            {
+                                var guidChk = Guid.NewGuid().ToString().Replace("-", "");
+                                var guidUpload = Guid.NewGuid().ToString().Replace("-", "");
+                                <div class="prdImgbox_outer imgboxouter" data-id="@i">
+                                    <div data-bid="0" data-tid="0" class="prdImgbox">
+                                        <div class="PrdImg displaynone">&nbsp;</div>
+                                        <div class="addPrdImg">
+                                            <input type="file" id="@guidUpload" name="@guidUpload">
+                                            <img class="loading displaynone" src="/images/loading_wall.gif">
+                                        </div>
+                                        <a data-bid="0" class="edit displaynone">&nbsp;</a>
+                                        <a data-bid="0" class="remove displaynone">&nbsp;</a>
+                                        <span class="spn_radioouter displaynone">
+                                            <input type="radio" value="@guidChk" name="grp_prdImage" id="@guidChk">
+                                            <label for="@guidChk">Main Image</label>
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                            <div data-id="0" class="prdImgbox_outer addnewctrl">
+                                <div class="prdImgbox" data-tid="0" data-bid="0">
+                                    <div class="addPrdImg addnewctrl">
+                                        <span>+</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="txtPrdTitle">Title *</label>
+                        <input type="text" id="txtPrdTitle" class="form-control" placeholder="Title" value="@(Model?.Name)" />
+                    </div>
+
+                    <div class="form-group col-md-12 row" style="margin-top: 15px;">
+                        <div class="col-md-12 row">
+                            <label for="txtDescription">Short Description</label>
+                        </div>
+                        <div class="col-md-12 row">
+                            <textarea id="txtDescription" class="form-control" style="height: 55px;" placeholder="Short Description">@(Model?.Desc)</textarea>
+                        </div>
+                    </div>
+
+                    <br class="clearfix" />
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label class="control-label">Recommendations</label>
+                        <div class="clearfix"></div>
+                        <div class="col-md-3" style="padding-left: 0;">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="chkRecomended" @(Model != null && Model.IsRecommend ? "checked" : "") /> Recomended
+                            </label>
+                        </div>
+                    </div>
+
+                    <br class="clearfix" />
+
+                    <div class="row" style="margin-top: 15px;">
+                        <div class="form-group col-md-3">
+                            <label for="txtWSPrice">Wholesale Price *</label>
+                            <input type="text" id="txtWSPrice" class="form-control" value="@(Model?.WsPrice.ToString("0.00") ?? "0.00")" />
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="txtPrice">Retail | Sale Price *</label>
+                            <input type="text" id="txtPrice" class="form-control" value="@(Model?.MarketPrice.ToString("0.00") ?? "0.00")" />
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 15px;">
+                        <div class="form-group col-md-4">
+                            <label>Recurring Type *</label>
+                            <div>
+                                <label class="radio-inline">
+                                    <input type="radio" name="grp1" id="rbOnline" @(Model == null || Model.RecurringOrOnline == 2 ? "checked" : "") /> One Time
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="grp1" id="rbRecurring" @(Model != null && Model.RecurringOrOnline == 1 ? "checked" : "") /> Recurring
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="div_RecurringFrequency" class="form-group col-md-4" style="display: @(Model != null && Model.RecurringOrOnline == 1 ? "block" : "none");">
+                            <label for="ddlRecurringFrequency">Recurring Frequency *</label>
+                            <select id="ddlRecurringFrequency" class="form-control">
+                                <option value="0">--Select Recurring Frequency--</option>
+                                <!option value="1" @(Model != null && Model.RecurringModeVal == 1 ? "selected" : "")>Weekly</!option>
+                                <!option value="2" @(Model != null && Model.RecurringModeVal == 2 ? "selected" : "")>Monthly</!option>
+                                <!option value="3" @(Model != null && Model.RecurringModeVal == 3 ? "selected" : "")>Quarterly</!option>
+                                <!option value="4" @(Model != null && Model.RecurringModeVal == 4 ? "selected" : "")>Yearly</!option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-12 col-md-12 col-sm-12 top-margin" style="margin-top: 20px; margin-bottom: 30px;">
+                    <a class="btn btn-danger BtnSave_shipping" id="btnSave">Submit</a>
+                    <a href="/manageservices" class="backbtn1" style="margin-left: 15px;">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal window for loading spinner stub -->
+<div id="modalpop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 5px; text-align: center;">
+        <img src="/images/loading_wall.gif" alt="Loading" /><br />
+        <span>Saving Service...</span>
+    </div>
+</div>
+
+@section FooterScripts {
+    <script src="/Scripts/custom/AjaxFileupload.js" type="text/javascript"></script>
+    <script src="/js/addupdateservice.js?ver=1.01" type="text/javascript"></script>
+    <script src="/ckeditor/ckeditor.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            if (typeof CKEDITOR !== 'undefined') {
+                CKEDITOR.replace('txtDescription');
+            }
+        });
+
+        function showpop_modalpop() {
+            $('#modalpop').css('display', 'flex');
+        }
+
+        function hidepop_modalpop() {
+            $('#modalpop').hide();
+        }
+    </script>
+}

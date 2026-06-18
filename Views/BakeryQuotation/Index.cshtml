@@ -1,0 +1,860 @@
+@{
+    ViewData["Title"] = "Customer Requirements";
+    var requests = ViewBag.Requests as List<CakerStreet.Business.Services.BakeryQuotationRequest> ?? new List<CakerStreet.Business.Services.BakeryQuotationRequest>();
+    var sizes = ViewBag.Sizes as List<CakerStreet.Business.Services.BakerySizeModel> ?? new List<CakerStreet.Business.Services.BakerySizeModel>();
+    var sortId = ViewBag.SortId as string ?? "1";
+    var specificId = ViewBag.SpecificId as long?;
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var bakeryId = ViewBag.BakeryId as long? ?? 0L;
+}
+
+@section Head {
+    <link href="/css/crf.css?version=1.17" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="/zoom/css/slimbox2.css" rel="stylesheet" type="text/css" media="all" />
+    <script type="text/javascript" src="/zoom/slimbox2.js"></script>
+    <style type="text/css">
+        .col-sm-12.Quotebox.bdred {
+            background-color: #ffeeee;
+        }
+        .ajax__calendar_container TD {
+            font-size: 12px !important;
+            height: auto;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 18px;
+            border-width: 0;
+        }
+        .ajax__calendar_day {
+            text-align: center !important;
+            padding: 0 0px !important;
+            line-height: 16px;
+        }
+        .ajax__calendar_days, .ajax__calendar_months, .ajax__calendar_years {
+            width: 165px !important;
+        }
+        .caln {
+            text-align: center;
+        }
+        .quotelist .boxouter {
+            margin-bottom: 14px;
+        }
+        .chkbox > label {
+            font-weight: normal;
+            margin: 0;
+            float: none;
+            display: inline-block;
+        }
+        .div_typewisefilter {
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            z-index: 3;
+        }
+        .OptionAttr_outer ul {
+            margin: inherit;
+        }
+        .col-sm-12.Quotebox {
+            margin: 10px 0;
+            display: table;
+            width: 100%;
+        }
+        .AddyourQuotationhere {
+            display: table;
+            width: 100%;
+            background-color: #aa041c;
+            line-height: 24px;
+            padding: 5px;
+            color: #fff;
+            text-align: center;
+        }
+        .bold {
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 26px;
+        }
+        .quotelist .boxouter {
+            margin: 10px 0;
+            border: 1px solid #aaa;
+        }
+        @@media screen and (max-width:768px) {
+           .deviceheader {
+                display: table;
+                width: 100%;
+                background-color: #aa041c;
+                line-height: 24px;
+                padding: 5px;
+                color: #fff;
+                margin: 10px 0;
+                text-align: center;
+            }
+            hr {
+                border-top: 1px dashed #aaa;
+                margin: 0;
+                padding: 0;
+                height: 1px;
+                display: table;
+                width: 100%;
+            }
+        }
+        @@media screen and (min-width:767px) {
+            .col-sm-3.leftouterstatic {
+                position: absolute;
+                top: 228px;
+                left: 10px;
+                max-height: 150px;
+                overflow: auto;
+            }
+            .divomgbox {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                height: 65px;
+                width: 65px;
+            }
+            .divomgbox:first-child {
+                position: relative;
+            }
+            .deviceheader {
+                display: none;
+            }
+            .col-sm-6.centerouter {
+                float: right;
+                padding: 0;
+                clear: right;
+            }
+            .col-sm-3.rightouter {
+                padding: 0 10px;
+            }
+            hr {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="box-body">
+    <h3 class="list-head">
+        <div class="pull-left col-sm-4">
+            Customer Requirements
+        </div>
+        <div class="col-sm-4">
+        </div>
+        <div class="pull-right col-sm-3">
+            <select id="drpsortby" class="form-control" onchange="onSortChanged(this.value)">
+                <!option value="1" @(sortId == "1" ? "selected" : "")>Sort By: New Arrivals</!option>
+                <!option value="2" @(sortId == "2" ? "selected" : "")>Sort By: Occasion Date</!option>
+            </select>
+        </div>
+    </h3>
+</div>
+
+<div role="form" class="quotelist">
+    @if (!requests.Any())
+    {
+        <div id="div_topmessagepnl" class="alert alert-danger" style="margin-top:15px;">
+            No request found
+        </div>
+    }
+    else
+    {
+        foreach (var req in requests)
+        {
+            <div class="boxouter" data-id="@req.CRF_ID">
+                <div class="div_crfContent">
+                    <div class="col-sm-12 col-md-6 col-sm-pad5">
+                        <div class="deviceheader" id="deviceheader1">
+                            Customer Requirement
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="col-sm-12 col-xs-4 redcolor">
+                                Quotation Ref.
+                            </div>
+                            <p class="col-sm-12 col-xs-8">
+                                <b>#@req.CRF_ID</b>
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="col-sm-12">
+                                <span class="redcolor">Requested On:</span>
+                                @req.CRF_createdOn.ToString("dd/MM/yyyy hh:mm tt")
+                            </div>
+                            <div class="col-sm-12">
+                                <span class="redcolor">Occasion Date:</span>
+                                <span style="display:inline-table;font-weight:bold;">
+                                    @req.CRF_datetime.ToString("dd/MM/yyyy")
+                                    @req.CRF_datetime.ToString("h:mm tt") - @req.CRF_datetime.AddHours(2).ToString("h:mm tt")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="col-sm-12">
+                                <div class="redcolor">
+                                    Customer Requirement:
+                                </div>
+                                <p>
+                                    @req.CRF_Cakedesc
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="redcolor">
+                                Postcode
+                            </div>
+                            <p>
+                                @req.CRF_Postcode
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="redcolor">
+                                Delivery Options:
+                            </div>
+                            @if (req.OrderId > 0)
+                            {
+                                <div class="col-sm-12 deliveroption">
+                                    Delivery to @req.CRF_Postcode
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-sm-12 deliveroption">
+                                    Can Collect
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-6 col-sm-pad5">
+                        <div class="col-sm-12 OptionAttr_outer">
+                            @Html.Raw(req.CustomAttributesHtml)
+                        </div>
+                        <div class="col-sm-12 OptionAttr_outer">
+                            <div class="col-sm-4">
+                                <ul>
+                                    <li class="parentli">Shape</li>
+                                    <li>@(string.IsNullOrEmpty(req.ShapeTitle) ? "-" : req.ShapeTitle)</li>
+                                </ul>
+                            </div>
+                            <div class="col-sm-4">
+                                <ul>
+                                    <li class="parentli">Type</li>
+                                    <li>@(string.IsNullOrEmpty(req.TypeTitle) ? "-" : req.TypeTitle)</li>
+                                </ul>
+                            </div>
+                            <div class="col-sm-4">
+                                <ul>
+                                    <li class="parentli">Occasion</li>
+                                    <li>@(string.IsNullOrEmpty(req.OccasionTitle) ? "-" : req.OccasionTitle)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(req.CRF_Alergyadvice))
+                        {
+                            <div class="col-sm-12">
+                                <div class="col-sm-12 redcolor">
+                                    Allergy Advice:
+                                </div>
+                                <div class="col-sm-12">
+                                    @req.CRF_Alergyadvice
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(req.CRF_remarks))
+                        {
+                            <div class="col-sm-12">
+                                <div class="col-sm-12 redcolor">
+                                    Remarks:
+                                </div>
+                                <div class="col-sm-12">
+                                    @req.CRF_remarks
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (req.Quotes.Any())
+                {
+                    <div class="div_orferlistheading">
+                        My Quote(s):
+                    </div>
+                    @foreach (var q in req.Quotes)
+                    {
+                        var isDeclined = q.crfQuote_isdeclined;
+                        var isBakeryDeclined = q.crfQuote_isbakerydeclined;
+                        var isBakeryConfirmed = q.crfQuote_isbakeryConfirmed;
+                        var isPaid = req.OrderId > 0;
+                        var total = q.crfQuote_QuotePrice + (q.crfQuote_deliverymode == 2 ? q.crfQuote_Deliverycharges : 0);
+
+                        <div class="col-sm-12 Quotebox @(isDeclined || isBakeryDeclined ? "bdred" : "")">
+                            <div class="col-sm-3 leftbox">
+                                <div class="col-sm-12 imgbox caln">
+                                    @{
+                                        var qImg1 = string.IsNullOrEmpty(q.crfQuote_image1) 
+                                            ? cdnBase + "bakery_content/images/commingsoon_cake.jpg" 
+                                            : cdnBase + "upload/Product_images/resized_500_500/" + q.crfQuote_image1;
+                                        var qLrgImg1 = string.IsNullOrEmpty(q.crfQuote_image1)
+                                            ? cdnBase + "bakery_content/images/commingsoon_cake.jpg"
+                                            : cdnBase + "upload/Product_images/resized_800_800/" + q.crfQuote_image1;
+                                    }
+                                    <a href="@qLrgImg1" target="_blank" class="absolute-anchor" rel="lightbox-cats-quote-@q.crfQuote_ID"></a>
+                                    <img src="@qImg1" alt="Bakery quote image" />
+                                </div>
+                            </div>
+                            <div class="col-sm-6 centerbox">
+                                <div class="col-sm-12">
+                                    <span class="redcolor">Size:</span>
+                                    @q.SizeTitle
+                                </div>
+                                <div class="col-sm-12 redcolor">
+                                    Delivery Options:
+                                </div>
+                                @if (q.crfQuote_isdelivery && q.crfQuote_deliverymode == 2)
+                                {
+                                    <div class="col-sm-12 deliveroption">
+                                        Delivery to @req.CRF_Postcode
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="col-sm-12 deliveroption">
+                                        Collection From:<br />
+                                        <i>@ViewBag.BusinessAddress</i>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(q.crfQuote_Remarks))
+                                {
+                                    <div class="col-sm-12 OptionAttr_outer">
+                                        <ul>
+                                            <li class="parentli">Remarks</li>
+                                            <li>@q.crfQuote_Remarks</li>
+                                        </ul>
+                                    </div>
+                                }
+                                <div class="col-sm-12">
+                                    <span class="redcolor">Quoted On:</span>
+                                    @q.crfQuote_modifiedOn.ToString("dd/MM/yyyy hh:mm tt")
+                                </div>
+                                @if (!string.IsNullOrEmpty(q.DeclineReason))
+                                {
+                                    <div class="col-sm-12 OptionAttr_outer">
+                                        <div class="col-sm-12">
+                                            <span class="redcolor">Not Interested Reason:</span>
+                                            @q.DeclineReason
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(q.DeclineRemarks))
+                                        {
+                                            <ul>
+                                                <li class="parentli">Not Interested Remarks:</li>
+                                                <li>@q.DeclineRemarks</li>
+                                            </ul>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-sm-3 rightbox">
+                                <div class="col-sm-12 OptionAttr_outer prc">
+                                    <ul>
+                                        <li class="parentli">Quoted Price</li>
+                                        <li>£@q.crfQuote_QuotePrice.ToString("F2")</li>
+                                    </ul>
+                                    @if (q.crfQuote_isdelivery && q.crfQuote_deliverymode == 2)
+                                    {
+                                        <ul>
+                                            <li class="parentli">Delivery Charges</li>
+                                            <li>£@q.crfQuote_Deliverycharges.ToString("F2")</li>
+                                        </ul>
+                                    }
+                                    <ul class="borderbox">
+                                        <li class="parentli">Total Price</li>
+                                        <li class="prc">£@total.ToString("F2")</li>
+                                    </ul>
+                                    @if (q.crfQuote_bakeryID == bakeryId)
+                                    {
+                                        <ul>
+                                            <li>
+                                                @if (isPaid)
+                                                {
+                                                    <a href="/printorder/@req.OrderId" target="_blank" class="btn btn-success btn-sm">View Order</a>
+                                                }
+                                                else if (isBakeryConfirmed && !isBakeryDeclined && !isDeclined)
+                                                {
+                                                    <button type="button" class="btn black-btn btn-sm" 
+                                                            onclick="editQuote('@req.CRF_ID', '@q.crfQuote_ID', '@q.crfQuote_QuotePrice', '@q.crfQuote_Remarks', '@q.SizeTitle', '@q.crfQuote_Deliverycharges', @(q.crfQuote_isdelivery ? "true" : "false"))">
+                                                        Edit Quote
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeQuote('@req.CRF_ID')">Remove Quote</button>
+                                                }
+                                                else if (!isBakeryConfirmed && !isBakeryDeclined && !isDeclined)
+                                                {
+                                                    <button type="button" class="btn btn-success btn-xs" onclick="acceptOffer('@req.CRF_ID', '@q.crfQuote_ID')">Accept Offer</button>
+                                                    <button type="button" class="btn black-btn btn-xs" onclick="declineOffer('@req.CRF_ID', '@q.crfQuote_ID')">Decline Offer</button>
+                                                    <button type="button" class="btn btn-danger btn-xs" 
+                                                            onclick="counterOffer('@req.CRF_ID', '@q.crfQuote_ID', '@q.crfQuote_QuotePrice', '@q.crfQuote_Remarks', '@q.SizeTitle', '@q.crfQuote_Deliverycharges', @(q.crfQuote_isdelivery ? "true" : "false"))">
+                                                        Counter Offer
+                                                    </button>
+                                                }
+                                            </li>
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+                            @if (isPaid)
+                            {
+                                <div class="soldout" style="background-image:url(/img/sold-out.png); display:block;"></div>
+                            }
+                            else if (isDeclined || isBakeryDeclined)
+                            {
+                                <div class="soldout rejected" style="background-image:url(/img/rejected.png); display:block;"></div>
+                            }
+                        </div>
+                    }
+                }
+
+                @if (req.OrderId == 0)
+                {
+                    <div class="AddyourQuotationhere" id="AddyourQuotationhere_@req.CRF_ID" style="@(req.Quotes.Any() ? "display:none;" : "")">
+                        Add your Quote
+                    </div>
+                    <div class="div_quotebox" id="div_quotebox_@req.CRF_ID" style="@(req.Quotes.Any() ? "display:none;" : "")">
+                        <form id="bid_form_@req.CRF_ID" onsubmit="submitBidForm(event, '@req.CRF_ID')">
+                            <input type="hidden" name="QuoteId" value="0" id="inp_quote_id_@req.CRF_ID" />
+                            <input type="hidden" name="CounterOfferRefQuoteId" value="0" id="inp_counter_ref_@req.CRF_ID" />
+
+                            <div class="col-sm-3 leftouter">
+                                <div class="col-sm-12 imgouter">
+                                    @{
+                                        var images = new List<string> { req.CRF_image1, req.CRF_image2, req.CRF_image3, req.CRF_image4 };
+                                        var hasAnyImage = false;
+                                        foreach (var imgName in images)
+                                        {
+                                            if (!string.IsNullOrEmpty(imgName))
+                                            {
+                                                hasAnyImage = true;
+                                                var smlImg = cdnBase + "upload/Product_images/resized_500_500/" + imgName;
+                                                var lrgImg = cdnBase + "upload/Product_images/resized_800_800/" + imgName;
+                                                <div class="divomgbox" style="background-image:url(@smlImg);">
+                                                    <a href="@lrgImg" target="_blank" class="absolute-anchor" rel="lightbox-cats@(req.CRF_ID)"></a>
+                                                    <div id="dvDesign" class="div_typewisefilter">
+                                                        <ul>
+                                                            <li>
+                                                                <a target="_blank" href="/download?file=upload/Product_images/resized_800_800/@imgName">
+                                                                    <img src="~/img/download-icon.png" id="ImgDownload" />
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        if (!hasAnyImage)
+                                        {
+                                            var placeholder = cdnBase + "bakery_content/images/commingsoon_cake.jpg";
+                                            <div class="divomgbox" style="background-image:url(@placeholder);">
+                                                <a href="@placeholder" target="_blank" class="absolute-anchor" rel="lightbox-cats@(req.CRF_ID)"></a>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-sm-3 rightouter">
+                                <div id="Div7" class="col-sm-12 OptionAttr_outer">
+                                    <ul>
+                                        <li class="col-sm-12 redcolor bold"><span class="required">*</span> Select Size</li>
+                                        <li>
+                                            <select class="form-control" name="SizeId" id="ddl_size_@req.CRF_ID" onchange="onSizeOptionChanged('@req.CRF_ID', this.value)" required style="max-width: 200px">
+                                                <option value="0">--Choose Size--</option>
+                                                @foreach (var sz in sizes)
+                                                {
+                                                    <option value="@sz.SizeID">@sz.SizeTitle</option>
+                                                }
+                                                <option value="-1">--Add new size--</option>
+                                            </select>
+                                            <input type="text" class="form-control" name="CustomSize" id="txt_custom_size_@req.CRF_ID" placeholder="Enter Size" style="max-width: 200px; margin-top: 5px; display: none;" />
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div id="Div9" class="col-sm-12 OptionAttr_outer">
+                                    <ul>
+                                        <li class="col-sm-12 redcolor bold"><span class="required">*</span> Quote Price</li>
+                                        <li>£
+                                            <input type="number" step="0.01" class="form-control" name="QuotePrice" id="txt_price_@req.CRF_ID" style="max-width: 100px; display: inline-block;" required min="0.01" />
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6 centerouter">
+                                <div class="col-sm-12 col-xs-12 form-group">
+                                    <label class="col-sm-12 col-xs-12 redcolor control-label">
+                                        <abbr class="required">*</abbr> Valid upto:
+                                    </label>
+                                    <div class="col-sm-12 col-xs-12">
+                                        <input type="date" id="txt_valid_date_@req.CRF_ID" name="ValidTillDate" class="form-control" style="width: 135px; float: left; margin-right: 7px;" required />
+                                        <select class="form-control" name="ValidTillHour" id="ddl_valid_hr_@req.CRF_ID" style="width: 55px; float: left; margin-right: 7px;" required>
+                                            @for (int h = 1; h <= 24; h++)
+                                            {
+                                                <option value="@h.ToString("00")">@h.ToString("00")</option>
+                                            }
+                                        </select>
+                                        <select class="form-control" name="ValidTillMinute" id="ddl_valid_min_@req.CRF_ID" style="width: 55px; float: left; margin-right: 7px;" required>
+                                            @for (int m = 0; m <= 59; m++)
+                                            {
+                                                <option value="@m.ToString("00")">@m.ToString("00")</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="Div4" class="col-sm-12 col-xs-12 OptionAttr_outer">
+                                    <ul>
+                                        <li class="col-sm-12 col-xs-12 redcolor">Add your remarks to customer:</li>
+                                        <li class="col-sm-12 col-xs-12">
+                                            <textarea class="form-control" name="Remarks" id="txt_remarks_@req.CRF_ID" placeholder="Enter your Remarks" rows="2"></textarea>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div id="Div10" class="col-sm-12 OptionAttr_outer">
+                                <label class="chkbox">
+                                    <input type="checkbox" name="IsDelivery" id="chk_delivery_@req.CRF_ID" onchange="onDeliveryCheckedChange('@req.CRF_ID', this.checked)" />
+                                    I can Deliver the cake to @req.CRF_Postcode
+                                </label>
+                                <div class="col-sm-12 OptionAttr_outer" id="div_delivery_charge_@req.CRF_ID" style="display: none;">
+                                    <ul>
+                                        <li class="col-sm-12 redcolor bold"><span class="required">*</span> Delivery Charges:</li>
+                                        <li>£
+                                            <input type="number" step="0.01" class="form-control" name="DeliveryCharges" id="txt_del_charges_@req.CRF_ID" value="0" style="width: 120px; display: inline-block;" />
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12 caln btnouterbox">
+                                <button type="submit" class="btn btn-danger" id="btn_submit_bid_@req.CRF_ID">Submit your Quote</button>
+                                <button type="button" class="btn btn-danger" id="btn_cancel_bid_@req.CRF_ID" style="display: none;" onclick="resetBiddingForm('@req.CRF_ID')">Cancel</button>
+                                <button type="button" class="btn black-btn" id="btn_decline_@req.CRF_ID" onclick="openDeclineRequestModal('@req.CRF_ID')">Decline</button>
+                                <a href="/businessavailability" target="_blank" class="btn black-btn btn-sm">Set Availability Calendar</a>
+                            </div>
+                        </form>
+                    </div>
+                }
+            </div>
+            <hr />
+        }
+    }
+</div>
+
+<!-- Decline Request Modal -->
+<div class="modal fade" id="declineRequestModal" tabindex="-1" role="dialog" aria-labelledby="declineModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #DF3F42; color: white;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="declineModalLabel" style="font-weight: 700;">Decline custom quotation request</h4>
+            </div>
+            <form id="declineRequestForm" onsubmit="submitDeclineForm(event)" class="form-horizontal">
+                <input type="hidden" id="decline_crf_id" name="crfId" value="" />
+                <div class="modal-body" style="width: 100%; padding: 20px;">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Select Reason</label>
+                        <div class="col-sm-9">
+                            <select class="form-control" id="decline_reason" name="reason" required>
+                                <option value="">--Select Reason--</option>
+                                <option value="I am busy on those dates">I am busy on those dates</option>
+                                <option value="I don’t do these kind of cakes">I don’t do these kind of cakes</option>
+                                <option value="I have got better quotation somewhere else">I have got better quotation somewhere else</option>
+                                <option value="Short Notice">Short Notice</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Remarks</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" id="decline_remarks" name="remarks" rows="3" placeholder="Remarks"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Submit</button>
+                    <button type="button" class="btn black-btn" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+    <script type="text/javascript">
+        // Sort order handler
+        function onSortChanged(val) {
+            window.location.href = '/business-quotation' + (val === "1" ? "" : "?sortid=" + val);
+        }
+
+        // Size dropdown toggling custom size field
+        function onSizeOptionChanged(crfId, value) {
+            var $customSize = $('#txt_custom_size_' + crfId);
+            if (value === '-1') {
+                $customSize.show().prop('required', true);
+            } else {
+                $customSize.hide().val('').prop('required', false);
+            }
+        }
+
+        // Delivery checkbox behavior
+        function onDeliveryCheckedChange(crfId, isChecked) {
+            var $delDiv = $('#div_delivery_charge_' + crfId);
+            var $delCharges = $('#txt_del_charges_' + crfId);
+            if (isChecked) {
+                $delDiv.show();
+                $delCharges.prop('required', true);
+            } else {
+                $delDiv.hide();
+                $delCharges.val('0.00').prop('required', false);
+            }
+        }
+
+        // Populate form in edit mode
+        function editQuote(crfId, quoteId, price, remarks, sizeTitle, deliveryCharges, isDelivery) {
+            resetBiddingForm(crfId);
+            
+            // Show bidding form container and header
+            $('#AddyourQuotationhere_' + crfId).show();
+            $('#div_quotebox_' + crfId).show();
+
+            $('#inp_quote_id_' + crfId).val(quoteId);
+            $('#AddyourQuotationhere_' + crfId).text('Edit submitted quote (ID: ' + quoteId + ')');
+            $('#txt_price_' + crfId).val(price);
+            $('#txt_remarks_' + crfId).val(remarks);
+            
+            // Set size dropdown
+            var $ddl = $('#ddl_size_' + crfId);
+            var sizeExists = false;
+            $ddl.find('option').each(function() {
+                if ($(this).text() === sizeTitle) {
+                    $ddl.val($(this).val());
+                    sizeExists = true;
+                }
+            });
+
+            if (!sizeExists) {
+                // If not in default dropdown, set to custom size
+                $ddl.val('-1');
+                $('#txt_custom_size_' + crfId).show().val(sizeTitle).prop('required', true);
+            }
+
+            // Set delivery details
+            var chk = $('#chk_delivery_' + crfId)[0];
+            chk.checked = isDelivery;
+            onDeliveryCheckedChange(crfId, isDelivery);
+            if (isDelivery) {
+                $('#txt_del_charges_' + crfId).val(deliveryCharges);
+            }
+
+            // Show cancel edit button
+            $('#btn_cancel_bid_' + crfId).show();
+            $('#btn_submit_bid_' + crfId).text('Update Quote');
+
+            // Scroll to form
+            document.getElementById('div_quotebox_' + crfId).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Populate form in counter offer mode
+        function counterOffer(crfId, oldQuoteId, price, remarks, sizeTitle, deliveryCharges, isDelivery) {
+            resetBiddingForm(crfId);
+
+            // Show bidding form container and header
+            $('#AddyourQuotationhere_' + crfId).show();
+            $('#div_quotebox_' + crfId).show();
+
+            $('#inp_counter_ref_' + crfId).val(oldQuoteId);
+            $('#AddyourQuotationhere_' + crfId).text('Submit Counter Offer to customer (Reference Quote ID: ' + oldQuoteId + ')');
+            
+            $('#txt_price_' + crfId).val(price);
+            $('#txt_remarks_' + crfId).val(remarks);
+
+            // Set size dropdown
+            var $ddl = $('#ddl_size_' + crfId);
+            var sizeExists = false;
+            $ddl.find('option').each(function() {
+                if ($(this).text() === sizeTitle) {
+                    $ddl.val($(this).val());
+                    sizeExists = true;
+                }
+            });
+
+            if (!sizeExists) {
+                $ddl.val('-1');
+                $('#txt_custom_size_' + crfId).show().val(sizeTitle).prop('required', true);
+            }
+
+            // Set delivery details
+            var chk = $('#chk_delivery_' + crfId)[0];
+            chk.checked = isDelivery;
+            onDeliveryCheckedChange(crfId, isDelivery);
+            if (isDelivery) {
+                $('#txt_del_charges_' + crfId).val(deliveryCharges);
+            }
+
+            // Show cancel edit button
+            $('#btn_cancel_bid_' + crfId).show();
+            $('#btn_submit_bid_' + crfId).text('Submit Counter Offer');
+
+            document.getElementById('div_quotebox_' + crfId).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reset the form details
+        function resetBiddingForm(crfId) {
+            var $form = $('#bid_form_' + crfId);
+            $form[0].reset();
+            
+            $('#inp_quote_id_' + crfId).val('0');
+            $('#inp_counter_ref_' + crfId).val('0');
+            
+            // If the request has quotes, hide the bid form when reset/cancelled
+            var hasQuotes = @(requests.FirstOrDefault(r => r.Quotes.Any()) != null ? "true" : "false");
+            if (hasQuotes) {
+                $('#AddyourQuotationhere_' + crfId).hide();
+                $('#div_quotebox_' + crfId).hide();
+            } else {
+                $('#AddyourQuotationhere_' + crfId).text('Add your Quote');
+            }
+            
+            $('#txt_custom_size_' + crfId).hide().prop('required', false);
+            $('#div_delivery_charge_' + crfId).hide();
+            $('#txt_del_charges_' + crfId).val('0').prop('required', false);
+            
+            $('#btn_cancel_bid_' + crfId).hide();
+            $('#btn_submit_bid_' + crfId).text('Submit your Quote');
+        }
+
+        // AJAX submit bidding quote (Create, Edit or Counter)
+        function submitBidForm(e, crfId) {
+            e.preventDefault();
+
+            // Format date to dd/MM/yyyy expected by C# DateTime parsing
+            var inputDate = $('#txt_valid_date_' + crfId).val(); // yyyy-mm-dd from HTML5 input
+            var formattedDate = '';
+            if (inputDate) {
+                var parts = inputDate.split('-');
+                if (parts.length === 3) {
+                    formattedDate = parts[2] + '/' + parts[1] + '/' + parts[0]; // dd/MM/yyyy
+                } else {
+                    formattedDate = inputDate;
+                }
+            }
+
+            var payload = {
+                quoteId: parseInt($('#inp_quote_id_' + crfId).val()) || 0,
+                quotePrice: parseFloat($('#txt_price_' + crfId).val()) || 0,
+                remarks: $('#txt_remarks_' + crfId).val() || '',
+                sizeId: parseInt($('#ddl_size_' + crfId).val()) || 0,
+                customSize: $('#txt_custom_size_' + crfId).val() || '',
+                isDelivery: $('#chk_delivery_' + crfId).is(':checked'),
+                deliveryCharges: parseFloat($('#txt_del_charges_' + crfId).val()) || 0,
+                validTillDate: formattedDate,
+                validTillHour: parseInt($('#ddl_valid_hr_' + crfId).val()) || 0,
+                validTillMinute: parseInt($('#ddl_valid_min_' + crfId).val()) || 0,
+                counterOfferRefQuoteId: parseInt($('#inp_counter_ref_' + crfId).val()) || 0
+            };
+
+            $.ajax({
+                url: '/business-quotation/submit?crfId=' + crfId,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    if (res.success) {
+                        alert(res.message);
+                        window.location.reload();
+                    } else {
+                        alert(res.message || 'Failed to submit quote.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while submitting quote.');
+                }
+            });
+        }
+
+        // Accept offer confirmation from customer
+        function acceptOffer(crfId, quoteId) {
+            if (!confirm('Are you sure you want to accept this offer?')) return;
+
+            $.post('/business-quotation/accept-confirmation', { crfId: crfId, quoteId: quoteId }, function (res) {
+                if (res.success) {
+                    alert(res.message);
+                    window.location.reload();
+                } else {
+                    alert(res.message || 'Failed to accept offer confirmation.');
+                }
+            }).fail(function () {
+                alert('An error occurred while accepting offer.');
+            });
+        }
+
+        // Decline offer confirmation from customer
+        function declineOffer(crfId, quoteId) {
+            if (!confirm('Are you sure you want to decline this offer confirmation?')) return;
+
+            $.post('/business-quotation/decline-confirmation', { crfId: crfId, quoteId: quoteId }, function (res) {
+                if (res.success) {
+                    alert(res.message);
+                    window.location.reload();
+                } else {
+                    alert(res.message || 'Failed to decline offer confirmation.');
+                }
+            }).fail(function () {
+                alert('An error occurred.');
+            });
+        }
+
+        // Remove (delete) submitted quote
+        function removeQuote(crfId) {
+            if (!confirm('Are you sure you want to remove this quote?')) return;
+
+            $.post('/business-quotation/delete', { crfId: crfId }, function (res) {
+                if (res.success) {
+                    alert(res.message);
+                    window.location.reload();
+                } else {
+                    alert(res.message || 'Failed to remove quote.');
+                }
+            }).fail(function () {
+                alert('An error occurred.');
+            });
+        }
+
+        // Open Decline request modal
+        function openDeclineRequestModal(crfId) {
+            $('#decline_crf_id').val(crfId);
+            $('#decline_reason').val('');
+            $('#decline_remarks').val('');
+            $('#declineRequestModal').modal('show');
+        }
+
+        // Submit Decline Request form
+        function submitDeclineForm(e) {
+            e.preventDefault();
+            var crfId = $('#decline_crf_id').val();
+            var reason = $('#decline_reason').val();
+            var remarks = $('#decline_remarks').val();
+
+            $.post('/business-quotation/decline', { crfId: crfId, reason: reason, remarks: remarks }, function (res) {
+                if (res.success) {
+                    alert(res.message);
+                    $('#declineRequestModal').modal('hide');
+                    window.location.reload();
+                } else {
+                    alert(res.message || 'Failed to decline request.');
+                }
+            }).fail(function () {
+                alert('An error occurred.');
+            });
+        }
+    </script>
+}

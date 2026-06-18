@@ -1,0 +1,203 @@
+@using System.Collections.Generic
+@{
+    Layout = null; // Independent popup page
+    var crfId = ViewBag.CrfId;
+    var details = ViewBag.Details as CakerStreet.Business.Services.ProductFranchiseLinkingDetail;
+    var notesList = ViewBag.NotesList as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+    var defaultNotesType = (int)ViewBag.DefaultNotesType;
+    var cdnBase = "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cakerstreet Franchise Notes</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        .header-card {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .header-card img {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .notes-list-card {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 15px;
+            height: 320px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .note-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .note-item:last-child {
+            border-bottom: none;
+        }
+        .note-author {
+            font-weight: bold;
+            color: #d90429;
+        }
+        .note-date {
+            font-size: 11px;
+            color: #888;
+            float: right;
+        }
+        .note-text {
+            font-size: 13px;
+            margin-top: 5px;
+            white-space: pre-line;
+        }
+        .add-note-card {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 15px;
+        }
+        .btnsend {
+            background-color: #d90429;
+            color: #fff;
+            border: none;
+            transition: background-color 0.2s ease;
+        }
+        .btnsend:hover {
+            background-color: #ef233c;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header / Product Preview -->
+        <div class="header-card">
+            @if (details != null && !string.IsNullOrEmpty(details.ProductImage))
+            {
+                string folder = details.IsService ? "upload/service_images" : "upload/Product_Images";
+                <img src="@(cdnBase + folder + "/resized_80_80/" + details.ProductImage)" alt="Product Image" />
+            }
+            else
+            {
+                <img src="/images/blankImages/img75.jpg" alt="No Image" />
+            }
+            <div>
+                <h6 class="fw-bold mb-1">@details?.ProductName</h6>
+                <span class="text-muted small">SKU: @details?.ProductCode</span><br/>
+                <span class="text-secondary small">Category: @details?.CategoryTitle</span><br/>
+                @Html.Raw(details?.PrdStatus)
+            </div>
+        </div>
+
+        <input type="hidden" id="hdCrfID" value="@crfId" />
+        <input type="hidden" id="drpNotes" value="@defaultNotesType" />
+
+        <!-- Scrollable Notes List -->
+        <div class="notes-list-card">
+            <ul class="list-unstyled" id="notesListUl">
+                @if (notesList.Count > 0)
+                {
+                    foreach (var note in notesList)
+                    {
+                        <li class="note-item" data-id="@note["tempFranchiseNotes_ID"]">
+                            <span class="note-date">@(((DateTime)note["tempFranchiseNotes_modifiedOn"]).ToString("dd/MM/yyyy HH:mm"))</span>
+                            <span class="note-author">@note["tempFranchiseNotes_custname"]:</span>
+                            <div class="note-text">@note["tempFranchiseNotes_Remarks"]</div>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li class="text-center text-muted py-4" id="liNoRecord">No notes found for this item</li>
+                }
+            </ul>
+        </div>
+
+        <!-- Add Note Input -->
+        <div class="add-note-card">
+            <div class="mb-3">
+                <textarea id="txtRemarks" class="form-control" rows="3" placeholder="Enter notes or comments..."></textarea>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small" id="spanStatus" style="display:none;">Saving note...</span>
+                <button type="button" class="btn btn-sm btn-danger px-4 btnsend" onclick="SendRemarks()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function SendRemarks() {
+            var remarks = $.trim($('#txtRemarks').val());
+            if (remarks === "") {
+                alert("Please enter remarks");
+                return false;
+            }
+
+            $("#spanStatus").show();
+            var clsretData = {
+                data_optionalId: parseInt($("#drpNotes").val()),
+                data_ID: 0,
+                data_str: remarks
+            };
+
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: "/webservices.aspx/SendRemarks_FranchiseNotes",
+                data: JSON.stringify({
+                    crfID: parseInt($("#hdCrfID").val()),
+                    retdata: clsretData
+                }),
+                dataType: "json",
+                success: function (response) {
+                    var retdata1 = response.d;
+                    if (retdata1.data_optionalId == 1) {
+                        var html = `
+                            <li class="note-item" data-id="${retdata1.data_ID}">
+                                <span class="note-date">${retdata1.data_str}</span>
+                                <span class="note-author">${retdata1.data_optionalstr}:</span>
+                                <div class="note-text">${remarks}</div>
+                            </li>
+                        `;
+                        $("#notesListUl").append(html);
+                        $("#liNoRecord").hide();
+                        $('#txtRemarks').val("");
+                    } else {
+                        alert("Failed to save note comment.");
+                    }
+                    $("#spanStatus").hide();
+                },
+                error: function (xhr) {
+                    alert("Error communicating with server: " + xhr.responseText);
+                    $("#spanStatus").hide();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

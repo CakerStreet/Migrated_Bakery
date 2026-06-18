@@ -1,0 +1,637 @@
+@{
+    ViewData["Title"] = "Manage Delivery Routes";
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var routeList = ViewBag.RouteList as CakerStreet.Business.Services.DeliveryRouteListResult;
+    var selectedDate = ViewBag.SelectedDate as string ?? DateTime.Today.ToString("dd/MM/yyyy");
+    var routes = routeList?.Routes ?? new List<CakerStreet.Business.Services.DeliveryRouteListItem>();
+    var totalCount = routeList?.TotalCount ?? 0;
+    var currentPage = routeList?.CurrentPage ?? 1;
+    var pageSize = routeList?.PageSize ?? 24;
+    var totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
+
+    var drivers = ViewBag.Drivers as List<CakerStreet.Business.Services.BakeryDriverItem> ?? new List<CakerStreet.Business.Services.BakeryDriverItem>();
+    var templates = ViewBag.Templates as List<CakerStreet.Business.Services.RouteChargeTemplateItem> ?? new List<CakerStreet.Business.Services.RouteChargeTemplateItem>();
+    var defaultRoutes = ViewBag.DefaultRoutes as List<CakerStreet.Business.Services.DefaultRouteItem> ?? new List<CakerStreet.Business.Services.DefaultRouteItem>();
+}
+
+@section Head {
+    <link href="@(cdnBase)bakery_content/css/mystore.css" rel="stylesheet" />
+    <link href="@(cdnBase)bakery_content/css/manageinventory.css" rel="stylesheet" />
+    <!-- jQuery UI Datepicker CSS (for safety) -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style type="text/css">
+        .highlighttext {
+            background-color: #fff;
+            padding: 0 7px;
+            color: #a40000;
+            font-weight: bold;
+            line-height: 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ecc;
+            display: inline-block;
+        }
+        .pagination > .active > a, .pagination > .active > a:focus,
+        .pagination > .active > a:hover, .pagination > .active > span,
+        .pagination > .active > span:focus, .pagination > .active > span:hover {
+            background-color: #cf0000;
+            border-color: #cf0000;
+        }
+        .pagination > li > a, .pagination > li > span {
+            border: 1px solid #E1E1E1;
+            color: #6C6764;
+        }
+        .premium-card {
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            border-radius: 8px;
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .btn-premium {
+            background-color: #b51a1a;
+            color: white;
+            font-weight: 600;
+            border: none;
+            transition: background 0.2s;
+        }
+        .btn-premium:hover {
+            background-color: #901313;
+            color: white;
+        }
+        .normallink {
+            color: #b51a1a;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .normallink:hover {
+            color: #901313;
+            text-decoration: underline;
+        }
+        .modalPopup {
+            background-color: rgba(0,0,0,0.5);
+        }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+
+    <div class="innerhead">
+        <h2 style="display: inline-block; color: #b51a1a; font-weight: 700;">Manage Delivery Routes - @selectedDate</h2>
+        <a href="/managedeliveryroutes/map-all?date=@(Uri.EscapeDataString(selectedDate))&postal=false" target="_blank" class="btn btn-success btn-xs pull-right" style="margin-right:10px;color:#fff;">Show orders on Map</a>
+        <a href="/managedeliveryroutes/map-all?date=@(Uri.EscapeDataString(selectedDate))&postal=true" target="_blank" class="btn btn-primary btn-xs pull-right" style="margin-right:10px;color:#fff;">Show orders on Map (inc. Postal)</a>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+
+        @* Alert Messages *@
+        @if (TempData["Msg"] != null)
+        {
+            <div class="@(TempData["MsgClass"] ?? "alert alert-info") alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                @TempData["Msg"]
+            </div>
+        }
+
+        <div id="jsAlert" class="alert" style="display:none;"></div>
+
+        @* Controls Panel *@
+        <div class="premium-card">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <input type="text" id="txtSearchDate" class="form-control datepicker" placeholder="Search Date" value="@selectedDate" />
+                        <span class="input-group-btn">
+                            <button class="btn btn-premium" type="button" onclick="goToDate()">Go</button>
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="btn-group">
+                        <button class="btn btn-premium dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Action on <span id="spnfilterselected">0</span> selected <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:void(0);" onclick="bulkUpdateRoutes()">Update Records</a></li>
+                            <li><a href="javascript:void(0);" onclick="bulkDeleteRoutes()">Remove</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button class="btn btn-success" onclick="openAddRouteModal()"><span class="glyphicon glyphicon-plus"></span> Add New Route</button>
+                </div>
+            </div>
+        </div>
+
+        @if (routes.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="tblRoutes">
+                    <thead>
+                        <tr style="background-color: #f8fafc;">
+                            <th style="width:40px; text-align:center;">
+                                <input type="checkbox" onchange="toggleAllCheckboxes(this)" />
+                            </th>
+                            <th>Route Title</th>
+                            <th>Remarks</th>
+                            <th style="width:110px;">Display Order</th>
+                            <th>Order Count</th>
+                            <th style="width:220px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var route in routes)
+                        {
+                            <tr class="rowtext-route" data-route-id="@route.RouteId">
+                                <td style="text-align:center; vertical-align:middle;">
+                                    <input type="checkbox" class="chk-route-row" onchange="updateSelectedCount()" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control route-title-input" value="@route.RouteTitle" />
+                                </td>
+                                <td>
+                                    <textarea class="form-control route-remarks-input" rows="1">@route.Remarks</textarea>
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control route-display-order-input" value="@route.DisplayOrder" />
+                                </td>
+                                <td style="vertical-align:middle;">
+                                    @if (route.OrderCount > 0)
+                                    {
+                                        <span>@route.OrderCount @(route.OrderCount == 1 ? "order" : "orders")</span>
+                                        <br />
+                                        <a class="normallink" onclick="loadRouteOrders(@route.RouteId)">View List</a>
+                                        <br />
+                                        <a href="/managedeliveryroutes/map-route?routeId=@route.RouteId&date=@(Uri.EscapeDataString(selectedDate))" target="_blank" class="btn btn-success btn-xs" style="margin-top:5px; color:#fff;">Show orders on Map</a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <form action="/managedeliveryroutes/save" method="post" style="display:inline;">
+                                        <input type="hidden" name="routeId" value="@route.RouteId" />
+                                        <input type="hidden" name="routeDate" value="@selectedDate" />
+                                        <input type="hidden" class="post-title" name="title" />
+                                        <input type="hidden" class="post-remarks" name="remarks" />
+                                        <input type="hidden" class="post-display-order" name="displayOrder" />
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="syncFormInputs(this)">Save Route</button>
+                                    </form>
+                                    <br />
+                                    @if (route.OrderCount > 0)
+                                    {
+                                        <div style="margin-top: 10px; font-size:12px;">
+                                            <label style="font-weight: normal;">
+                                                <input type="checkbox" class="calc-return-unit" @(route.ReturnToUnit ? "checked" : "") /> Return to Unit
+                                            </label>
+                                            <br />
+                                            <button class="btn btn-default btn-xs" onclick="calculateRoute(@route.RouteId, this)">Calculate Route</button>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                            @if (!string.IsNullOrEmpty(route.ApiMiles) || route.DriverId > 0 || route.DriverCharges > 0)
+                            {
+                                <tr style="background-color: #fee;">
+                                    <td colspan="3">
+                                        @if (!string.IsNullOrEmpty(route.ApiUrl))
+                                        {
+                                            <span>Route link: <u><a href="/deliveryroutedetail/r@(route.RouteId)" target="_blank" class="normallink">Click Here</a></u></span>
+                                            <br />
+                                        }
+                                        Total Distance: <span class="highlighttext">@(route.ApiMiles ?? "0") mi</span>
+                                        <br />
+                                        Approx. Duration: <span class="highlighttext">@(route.ApiSeconds.HasValue ? TimeSpan.FromSeconds(route.ApiSeconds.Value).ToString(@"hh\:mm\:ss") : "N/A")</span>
+                                        <br />
+                                        Order Total Price: <span class="highlighttext">£@route.TotalOrderAmt</span>
+                                        <br />
+                                        Delivery Charges: <span class="highlighttext">£@route.TotalDeliveryAmt</span>
+                                    </td>
+                                    <td colspan="3">
+                                        <form action="/managedeliveryroutes/save-driver" method="post" class="form-horizontal">
+                                            <input type="hidden" name="routeId" value="@route.RouteId" />
+                                            <input type="hidden" name="routeDate" value="@selectedDate" />
+                                            
+                                            <div class="form-group" style="margin-bottom: 5px;">
+                                                <label class="col-sm-4 control-label" style="font-size:12px; padding-top:5px;">Price Template:</label>
+                                                <div class="col-sm-8">
+                                                    <select class="form-control input-sm calc-template" name="templateId">
+                                                        @foreach (var t in templates)
+                                                        {
+                                                            if (t.Id == route.TemplateId)
+                                                            {
+                                                                <option value="@t.Id" selected>@t.Title</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@t.Id">@t.Title</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group" style="margin-bottom: 5px;">
+                                                <label class="col-sm-4 control-label" style="font-size:12px; padding-top:5px;">Driver Charges:</label>
+                                                <div class="col-sm-8">
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-addon">&pound;</span>
+                                                        <input type="text" class="form-control" name="driverCharges" value="@route.DriverCharges" @(route.IsChargePaid ? "disabled" : "") />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group" style="margin-bottom: 5px;">
+                                                <label class="col-sm-4 control-label" style="font-size:12px; padding-top:5px;">Driver:</label>
+                                                <div class="col-sm-8">
+                                                    <select class="form-control input-sm" name="driverId">
+                                                        <option value="0">--Select Driver--</option>
+                                                        @foreach (var d in drivers)
+                                                        {
+                                                            if (d.Id == route.DriverId)
+                                                            {
+                                                                <option value="@d.Id" selected>@d.Name</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@d.Id">@d.Name</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                    <a class="normallink" style="font-size:11px;" onclick="openAddDriverModal()">+ Add New Driver</a>
+                                                </div>
+                                            </div>
+
+                                            <div class="text-right">
+                                                @if (!route.IsChargePaid)
+                                                {
+                                                    <button type="submit" class="btn btn-danger btn-xs">Save Driver &amp; Charges</button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="label label-success">Paid</span>
+                                                }
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @* Pagination *@
+            @if (totalCount > pageSize)
+            {
+                <nav>
+                    <ul class="pagination">
+                        @if (currentPage > 1)
+                        {
+                            <li><a href="/managedeliveryroutes?search=@selectedDate&pageno=@(currentPage - 1)">&laquo; Previous</a></li>
+                        }
+                        else
+                        {
+                            <li class="disabled"><span>&laquo; Previous</span></li>
+                        }
+
+                        @for (int p = 1; p <= totalPages; p++)
+                        {
+                            if (p == currentPage)
+                            {
+                                <li class="active"><a href="#">@p</a></li>
+                            }
+                            else
+                            {
+                                <li><a href="/managedeliveryroutes?search=@selectedDate&pageno=@p">@p</a></li>
+                            }
+                        }
+
+                        @if (currentPage < totalPages)
+                        {
+                            <li><a href="/managedeliveryroutes?search=@selectedDate&pageno=@(currentPage + 1)">Next &raquo;</a></li>
+                        }
+                        else
+                        {
+                            <li class="disabled"><span>Next &raquo;</span></li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+
+        @* Route Orders Container (populated via AJAX) *@
+        <div id="routeOrdersContainer" style="display:none; margin-top:20px;"></div>
+
+    </div>
+</div>
+
+@* Modal: Add New Route *@
+<div class="modal fade" id="modalAddRoute" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <form action="/managedeliveryroutes/save" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Add New Delivery Route</h4>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="routeId" value="0" />
+                    <input type="hidden" name="routeDate" value="@selectedDate" />
+
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label">Route Date:</label>
+                            <div class="col-sm-8" style="padding-top: 7px;">
+                                <strong>@selectedDate</strong>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label">Default Route Title: <span class="text-danger">*</span></label>
+                            <div class="col-sm-8">
+                                <select class="form-control" name="defaultRouteSelect" id="drpDefaultRouteSelect" onchange="handleDefaultRouteSelect(this)">
+                                    <option value="0">--Select Default Route--</option>
+                                    @foreach (var dr in defaultRoutes)
+                                    {
+                                        <option value="@dr.Title">@dr.Title</option>
+                                    }
+                                    <option value="-1">--Create New Route--</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="divCustomRouteTitle" style="display:none;">
+                            <label class="col-sm-4 control-label">Route Title: <span class="text-danger">*</span></label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" name="title" id="txtCustomTitle" placeholder="Route Title" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label">Route Remarks:</label>
+                            <div class="col-sm-8">
+                                <textarea class="form-control" name="remarks" placeholder="Route Remarks"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label">Display Order: <span class="text-danger">*</span></label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control" name="displayOrder" value="1" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="divSetDefaultCheckbox" style="display:none;">
+                            <div class="col-sm-offset-4 col-sm-8">
+                                <label>
+                                    <input type="checkbox" name="isDefault" value="true" /> Set as default route
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Modal: Add New Driver *@
+<div class="modal fade" id="modalAddDriver" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <form action="/managedeliveryroutes/add-driver" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Add New Driver</h4>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="routeDate" value="@selectedDate" />
+                    
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Name: <span class="text-danger">*</span></label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="name" required placeholder="Name" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Email ID: <span class="text-danger">*</span></label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" name="email" required placeholder="Email ID" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section FooterScripts {
+    <!-- jQuery UI Datepicker JS -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            if (typeof $.fn.datepicker === 'function') {
+                $('.datepicker').datepicker({ dateFormat: 'dd/mm/yy' });
+            }
+        });
+
+        function goToDate() {
+            var dateVal = document.getElementById('txtSearchDate').value;
+            if (dateVal) {
+                window.location.href = '/managedeliveryroutes?search=' + encodeURIComponent(dateVal);
+            }
+        }
+
+        function loadRouteOrders(routeId) {
+            fetch('/managedeliveryroutes/orders/' + routeId)
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    document.getElementById('routeOrdersContainer').innerHTML = html;
+                    document.getElementById('routeOrdersContainer').style.display = 'block';
+                });
+        }
+
+        function syncFormInputs(btn) {
+            var tr = $(btn).closest('tr');
+            var title = tr.find('.route-title-input').val();
+            var remarks = tr.find('.route-remarks-input').val();
+            var order = tr.find('.route-display-order-input').val();
+
+            var form = $(btn).closest('form');
+            form.find('.post-title').val(title);
+            form.find('.post-remarks').val(remarks);
+            form.find('.post-display-order').val(order);
+        }
+
+        function openAddRouteModal() {
+            $('#modalAddRoute').modal('show');
+        }
+
+        function openAddDriverModal() {
+            $('#modalAddDriver').modal('show');
+        }
+
+        function handleDefaultRouteSelect(select) {
+            var val = select.value;
+            if (val === '-1') {
+                $('#divCustomRouteTitle').show();
+                $('#divSetDefaultCheckbox').show();
+                $('#txtCustomTitle').prop('required', true).val('');
+            } else if (val === '0') {
+                $('#divCustomRouteTitle').hide();
+                $('#divSetDefaultCheckbox').hide();
+                $('#txtCustomTitle').prop('required', false).val('');
+            } else {
+                $('#divCustomRouteTitle').show();
+                $('#divSetDefaultCheckbox').hide();
+                $('#txtCustomTitle').prop('required', true).val(val);
+            }
+        }
+
+        // Checkbox management
+        function toggleAllCheckboxes(headerCheckbox) {
+            var checked = headerCheckbox.checked;
+            $('.chk-route-row').prop('checked', checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            var count = $('.chk-route-row:checked').length;
+            $('#spnfilterselected').text(count);
+        }
+
+        // Bulk operations
+        function bulkUpdateRoutes() {
+            var selectedRows = $('.chk-route-row:checked').closest('tr');
+            if (selectedRows.length === 0) {
+                alert("Please select any item!");
+                return;
+            }
+
+            var routes = [];
+            selectedRows.each(function () {
+                var routeId = $(this).data('route-id');
+                var title = $(this).find('.route-title-input').val();
+                var remarks = $(this).find('.route-remarks-input').val();
+                var order = parseInt($(this).find('.route-display-order-input').val()) || 1;
+
+                routes.push({
+                    routeId: routeId,
+                    routeTitle: title,
+                    remarks: remarks,
+                    displayOrder: order
+                });
+            });
+
+            fetch('/managedeliveryroutes/bulk-update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(routes)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    showAlert("Route details have been updated successfully.", "alert alert-success");
+                    setTimeout(function() { window.location.reload(); }, 1000);
+                } else {
+                    showAlert("Error updating routes.", "alert alert-danger");
+                }
+            });
+        }
+
+        function bulkDeleteRoutes() {
+            var selectedRows = $('.chk-route-row:checked').closest('tr');
+            if (selectedRows.length === 0) {
+                alert("Please select any item!");
+                return;
+            }
+
+            var count = selectedRows.length;
+            if (!confirm('Are you sure to remove selected ' + count + ' item(s)?')) {
+                return;
+            }
+
+            var routeIds = [];
+            selectedRows.each(function () {
+                routeIds.push($(this).data('route-id'));
+            });
+
+            fetch('/managedeliveryroutes/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(routeIds)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    showAlert("Selected route(s) removed successfully.", "alert alert-success");
+                    setTimeout(function() { window.location.reload(); }, 1000);
+                } else {
+                    showAlert("Error removing routes.", "alert alert-danger");
+                }
+            });
+        }
+
+        // Route calculation
+        function calculateRoute(routeId, btn) {
+            var tr = $(btn).closest('tr');
+            var nextTr = tr.next('tr');
+            var returnToUnit = tr.find('.calc-return-unit').is(':checked');
+            var templateId = nextTr.find('.calc-template').val() || 0;
+
+            $(btn).prop('disabled', true).text('Calculating...');
+
+            fetch('/managedeliveryroutes/calculateroute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    routeId: routeId,
+                    templateId: parseInt(templateId),
+                    returnToUnit: returnToUnit
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    showAlert("Route has been calculated successfully.", "alert alert-success");
+                    setTimeout(function() { window.location.reload(); }, 1000);
+                } else {
+                    showAlert(res.error || "Some issue occurred while calculating route", "alert alert-danger");
+                    $(btn).prop('disabled', false).text('Calculate Route');
+                }
+            })
+            .catch(function() {
+                showAlert("Some issue occurred while calculating route", "alert alert-danger");
+                $(btn).prop('disabled', false).text('Calculate Route');
+            });
+        }
+
+        function showAlert(msg, className) {
+            var alertDiv = $('#jsAlert');
+            alertDiv.removeClass().addClass(className).html(msg).show();
+            setTimeout(function() { alertDiv.hide(); }, 3000);
+        }
+    </script>
+}

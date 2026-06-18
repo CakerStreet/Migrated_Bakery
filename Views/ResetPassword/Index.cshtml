@@ -1,0 +1,128 @@
+@model CakerStreet.Business.Services.ResetPasswordInfo
+@{
+    Layout = null;
+    var cdnBase = "https://cakerstreet1.s3.amazonaws.com/";
+    var errorMessage = ViewBag.ErrorMessage as string;
+    var successMessage = ViewBag.SuccessMessage as string;
+}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Caker Street :: Reset Password</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="@(cdnBase)bakery_content/img/favicon.ico?version=1.1" type="image/png" />
+    <link href="@(cdnBase)bakery_content/bakery_content/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/css/shoppingcart.css" rel="stylesheet" />
+    <style type="text/css">
+        .right-info {
+            width: 100%;
+            float: left;
+        }
+        .alert {
+            margin-top: 0px;
+            margin-bottom: 10px;
+            padding: 8px;
+        }
+        .contactInformation {
+            background-color: #E5E5E5;
+            border: 1px solid #CCCCCC;
+            border-radius: 5px;
+            display: block;
+            font-size: 13px;
+            line-height: 20px;
+            margin-top: 10px;
+            padding: 10px;
+        }
+        .contactInformation span {
+            color: #a70c1b;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .contactInformation b {
+            color: #333;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        .form-horizontal .form-group {
+            margin-bottom: 10px;
+            float: left;
+            width: 100%;
+        }
+        .mar-btm10 {
+            margin-bottom: 10px;
+        }
+        .continue {
+            margin-top: 0px;
+        }
+        .loginPan {
+            margin-top: 50px;
+        }
+        #footer { 
+            background-color: #eee; 
+            height: 60px; 
+            bottom: 0; 
+            width: 100%; 
+            position: fixed; 
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4">
+                <div class="panel panel-default loginPan">
+                    <div class="panel-body">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                <span class="centered">@errorMessage</span>
+                            </div>
+                        }
+
+                        <h3>Reset Password</h3>
+                        <div class="panel-body">
+                            <form method="post" action="/resetpassword/@ViewBag.ResetCode" onsubmit="return validateForm();">
+                                @Html.AntiForgeryToken()
+                                <div class="box-body">
+                                    <div class="form-group">
+                                        <label for="txtRegPassword">Password <span class="text-danger">*</span></label>
+                                        <input type="password" id="txtRegPassword" name="password" class="form-control" placeholder="Password" required />
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="txtConfirmPassword">Confirm Password <span class="text-danger">*</span></label>
+                                        <input type="password" id="txtConfirmPassword" name="confirmPassword" class="form-control" placeholder="Confirm Password" required />
+                                    </div>
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-danger continue">Reset Password</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer">
+        <div class="container">
+            <p class="text-muted text-center">Copyright &copy; Stioc Pro Ltd. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function validateForm() {
+            var pass = document.getElementById("txtRegPassword").value;
+            var confirmPass = document.getElementById("txtConfirmPassword").value;
+            if (pass !== confirmPass) {
+                alert("Password and confirm password do not match");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

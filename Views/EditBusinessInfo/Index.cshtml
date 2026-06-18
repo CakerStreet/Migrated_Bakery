@@ -1,0 +1,418 @@
+@{
+    ViewData["Title"] = "Edit Business Info";
+    var info = ViewBag.BusinessInfo as CakerStreet.Business.Services.BusinessInfoModel;
+    var timings = ViewBag.Timings as List<CakerStreet.Business.Services.StoreTimingItem> ?? new List<CakerStreet.Business.Services.StoreTimingItem>();
+    var specialDays = ViewBag.SpecialDays as List<CakerStreet.Business.Services.SpecialDayItem> ?? new List<CakerStreet.Business.Services.SpecialDayItem>();
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+}
+
+@section Head {
+    <style type="text/css">
+        .middleSection { width: 100%; }
+        .alert-msg { display: none; margin: 10px 0; }
+        .section-panel { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px; background: #fff; }
+        .section-panel h4 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333; }
+        .timing-row { margin-bottom: 8px; }
+        .timing-row label { min-width: 100px; display: inline-block; font-weight: bold; }
+        .special-day-row { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .special-day-row:last-child { border-bottom: none; }
+        .logo-preview { max-width: 150px; max-height: 150px; border: 1px solid #ddd; padding: 5px; border-radius: 4px; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Edit Business Info</h2>
+    </div>
+
+    <div class="col-lg-12 padding-top-mobile">
+        <div id="divMessage" class="alert alert-msg"></div>
+
+        @* ─── Section 1: Business Info ─────────────────────────────────────────── *@
+        <div class="section-panel">
+            <h4>Business Information</h4>
+            <div class="form-horizontal" role="form">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Business Name:</label>
+                    <div class="col-sm-6">
+                        <input type="text" id="txtBusinessName" class="form-control" value="@(info?.BusinessName ?? "")" maxlength="200" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Phone:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtBusinessPhone" class="form-control" value="@(info?.BusinessPhone ?? "")" maxlength="50" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Order Email:</label>
+                    <div class="col-sm-5">
+                        <input type="email" id="txtOrderEmail" class="form-control" value="@(info?.OrderEmail ?? "")" maxlength="200" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">SMS Number:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtQuoteSMSNo" class="form-control" value="@(info?.QuoteSMSNo ?? "")" maxlength="50" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Description / About:</label>
+                    <div class="col-sm-8">
+                        <textarea id="txtBusinessDescription" class="form-control" rows="4">@(info?.BusinessDescription ?? "")</textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Address:</label>
+                    <div class="col-sm-6">
+                        <input type="text" id="txtAddress" class="form-control" value="@(info?.Address ?? "")" maxlength="500" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">City:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtCity" class="form-control" value="@(info?.City ?? "")" maxlength="100" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">County:</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="txtCounty" class="form-control" value="@(info?.County ?? "")" maxlength="100" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Postcode:</label>
+                    <div class="col-sm-3">
+                        <input type="text" id="txtPostcode" class="form-control" value="@(info?.Postcode ?? "")" maxlength="20" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Store URL:</label>
+                    <div class="col-sm-6">
+                        <input type="text" id="txtStoreURL" class="form-control" value="@(info?.StoreURL ?? "")" maxlength="500" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Logo:</label>
+                    <div class="col-sm-6">
+                        @if (!string.IsNullOrEmpty(info?.Logo))
+                        {
+                            <img src="@(cdnBase)@(info.Logo)" alt="Store Logo" class="logo-preview" />
+                            <p class="help-block">@info.Logo</p>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No logo uploaded</p>
+                        }
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-6">
+                        <button type="button" class="btn btn-primary" onclick="saveBusinessInfo();">Save Business Info</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ─── Section 2: Store Timings ─────────────────────────────────────────── *@
+        <div class="section-panel">
+            <h4>Store Timings</h4>
+            <div id="timingsContainer">
+                @foreach (var timing in timings)
+                {
+                    <div class="timing-row row" data-dayid="@timing.DayId">
+                        <div class="col-sm-2">
+                            <label>@timing.DayName</label>
+                        </div>
+                        <div class="col-sm-2">
+                            <select class="form-control timing-from">
+                                @for (int h = 0; h <= 24; h++)
+                                {
+                                    <option value="@h" @(h == timing.FromHour ? "selected" : "")>@(h.ToString("00")):00</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-sm-1 text-center" style="padding-top:7px;">to</div>
+                        <div class="col-sm-2">
+                            <select class="form-control timing-to">
+                                @for (int h = 0; h <= 24; h++)
+                                {
+                                    <option value="@h" @(h == timing.ToHour ? "selected" : "")>@(h.ToString("00")):00</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" class="timing-closed" @(timing.IsClosed ? "checked" : "") /> Closed
+                            </label>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <button type="button" class="btn btn-primary" onclick="saveTimings();">Save Timings</button>
+            </div>
+        </div>
+
+        @* ─── Section 3: Special Days ──────────────────────────────────────────── *@
+        <div class="section-panel">
+            <h4>Special Days (Holidays / Adjusted Hours)</h4>
+            <div id="specialDaysContainer">
+                @if (specialDays.Count > 0)
+                {
+                    foreach (var day in specialDays)
+                    {
+                        <div class="special-day-row" data-id="@day.Id">
+                            <span class="text-info">@day.Date.ToString("dd/MM/yyyy")</span>
+                            &nbsp; From: <strong>@(day.FromHour.ToString("00")):00</strong>
+                            &nbsp; To: <strong>@(day.ToHour.ToString("00")):00</strong>
+                            @if (day.IsClosed)
+                            {
+                                <span class="label label-danger">Closed</span>
+                            }
+                            <a href="javascript:void(0);" class="btn btn-xs btn-danger pull-right" onclick="deleteSpecialDay(@day.Id);">
+                                <span class="glyphicon glyphicon-trash"></span> Delete
+                            </a>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted" id="noSpecialDaysMsg">No special days configured.</p>
+                }
+            </div>
+
+            <hr />
+            <h5>Add Special Day</h5>
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Date:</label>
+                    <div class="col-sm-3">
+                        <input type="date" id="txtSpecialDate" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">From:</label>
+                    <div class="col-sm-2">
+                        <select id="selSpecialFrom" class="form-control">
+                            @for (int h = 0; h <= 24; h++)
+                            {
+                                <option value="@h">@(h.ToString("00")):00</option>
+                            }
+                        </select>
+                    </div>
+                    <label class="col-sm-1 control-label">To:</label>
+                    <div class="col-sm-2">
+                        <select id="selSpecialTo" class="form-control">
+                            @for (int h = 0; h <= 24; h++)
+                            {
+                                <option value="@h">@(h.ToString("00")):00</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-4">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="chkSpecialClosed" /> Closed all day
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-4">
+                        <button type="button" class="btn btn-success" onclick="saveSpecialDay();">
+                            <span class="glyphicon glyphicon-plus"></span> Add Special Day
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ─── Section 4: Delivery Settings ────────────────────────────────────── *@
+        <div class="section-panel">
+            <h4>Collection &amp; Delivery Settings</h4>
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <div class="col-sm-offset-1 col-sm-8">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="chkIsDeliverable" @(info?.IsDeliverable == true ? "checked" : "") /> Delivery Available
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Min Order Value (£):</label>
+                    <div class="col-sm-3">
+                        <input type="number" id="txtDeliveryMinOrder" class="form-control" step="0.01" min="0" value="@(info?.DeliveryMinOrder.ToString("0.00") ?? "0.00")" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">Delivery Miles:</label>
+                    <div class="col-sm-3">
+                        <input type="number" id="txtDeliveryMiles" class="form-control" step="0.1" min="0" value="@(info?.DeliveryMiles.ToString("0.0") ?? "0.0")" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-1 col-sm-8">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="chkIsCollectable" @(info?.IsCollectable == true ? "checked" : "") /> Collection Available
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-6">
+                        <button type="button" class="btn btn-primary" onclick="saveDeliverySettings();">Save Delivery Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section FooterScripts {
+<script type="text/javascript">
+    // ─── Message Display ────────────────────────────────────────────────────────
+
+    function showMessage(msg, isSuccess) {
+        var $div = $('#divMessage');
+        $div.removeClass('alert-danger alert-success alert-msg');
+        $div.addClass(isSuccess ? 'alert alert-success' : 'alert alert-danger');
+        $div.text(msg).fadeIn();
+        setTimeout(function () { $div.fadeOut(function () { $(this).addClass('alert-msg'); }); }, 4000);
+    }
+
+    // ─── Save Business Info ─────────────────────────────────────────────────────
+
+    function saveBusinessInfo() {
+        var data = {
+            businessName: $.trim($('#txtBusinessName').val()),
+            businessPhone: $.trim($('#txtBusinessPhone').val()),
+            orderEmail: $.trim($('#txtOrderEmail').val()),
+            quoteSMSNo: $.trim($('#txtQuoteSMSNo').val()),
+            businessDescription: $('#txtBusinessDescription').val(),
+            county: $.trim($('#txtCounty').val()),
+            city: $.trim($('#txtCity').val()),
+            storeURL: $.trim($('#txtStoreURL').val()),
+            postcode: $.trim($('#txtPostcode').val()),
+            address: $.trim($('#txtAddress').val())
+        };
+
+        if (data.businessName === '') {
+            showMessage('Business Name is required.', false);
+            return;
+        }
+
+        $.post('/editbusinessinfo/saveinfo', data, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving business info.', false);
+        });
+    }
+
+    // ─── Save Timings ───────────────────────────────────────────────────────────
+
+    function saveTimings() {
+        var timings = [];
+        $('#timingsContainer .timing-row').each(function () {
+            var $row = $(this);
+            timings.push({
+                dayId: parseInt($row.data('dayid')),
+                fromHour: parseInt($row.find('.timing-from').val()),
+                toHour: parseInt($row.find('.timing-to').val()),
+                isClosed: $row.find('.timing-closed').is(':checked')
+            });
+        });
+
+        $.ajax({
+            url: '/editbusinessinfo/savetimings',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(timings),
+            success: function (r) {
+                if (r.success) {
+                    showMessage(r.message, true);
+                } else {
+                    showMessage(r.message || 'Failed to save timings.', false);
+                }
+            },
+            error: function () {
+                showMessage('An error occurred while saving timings.', false);
+            }
+        });
+    }
+
+    // ─── Save Special Day ───────────────────────────────────────────────────────
+
+    function saveSpecialDay() {
+        var dateVal = $('#txtSpecialDate').val();
+        if (!dateVal) {
+            showMessage('Please select a date.', false);
+            return;
+        }
+
+        var data = {
+            id: 0,
+            date: dateVal,
+            fromHour: parseInt($('#selSpecialFrom').val()),
+            toHour: parseInt($('#selSpecialTo').val()),
+            isClosed: $('#chkSpecialClosed').is(':checked')
+        };
+
+        $.post('/editbusinessinfo/savespecialday', data, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to save special day.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving special day.', false);
+        });
+    }
+
+    // ─── Delete Special Day ─────────────────────────────────────────────────────
+
+    function deleteSpecialDay(id) {
+        if (!confirm('Are you sure you want to delete this special day?')) return;
+
+        $.post('/editbusinessinfo/deletespecialday', { id: id }, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+                setTimeout(function () { location.reload(); }, 1000);
+            } else {
+                showMessage(r.message || 'Failed to delete.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while deleting.', false);
+        });
+    }
+
+    // ─── Save Delivery Settings ─────────────────────────────────────────────────
+
+    function saveDeliverySettings() {
+        var data = {
+            isDeliverable: $('#chkIsDeliverable').is(':checked'),
+            deliveryMinOrder: parseFloat($('#txtDeliveryMinOrder').val()) || 0,
+            deliveryMiles: parseFloat($('#txtDeliveryMiles').val()) || 0,
+            isCollectable: $('#chkIsCollectable').is(':checked')
+        };
+
+        $.post('/editbusinessinfo/savedelivery', data, function (r) {
+            if (r.success) {
+                showMessage(r.message, true);
+            } else {
+                showMessage(r.message || 'Failed to save delivery settings.', false);
+            }
+        }).fail(function () {
+            showMessage('An error occurred while saving delivery settings.', false);
+        });
+    }
+</script>
+}

@@ -1,0 +1,392 @@
+@using CakerStreet.Business.Controllers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var products = ViewBag.Products as List<ManageProductTagsController.ProductItem> ?? new();
+    var productTags = ViewBag.ProductTags as Dictionary<long, List<ManageProductTagsController.ProductTagItem>> ?? new();
+    var packagingTypes = ViewBag.PackagingTypes as List<ManageProductTagsController.PackagingTypeItem> ?? new();
+    var selectedTypeId = ViewBag.SelectedTypeId as int? ?? 0;
+    var selectedPackTypeId = ViewBag.SelectedPackTypeId as int? ?? 0;
+    var keyword = ViewBag.Keyword as string ?? "";
+    var prdId = ViewBag.PrdId as long?;
+    var cdnBase = ViewBag.CdnBase as string ?? "";
+}
+
+@section head {
+    <link href="/css/sellcss.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet" />
+    <style type="text/css">
+        .font-weight-normal
+        {
+            font-weight: normal;
+        }
+        .img img
+        {
+            max-height: 60px;
+            max-width: 60px;
+        }
+        .table.prdlstouter
+        {
+            margin-top: 20px;
+        }
+        .ui-menu img
+        {
+            width: 40px;
+            height: 40px;
+        }
+        .ui-menu li span
+        {
+            font-size: 1em;
+            padding: 0 0 10px 10px;
+            margin: 0 0 10px 0 !important;
+            white-space: nowrap;
+        }
+        .dvtagOuter {
+            display: table;
+            width: 100%;
+            margin: 0 0 10px 0;
+        }
+        .dvtagOuter .litags {
+            display: block;
+            float: left;
+            margin: 5px 10px 5px 0;
+            border: 1px solid #ccc;
+            line-height: 30px;
+            overflow: hidden;
+            border-radius: 4px;
+            font-size: 13px;
+            background-color: #fff;
+        }
+        .dvtagOuter .litags .input-group-addon {
+            padding: 0;
+            border-width: 0;
+            line-height: 30px;
+            float: right;
+            width: 30px;
+            margin-left: 7px;
+            display: block;
+            background-color: #fff;
+            border-left: 1px Solid #ccc;
+            text-align: center;
+        }
+        .dvtagOuter .litags::before {
+            content: "#";
+            padding: 0 7px;
+            color: #a94442;
+            line-height: 30px;
+            float: left;
+            background-color: #fcc;
+            margin-right: 7px;
+        }
+        .dvtagOuter .litags .input-group-addon a {
+            display: block;
+            cursor: pointer;
+            text-decoration: none;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse2" aria-expanded="true"><span class="glyphicon glyphicon-minus"></span></a>
+                </div>
+                <div class="col-md-11">
+                    <h2>Manage Product Tags</h2>
+                </div>
+            </div>
+            
+            <div class="col-md-12 panel-collapse collapse in" id="collapse2" aria-expanded="true">
+                <div id="dvSearch" class="form-horizontal" style="margin-top: 15px; @(prdId != null ? "display:none;" : "")">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Product Type *</label>
+                        <div class="col-sm-3">
+                            <select id="ddlProductType" class="form-control" onchange="onTypeChange(this.value)">
+                                <option value="0" selected="@(selectedTypeId == 0 ? "selected" : null)">--Select Type--</option>
+                                <option value="2" selected="@(selectedTypeId == 2 ? "selected" : null)">Accessories</option>
+                                <option value="4" selected="@(selectedTypeId == 4 ? "selected" : null)">Cake Toppers</option>
+                                <option value="5" selected="@(selectedTypeId == 5 ? "selected" : null)">Cutters / Moulds</option>
+                                <option value="7" selected="@(selectedTypeId == 7 ? "selected" : null)">Packaging</option>
+                                <option value="8" selected="@(selectedTypeId == 8 ? "selected" : null)">Supplies</option>
+                                <option value="9" selected="@(selectedTypeId == 9 ? "selected" : null)">Appliances</option>
+                                <option value="10" selected="@(selectedTypeId == 10 ? "selected" : null)">Shop Setup</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">
+                            Select Type<br />
+                            <a target="_blank" class="normallink" href="/packagingtype">Manage</a>
+                        </label>
+                        <div class="col-sm-3">
+                            <select id="ddlpackagingType" class="form-control" @(selectedTypeId == 0 ? "disabled=\"disabled\"" : "") onchange="onPackTypeChange(this.value)">
+                                <option value="0">--All Types--</option>
+                                @foreach (var pkg in packagingTypes)
+                                {
+                                    if (pkg.Id == selectedPackTypeId)
+                                    {
+                                        <option value="@pkg.Id" selected="selected">@pkg.Title</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@pkg.Id">@pkg.Title</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Search Keyword</label>
+                        <div class="col-sm-3">
+                            <input type="text" id="txtKeyword" class="form-control" placeholder="Search Keyword" value="@keyword" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-3">
+                            <button type="button" class="btn btn-danger btn-sm" id="btnSearch" @(selectedTypeId == 0 ? "disabled=\"disabled\"" : "") onclick="doSearch()">Search</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dvprd" class="form-group" style="padding: 15px;">
+                    @if (products.Count > 0)
+                    {
+                        <div class="table prdlstouter" id="our_products">
+                            <table class="table table-bordred table-striped">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;"></th>
+                                        <th style="width: 30%;">Product</th>
+                                        <th style="width: 50%;">Tags</th>
+                                        <th class="action">Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var prod in products)
+                                    {
+                                        var tags = productTags.ContainsKey(prod.Id) ? productTags[prod.Id] : new List<ManageProductTagsController.ProductTagItem>();
+                                        <tr id="trProduct_@prod.Id" class="rowtext">
+                                            <td class="img">
+                                                <a>
+                                                    @if (!string.IsNullOrEmpty(prod.Image1))
+                                                    {
+                                                        <img src="https://cakerstreet1.s3.amazonaws.com/Product_images/resized_80_80/@prod.Image1" style="border-width: 0px;" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <img src="https://cakerstreet1.s3.amazonaws.com/images/blankImages/img75.jpg" style="border-width: 0px;" />
+                                                    }
+                                                </a>
+                                            </td>
+                                            <td>
+                                                @prod.Name - @prod.Code
+                                                <input type="hidden" id="hfProductID_@prod.Id" value="@prod.Id" />
+                                                
+                                                <select class="form-control input-sm ddlprdtype" style="margin-top: 5px;" onchange="changeProductType(@prod.Id, this.value)">
+                                                    <option value="2" selected="@(prod.ProductType == 2 ? "selected" : null)">Accessories</option>
+                                                    <option value="4" selected="@(prod.ProductType == 4 ? "selected" : null)">Cake Toppers</option>
+                                                    <option value="5" selected="@(prod.ProductType == 5 ? "selected" : null)">Cutters / Moulds</option>
+                                                    <option value="7" selected="@(prod.ProductType == 7 ? "selected" : null)">Packaging</option>
+                                                    <option value="8" selected="@(prod.ProductType == 8 ? "selected" : null)">Supplies</option>
+                                                    <option value="9" selected="@(prod.ProductType == 9 ? "selected" : null)">Appliances</option>
+                                                    <option value="10" selected="@(prod.ProductType == 10 ? "selected" : null)">Shop Setup</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <div id="dvtagOuter_@prod.Id" class="dvtagOuter">
+                                                    @foreach (var tag in tags)
+                                                    {
+                                                        <div id="divtagid_fortags_@(tag.Id)_@prod.Id" class="litags input-group">
+                                                            @tag.Title
+                                                            <div class="input-group-addon">
+                                                                <a onclick="deleteTag(@tag.Id, @prod.Id)" class="text-danger">X</a>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="clearfix"></div>
+                                                <div class="form-horizontal">
+                                                    <div class="form-group">
+                                                        <div class="col-sm-12">
+                                                            <input type="text" id="txtSearchTag_@prod.Id" class="form-control input-sm txtSearchTag" data-pid="@prod.Id" placeholder="Search Tags or Press Enter to Add Tag" autocomplete="off" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="action">
+                                                <select id="ddlPkgType_@prod.Id" class="form-control" onchange="changePackagingType(@prod.Id, this.value, @prod.ProductType)">
+                                                    <option value="0">--select Type--</option>
+                                                    @foreach (var pkg in packagingTypes)
+                                                    {
+                                                        if (pkg.Id == prod.PackagingTypeId)
+                                                        {
+                                                            <option value="@pkg.Id" selected="selected">@pkg.Title</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@pkg.Id">@pkg.Title</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else if (selectedTypeId > 0)
+                    {
+                        <div class="alert alert-danger">No Products Found</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    function onTypeChange(typeId) {
+        window.location.href = "/manageproducttags?typeId=" + typeId;
+    }
+    
+    function onPackTypeChange(packtypeId) {
+        var typeId = $("#ddlProductType").val();
+        var q = $("#txtKeyword").val();
+        window.location.href = "/manageproducttags?typeId=" + typeId + "&packtypeId=" + packtypeId + "&q=" + encodeURIComponent(q);
+    }
+    
+    function doSearch() {
+        var typeId = $("#ddlProductType").val();
+        var packtypeId = $("#ddlpackagingType").val();
+        var q = $("#txtKeyword").val();
+        window.location.href = "/manageproducttags?typeId=" + typeId + "&packtypeId=" + packtypeId + "&q=" + encodeURIComponent(q);
+    }
+
+    function changeProductType(prdId, prdType) {
+        if (confirm("Are you sure to change product type?")) {
+            $.ajax({
+                type: "POST",
+                url: "/manageproducttags/UpdateProduct_PrdType",
+                data: JSON.stringify({ prdType: parseInt(prdType), prdID: prdId }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (res) {
+                    if (res == 1) {
+                        alert("Product detail has been updated successfully.");
+                        $("#trProduct_" + prdId).remove();
+                    } else {
+                        alert("Failed to update product type.");
+                    }
+                }
+            });
+        }
+    }
+
+    function changePackagingType(prdId, pkgId, prdType) {
+        $.ajax({
+            type: "POST",
+            url: "/manageproducttags/UpdatePackagingType",
+            data: { prdId: prdId, packagingTypeId: parseInt(pkgId), prdType: prdType },
+            success: function (res) {
+                if (res.success) {
+                    alert("Product detail has been updated successfully.");
+                } else {
+                    alert("Failed: " + res.message);
+                }
+            }
+        });
+    }
+
+    function deleteTag(tagId, prdId) {
+        if (confirm("Are you sure to delete this tag?")) {
+            $.ajax({
+                type: "POST",
+                url: "/manageproducttags/deleteStockPrdTag",
+                data: JSON.stringify({ tagID: tagId, prdID: prdId }),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (res) {
+                    if (res == 1) {
+                        $("#divtagid_fortags_" + tagId + "_" + prdId).remove();
+                    } else {
+                        alert("Failed to delete tag.");
+                    }
+                }
+            });
+        }
+    }
+
+    function saveTag(tagId, tagTitle, prdId) {
+        $.ajax({
+            type: "POST",
+            url: "/manageproducttags/SaveStockPrdTag",
+            data: JSON.stringify({ tagID: tagId, tagTitle: tagTitle, prdID: prdId }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (city) {
+                if (parseInt(city.id) == 0 || parseInt(city.ID) == 0) {
+                    alert(city.stocktypeTag_title || city.StocktypeTag_title);
+                } else {
+                    var finalTagId = city.id || city.ID;
+                    var finalTitle = city.stocktypeTag_title || city.StocktypeTag_title;
+                    var str = "<div id='divtagid_fortags_" + finalTagId + "_" + prdId + "' class='litags input-group'>" + finalTitle + "<div class='input-group-addon'> <a onclick='deleteTag(" + finalTagId + "," + prdId + ");' class='text-danger'>X</a></div></div>";
+                    $("#dvtagOuter_" + prdId).append(str);
+                    $("#txtSearchTag_" + prdId).val("");
+                }
+            }
+        });
+    }
+
+    $(function () {
+        $('input.txtSearchTag').each(function () {
+            var $el = $(this);
+            var prdId = $el.attr("data-pid");
+            
+            $el.autocomplete({
+                minLength: 1,
+                select: function (event, ui) {
+                    event.preventDefault();
+                    $el.val(ui.item.label);
+                    saveTag(ui.item.value, ui.item.label, prdId);
+                    return false;
+                },
+                open: function () {
+                    $(".ui-autocomplete").css("z-index", 99999);
+                },
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/manageproducttags/GetStockPrdTag",
+                        type: "POST",
+                        dataType: "json",
+                        data: JSON.stringify({ keyword: request.term, prdId: parseInt(prdId) }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+                            response($.map(data.d, function (item) {
+                                return {
+                                    label: item.stocktypeTag_title,
+                                    value: item.id || item.ID
+                                };
+                            }))
+                        }
+                    });
+                }
+            });
+
+            $el.on("keypress", function (e) {
+                if (e.keyCode == 13) {
+                    var val = $.trim($el.val());
+                    if (val == "") {
+                        alert("Please enter search tag");
+                    } else {
+                        saveTag(0, val, prdId);
+                    }
+                    return false;
+                }
+            });
+        });
+    });
+</script>
