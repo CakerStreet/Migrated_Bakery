@@ -13,6 +13,7 @@ namespace CakerStreet.Business.Controllers;
 /// </summary>
 [Route("businessorders")]
 [Route("bakeryorders")]
+[Route("bakeryorders.aspx")]
 public class BusinessOrdersController : Controller
 {
     private readonly BusinessOrdersService _ordersService;
@@ -49,9 +50,10 @@ public class BusinessOrdersController : Controller
         int tasktype = 0,
         int topper = 0,
         int disptime = 0,
-        int rt = 0)
+        int rt = 0,
+        string? startdate = null)
     {
-        return await Index(12, sdate, edate, from, to, q, datemode, dt, pno, dm, all, dayID, tasktype, topper, disptime, rt);
+        return await Index(12, sdate, edate, from, to, q, datemode, dt, pno, dm, all, dayID, tasktype, topper, disptime, rt, startdate);
     }
 
     [HttpGet("")]
@@ -71,7 +73,8 @@ public class BusinessOrdersController : Controller
         int tasktype = 0,
         int topper = 0,
         int disptime = 0,
-        int rt = 0)
+        int rt = 0,
+        string? startdate = null)
     {
         // Get auth info from HttpContext.Items (set by middleware)
         var webshopId = HttpContext.Items["BakeryWebshopId"]?.ToString() ?? "";
@@ -97,6 +100,21 @@ public class BusinessOrdersController : Controller
         {
             var effectiveDayID = dayID > 0 ? dayID : AssignedTasksNavHelper.GetDayId(DateTime.Now);
 
+            // Parse calendar startdate param (legacy: Session["Startdate_day"])
+            // Legacy default: dttaskdate = DateTime.Today.AddDays(-1)  (bakeryorders.aspx.cs line 538)
+            // Legacy with CalendarExtender: Session["Startdate_day"] = exact picked date (line 2166)
+            // The -1 offset only applies to the default (no user date), NOT to user-picked dates.
+            DateTime weekAnchor = DateTime.Today.AddDays(-1);
+            if (!string.IsNullOrEmpty(startdate))
+            {
+                // Support multiple date formats: dd/MM/yyyy, MM/dd/yyyy, yyyy-MM-dd
+                if (DateTime.TryParseExact(startdate, new[] { "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "d/M/yyyy" },
+                    System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed))
+                {
+                    weekAnchor = parsed;
+                }
+            }
+
             var assignedRequest = new AssignedTasksRequest
             {
                 WebshopId = long.Parse(webshopId),
@@ -106,7 +124,7 @@ public class BusinessOrdersController : Controller
                 DispTime = disptime,
                 DeliveryMode = dm,
                 RouteId = rt,
-                StartDate = DateTime.Today.AddDays(-1)
+                StartDate = weekAnchor
             };
 
             var assignedModel = await _assignedTasksService.GetAssignedTasksAsync(assignedRequest);

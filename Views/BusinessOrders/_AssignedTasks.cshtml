@@ -3,6 +3,9 @@
 @{
     var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
     var strFindFilter = AssignedTasksNavHelper.BuildFindFilter(null, null, null, Model.ActiveDispTime);
+    // Compute startdate string for URL propagation (format: dd/MM/yyyy)
+    // StartDate is the start of the 7-day window (default: Today-1, or exact user-picked date)
+    var startdateStr = Model.StartDate != default ? Model.StartDate.ToString("dd/MM/yyyy") : null;
 }
 
 @* === LAYER 1: Status sub-nav (All / Assigned Tasks) === *@
@@ -23,10 +26,10 @@
         @foreach (var day in Model.DayTabs)
         {
             var dayClass = AssignedTasksNavHelper.GetDayTabCssClass(day.Date, day.IsClosed, day.DayID, Model.ActiveDayID, Model.ActiveDayID > 0);
-            <li><a class="@dayClass" href="@AssignedTasksNavHelper.BuildDayTabUrl(day.DayID)"><span>@day.DayName (@day.CakeCount)</span><font>(@day.Date.ToString("dd/MM/yyyy"))</font></a></li>
+            <li><a class="@dayClass" href="@AssignedTasksNavHelper.BuildDayTabUrl(day.DayID, startdateStr)"><span>@day.DayName (@day.CakeCount)</span><font>(@day.Date.ToString("dd/MM/yyyy"))</font></a></li>
         }
         <li class="pull-right">
-            <input type="text" class="order-to" placeholder="Start Date" />
+            <input type="text" class="order-to" id="txtStartdate_day" placeholder="Start Date" value="@(startdateStr ?? "")" />
         </li>
     </ul>
 </div>
@@ -38,12 +41,12 @@
     <div class="panel-heading bot">
         <ul>
             <li><a class="@(Model.ActiveDispTime == 0 ? "stt" : "")"
-                href="@AssignedTasksNavHelper.BuildAllDispatchTimeUrl(Model.ActiveDayID)">All</a></li>
+                href="@AssignedTasksNavHelper.BuildAllDispatchTimeUrl(Model.ActiveDayID, startdateStr)">All</a></li>
             @foreach (var slot in Model.TimeSlots)
             {
                 var slotClass = AssignedTasksNavHelper.GetTimeSlotCssClass(slot.TimeID, Model.ActiveDispTime, slot.TotalCount, slot.TotalDone, Model.ActiveDispTime > 0);
                 <li><a class="@slotClass"
-                    href="@AssignedTasksNavHelper.BuildDispatchTimeUrl(Model.ActiveDayID, slot.TimeID)"><span>@slot.TimeSlotName (@slot.CakeCount/@slot.CupcakeCount)</span></a></li>
+                    href="@AssignedTasksNavHelper.BuildDispatchTimeUrl(Model.ActiveDayID, slot.TimeID, startdateStr)"><span>@slot.TimeSlotName (@slot.CakeCount/@slot.CupcakeCount)</span></a></li>
             }
         </ul>
     </div>
@@ -490,6 +493,31 @@ else
 
 @* === TASK ACTION JAVASCRIPT === *@
 <script type="text/javascript">
+    // Migration safety helper: parse 403 blocked responses
+    function handleSafetyError(xhr, fallbackMsg) {
+        if (xhr.status === 403) {
+            try {
+                var resp = JSON.parse(xhr.responseText);
+                if (resp.readOnlyMode) { alert(resp.message); return; }
+            } catch(e) {}
+        }
+        alert(fallbackMsg);
+    }
+
+    // Calendar date picker — matches legacy CalendarExtender3 + txtStartdate_day_OnTextChanged
+    // Legacy: AutoPostBack=true → server sets Session["Startdate_day"] → redirect
+    // Modern: jQuery datepicker → navigate with startdate query param
+    $(function () {
+        $('#txtStartdate_day').datepicker({
+            dateFormat: 'dd/mm/yy',
+            onSelect: function (dateText) {
+                // Build URL preserving current ordertype=12 and navigate
+                var url = '/businessorders?ordertype=12&startdate=' + encodeURIComponent(dateText);
+                window.location.href = url;
+            }
+        });
+    });
+
     // Staff selection — matches legacy: save to DB then reload page
     $(document).on('click', '.drptaskuserlist li a', function (e) {
         e.preventDefault();
@@ -522,7 +550,7 @@ else
                     alert(result.message || 'Failed to assign staff.');
                 }
             },
-            error: function () { alert('Server error assigning staff.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error assigning staff.'); }
         });
     });
 
@@ -585,7 +613,7 @@ else
                     alert(result.message || 'Failed to update checklist.');
                 }
             },
-            error: function () { alert('Server error updating checklist.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error updating checklist.'); }
         });
     });
 
@@ -608,7 +636,7 @@ else
                     alert(result.message || 'Action failed.');
                 }
             },
-            error: function () { alert('Server error.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error.'); }
         });
     }
 
@@ -707,7 +735,7 @@ else
                             }
                         }
                     },
-                    error: function () { alert('Server error assigning route.'); }
+                    error: function (xhr) { handleSafetyError(xhr, 'Server error assigning route.'); }
                 });
             });
         });
