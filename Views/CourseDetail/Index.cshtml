@@ -1,0 +1,58 @@
+@model CourseDetailViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = ViewData["Title"] ?? "Manage Course";
+}
+
+@section head {
+    <style type="text/css">
+        .div_moduleNavigaionMain {display: table;margin: 0px auto 20px;}
+        .div_moduleNavigaionMain.div_content {width:100%;}
+        .div_moduleNavigaionMain > ul{list-style-type:none;padding:0;margin:0;}
+        .div_moduleNavigaionMain li{line-height:30px;}
+        .div_moduleNavigaionMain li.headertext{line-height:30px;font-size:20px;}
+        .div_moduleNavigaionMain.div_content li.headertext{background-color: #ddd;line-height: 20px;font-size: 18px;padding: 7px;}
+        .div_moduleNavigaionMain.div_content li{line-height:24px;font-size:14px;padding:7px;}
+        .moudlebuttons_outer {padding: 20px;}
+        .div_moduleNavigaionMain.div_content li.contenttext img {max-width: 100%;}
+        .normallink,.normallink:hover,.normallink:focus { text-decoration: underline;color:#fff;}
+        .rpad10{padding-right:10px}
+        .inventoryWrapper .innerhead { display: table; width: 100%; }
+    </style>
+}
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">@Model.CourseName</h2>
+        @if (Model.ShowBackLink)
+        {
+            <a href="@Model.BackUrl" class="pull-right normallink rpad10">Back to Navigation</a>
+        }
+        @if (Model.ShowBackFoodStandards)
+        {
+            <a href="/food-standards" class="pull-right normallink rpad10">Back</a>
+        }
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            @Html.Raw(Model.NavigationHtml)
+            <div class="moudlebuttons_outer col-md-12 col-xs-12">
+                @if (Model.ShowPrevNext && !string.IsNullOrEmpty(Model.PrevUrl))
+                {
+                    <a href="@Model.PrevUrl" class="pull-left btn btn-danger">&lt;&lt; Prev</a>
+                }
+                @if (Model.ShowPrevNext && !string.IsNullOrEmpty(Model.NextUrl))
+                {
+                    <a href="@Model.NextUrl" class="pull-right btn btn-danger">@Model.NextText</a>
+                }
+                @if (Model.ShowStartButton && !string.IsNullOrEmpty(Model.StartUrl))
+                {
+                    <a href="@Model.StartUrl" class="pull-right btn btn-danger">Start Course &gt;&gt;</a>
+                }
+                @Html.Raw(Model.ButtonsHtml)
+            </div>
+        </div>
+    </div>
+</div>

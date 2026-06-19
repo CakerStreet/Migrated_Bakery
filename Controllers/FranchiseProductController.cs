@@ -12,6 +12,8 @@ namespace CakerStreet.Business.Controllers;
 /// No service file — inline SQL.
 /// </summary>
 [Route("manageproductwithfranchise")]
+[Route("franchiseproduct")]
+[Route("manageproductwithfranchise.aspx")]
 public class FranchiseProductController : Controller
 {
     private readonly BakeryMenuService _menuService;

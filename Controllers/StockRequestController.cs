@@ -11,6 +11,8 @@ namespace CakerStreet.Business.Controllers;
 /// Module 20 permission check + HQ-only (webshopId == 82).
 /// </summary>
 [Route("managestockrequest")]
+[Route("stockrequest")]
+[Route("managestockrequest.aspx")]
 public class StockRequestController : Controller
 {
     private readonly StockRequestService _stockRequestService;

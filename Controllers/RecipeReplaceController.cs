@@ -9,9 +9,7 @@ using CakerStreet.Business.Services;
 
 namespace CakerStreet.Business.Controllers;
 
-[Route("managereceipe-findandreplace")]
-[Route("managereceipeingredient_keywords")]
-[Route("managereceipeIngredient_keywords.aspx")]
+[Route("recipe-replace-ops")]
 public class RecipeReplaceController : Controller
 {
     private readonly RecipeService _recipeService;

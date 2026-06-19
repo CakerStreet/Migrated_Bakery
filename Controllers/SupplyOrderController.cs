@@ -12,6 +12,8 @@ namespace CakerStreet.Business.Controllers;
 /// Module 21 permission check.
 /// </summary>
 [Route("managesupplyorder")]
+[Route("supplyorder")]
+[Route("managesupplyorder.aspx")]
 public class SupplyOrderController : Controller
 {
     private readonly SupplyOrderService _soService;

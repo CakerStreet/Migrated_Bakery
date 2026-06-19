@@ -1,0 +1,51 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Order Detail";
+    int recordCount = ViewBag.RecordCount ?? 0;
+    string printContent = ViewBag.PrintContent ?? "";
+}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Order Detail</title>
+    <link rel="shortcut icon" href="/images/icons/favicon.ico?version=1.1" type="image/png" />
+    <link href="/css/bootstrap.css" media="all" rel="stylesheet" type="text/css" />
+    <style type="text/css" media="all">
+        body, body * {
+            font-weight: normal;
+            background-color: transparent;
+        }
+        .divmain { margin: 0 auto; position: relative; width: 668px; }
+        h5 { float: left; width: 100%; }
+        .flush { padding: 0; }
+        .ligrp { float: left; margin: 5px; line-height: 20px; }
+        .divIngredientlistOuter { float: left; width: 100%; text-align: justify; }
+        span.serving { float: right; font-size: 14px; line-height: 24px; color: #555; }
+        h3 { margin: 0; border-bottom: 1px dashed #aaa; padding-bottom: 10px; color: #df3f42; }
+        .div_reciepe { padding-bottom: 14px; border-bottom: 1px solid #777; margin-bottom: 14px; float: left; width: 100%; }
+        .nact { text-decoration: line-through; }
+        ul { padding: 0; list-style-type: none; margin: 0; }
+        .divIngredientlistOuter ul.directionul { width: 100%; padding-left: 20px; }
+        .divIngredientlistOuter ul.directionul::before {
+            content: "-"; position: absolute; left: 3px; line-height: 28px; top: 0; font-weight: bold; color: #f00;
+        }
+    </style>
+    <style type="text/css" media="print">
+        @@media page { size: A4 landscape; }
+        @@page { margin: 5mm; padding: 0; }
+        #dvPrintButtons { visibility: hidden; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="dvPrintButtons" class="row" style="margin-top: 10px; text-align: center;">
+            @recordCount Records found
+            <br />
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm" onclick="javascript:window.print();">Print</button>
+            </div>
+        </div>
+        @Html.Raw(printContent)
+    </div>
+</body>
+</html>

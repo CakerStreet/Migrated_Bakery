@@ -1,0 +1,192 @@
+@model CourseAssessmentViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = ViewData["Title"] ?? "Manage Course";
+}
+
+@section head {
+    <style type="text/css">
+        .div_QuestionMain_outer { display: table; margin: 0px auto 20px; width: 100%; }
+        ol, ul { list-style-type: none; padding: 0; margin: 0; }
+        .div_QuestionMain > ul.UL_QuestionMain { display: table; width: 100%; }
+        .div_QuestionMain_outer li { line-height: 30px; }
+        .div_QuestionMain > ul.UL_QuestionMain li { float: left; line-height: 20px; font-size: 14px; font-weight: bold; width: 100%; position: relative; padding: 5px 0 5px 90px; }
+        ul.UL_QuestionMain li span { position: absolute; left: 0; top: 5px; }
+        .UL_rpAnswersMain { display: table; width: 100%; }
+        .div_rpAnswersMain { display: table; width: 100%; padding: 7px 0 7px 90px; }
+        .UL_rpAnswersMain li { float: left; width: 50%; padding: 5px 0 0 0; display: flex; height: 40px; }
+        .UL_rpAnswersMain li label { font-weight: normal; font-size: 13px; line-height: 18px; display: inline; }
+        .informationNotes { display: table; width: 100%; padding: 10px 0; color: #f55; font-style: italic; text-decoration: underline; }
+        .informationNotes span { font-weight: bold; font-size: 16px; }
+        .moudlebuttons_outer { display: table; width: 100%; text-align: center; padding: 10px 0 10px 0; }
+        .informationNotes.st { color: green; text-decoration: unset; font-style: normal; }
+        .informationNotes.stf { text-decoration: unset; font-style: normal; }
+        @@media screen and (max-width:991px) {
+            .UL_rpAnswersMain li { float: left; width: 100%; padding: 5px 0 0 0; display: flex; height: auto; }
+        }
+        .informationDetail { display: table; width: 100%; line-height: 20px; }
+        .normallink,.normallink:hover,.normallink:focus { text-decoration: underline; color:#fff; }
+        .rpad10 { padding-right:10px }
+        .div_QuestionMainList_outer, .div_ResultMain { display: table; width: 100%; }
+        .UL_ResultMain { display: table-row; line-height:34px; }
+        .UL_ResultMain.headertext { background-color: #ccc; font-weight: bold; }
+        .UL_ResultMain > li { display: table-cell; padding: 0 10px; text-align: left; }
+        .inventoryWrapper .innerhead { display: table; width: 100%; }
+    </style>
+}
+
+<input type="hidden" id="hfCourseID" value="@Model.CourseId" />
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">@Model.CourseName</h2>
+        <a href="@Model.BackUrl" class="pull-right normallink rpad10">Back</a>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="div_QuestionMainList_outer">
+
+                @* Info notes - shown in assessment mode *@
+                @if (Model.Mode == "assessment")
+                {
+                    <div class="informationNotes">
+                        You need to score <span>7</span> correct answers out of <span>10</span> questions
+                        to pass this Food Allergen Awareness Assessment. Good Luck!
+                    </div>
+                }
+
+                @* Result info - shown in individual result mode *@
+                @if (Model.Mode == "result" && !string.IsNullOrEmpty(Model.ResultInfoHtml))
+                {
+                    <div class="@Model.ResultInfoCssClass">@Html.Raw(Model.ResultInfoHtml)</div>
+                }
+
+                @if (Model.ShowInfoDetail)
+                {
+                    <div class="informationDetail">
+                        <p>Congratulations on passing the Food Allergen Awareness course! Your certificate will be emailed and posted to you within 1 working day, original certificate should be with you within 2-3 working days. please make sure your address on the system is correct.</p>
+                        <p>Don't forget to check out our other great courses. Remember to come back and take your refresher course when it is due.</p>
+                    </div>
+                }
+
+                @* Results table - shown in resultlist mode *@
+                @if (Model.Mode == "resultlist")
+                {
+                    <div class="div_ResultMain">
+                        <ul class="UL_ResultMain headertext">
+                            <li>Sr.</li>
+                            <li>Staff</li>
+                            <li>Status</li>
+                            <li>Score</li>
+                            <li>Date</li>
+                        </ul>
+                        @{ var idx = 0; }
+                        @foreach (var r in Model.Results)
+                        {
+                            idx++;
+                            <ul class="UL_ResultMain">
+                                <li><span>@idx.</span></li>
+                                <li>@r.CustomerName</li>
+                                <li>@(r.IsPass ? "Pass" : "Fail")</li>
+                                <li>@r.ResultPercentage%</li>
+                                <li>@r.ModifiedOn.ToString("dd/MM/yyyy")</li>
+                            </ul>
+                        }
+                    </div>
+                }
+
+                @* Questions - shown in assessment mode *@
+                @if (Model.Mode == "assessment")
+                {
+                    var qIdx = 0;
+                    foreach (var q in Model.Questions)
+                    {
+                        qIdx++;
+                        <div class="div_QuestionMain">
+                            <ul class="UL_QuestionMain">
+                                <li><span>Question @qIdx.</span>@q.QuestionText</li>
+                            </ul>
+                        </div>
+                        <div class="div_rpAnswersMain">
+                            <ul class="UL_rpAnswersMain">
+                                @foreach (var a in q.Answers)
+                                {
+                                    <li>
+                                        <input data-tid="@a.AnswerId" data-qtid="@a.QuestionId"
+                                               type="radio" id="rdbtnAnswer_@a.AnswerId" onchange="SelectSingleRadiobutton(this);"
+                                               name="rdbtnAnswer_@a.AnswerId">
+                                        <label for="rdbtnAnswer_@a.AnswerId">@a.Title</label>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="moudlebuttons_outer col-md-12 col-xs-12">
+                @if (Model.ShowRestartButton)
+                {
+                    <a href="@Model.RestartUrl" class="btn btn-danger">@Model.RestartText</a>
+                }
+                @if (Model.ShowSubmitButton)
+                {
+                    <a href="javascript:void(0);" onclick="SubmitAssessment(this);" class="btn btn-danger">Submit Assessment</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        function SelectSingleRadiobutton(obj) {
+            var id = $(obj).attr("id").toString();
+            $(obj).closest(".UL_rpAnswersMain").find("input[type='radio']").each(function () {
+                if ($(this).attr("id").toString() != id) {
+                    $(this).prop('checked', false);
+                }
+            });
+        }
+
+        function SubmitAssessment(obj) {
+            var leftcounter = 0;
+            $(".UL_rpAnswersMain").each(function () {
+                if ($(this).find("input[type='radio']:checked").length == 0) {
+                    leftcounter += 1;
+                }
+            });
+            if (leftcounter > 0) {
+                alert(leftcounter + " Questions are pending!");
+            }
+            else {
+                var arr_data_entry = [];
+                $(".UL_rpAnswersMain input[type='radio']:checked").each(function () {
+                    arr_data_entry.push({
+                        ansID: parseInt($(this).attr("data-tid")),
+                        queID: parseInt($(this).attr("data-qtid"))
+                    });
+                });
+                $.ajax({
+                    type: "POST",
+                    url: "/courseassessment/submit",
+                    data: JSON.stringify({ courseID: parseInt($("#hfCourseID").val()), answers: arr_data_entry }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (msg) {
+                        var city = msg.d;
+                        if (city.data_ID == 0) {
+                            alert('some error occured!! Please try again.');
+                        } else {
+                            alert(city.data_str);
+                            location.href = "/courseresult/" + city.data_optionalstr;
+                        }
+                    },
+                    error: function (x, e) {
+                        alert("The call to the server side failed. " + x.responseText);
+                    }
+                });
+            }
+        }
+    </script>
+}

@@ -1,0 +1,26 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = ViewBag.PageTitle ?? "Module Unavailable";
+}
+<div class="container" style="padding: 40px 20px;">
+    <div class="alert alert-warning" style="max-width: 700px; margin: 60px auto; padding: 30px; border-radius: 8px; border-left: 5px solid #f0ad4e;">
+        <h3 style="margin-top: 0; color: #8a6d3b;">
+            <i class="fa fa-exclamation-triangle"></i>
+            @(ViewBag.PageTitle ?? "Module Unavailable")
+        </h3>
+        <p style="font-size: 15px; color: #555; margin-bottom: 15px;">
+            This module requires database tables that are not available in the current environment.
+        </p>
+        @if (ViewBag.MissingTable != null)
+        {
+            <p style="font-size: 13px; color: #888;">
+                <strong>Missing table:</strong> <code>@ViewBag.MissingTable</code>
+            </p>
+        }
+        <p style="font-size: 13px; color: #888; margin-bottom: 0;">
+            This module will be available after the database schema is updated for migration.
+        </p>
+        <hr style="border-color: #f0ad4e; opacity: 0.3;">
+        <a href="/dashboard" class="btn btn-default" style="margin-right: 10px;">Back to Dashboard</a>
+    </div>
+</div>

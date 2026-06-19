@@ -30,22 +30,11 @@ public class LegacyProxyMiddleware
         // ─── Pages with no modern controller ──────────────────────────────────
         { "/edittheme",                     "/edittheme.aspx" },
         { "/managecollectionpoint",         "/managecollectionpoint.aspx" },
-        { "/managereceipecategory",         "/manageeeceipecategory.aspx" },
-        { "/manageeeceipecategory",         "/manageeeceipecategory.aspx" },
-        { "/managereceipe-filter",          "/managereceipe_filter.aspx" },
-        { "/managereceipe_filter",          "/managereceipe_filter.aspx" },
         { "/managesection",                 "/managesection.aspx" },
-        { "/managetemplateforingredients",  "/managetemplateforingredients.aspx" },
-        { "/myaccountbalanceforbaking",     "/myaccountbalanceforbaking.aspx" },
         { "/printdeliveryreceipt",          "/printdeliveryreceipt.aspx" },
         { "/printorder",                    "/printorderspongelist.aspx" },
         { "/printorderspongelist",          "/printorderspongelist.aspx" },
         { "/viewspongeorderlist",           "/viewspongeorderlist.aspx" },
-        { "/withdrawamount",               "/withdrawamount.aspx" },
-
-        // ─── Franchise variant of bakery orders ───────────────────────────────
-        { "/franchiseorders",               "/franchisebakeryorders.aspx" },
-        { "/franchisebakeryorders",         "/franchisebakeryorders.aspx" },
 
         // ─── POST-only form targets (upload endpoints) ────────────────────────
         { "/uploadcakepicture",             "/uploadCakePicture.aspx" },

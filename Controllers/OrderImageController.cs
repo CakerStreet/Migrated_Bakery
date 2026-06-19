@@ -13,6 +13,7 @@ using CakerStreet.Business.Services;
 
 namespace CakerStreet.Business.Controllers;
 
+[Route("order-image-ops")]
 public class OrderImageController : Controller
 {
     private readonly OrderImageService _orderImageService;

@@ -10,6 +10,7 @@ namespace CakerStreet.Business.Controllers;
 /// No permission check — standalone printable page accessible via direct link.
 /// </summary>
 [Route("deliveryroutedetail")]
+[Route("deliveryroutedetail.aspx")]
 public class DeliveryRouteDetailController : Controller
 {
     private readonly DeliveryRoutesService _routesService;

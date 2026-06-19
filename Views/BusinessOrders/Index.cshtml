@@ -643,6 +643,13 @@
 
 @section FooterScripts {
 <script type="text/javascript">
+    // Migration safety helper: parse 403 blocked responses
+    function handleSafetyError(xhr, fallbackMsg) {
+        if (xhr.status === 403) {
+            try { var r = JSON.parse(xhr.responseText); if (r.readOnlyMode) { alert(r.message); return; } } catch(e) {}
+        }
+        alert(fallbackMsg);
+    }
     // === HAS TOPPER / EDIBLE / NON-EDIBLE (matching legacy jsbakeryorders.js) ===
     $(document).on("click", ".chkHasTopper", function () {
         var orderid = $(this).attr("data-oid");
@@ -680,7 +687,7 @@
             url: "/businessorders/savetopper",
             data: JSON.stringify({ orderId: parseInt(orderid), orderDetailId: parseInt(orderdetailid), hasTopper: hastopper, topperTypeId: typeid }),
             contentType: "application/json",
-            error: function () { alert('Failed to save topper type.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Failed to save topper type.'); }
         });
     }
 
@@ -738,7 +745,7 @@
             type: "POST", url: "/businessorders/markchangeimage",
             data: JSON.stringify({ orderDetailId: parseInt(orderDetailId), markForChange: !isChecked }),
             contentType: "application/json",
-            error: function () { alert('Failed to update image mark.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Failed to update image mark.'); }
         });
     });
 
@@ -768,7 +775,7 @@
                     alert(result.message || 'Failed to save review.');
                 }
             },
-            error: function () { alert('Server error.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error.'); }
         });
     }
 
@@ -785,7 +792,7 @@
                 if (result.success) { location.reload(); }
                 else { alert(result.message || 'Failed to update status.'); }
             },
-            error: function () { alert('Server error. Please try again.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error. Please try again.'); }
         });
     }
 
@@ -800,7 +807,7 @@
                 if (result.success) { location.reload(); }
                 else { alert(result.message || 'Failed to confirm order.'); }
             },
-            error: function () { alert('Server error. Please try again.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error. Please try again.'); }
         });
     }
 
@@ -815,7 +822,7 @@
                 if (result.success) { location.reload(); }
                 else { alert(result.message || 'Failed to remove order.'); }
             },
-            error: function () { alert('Server error. Please try again.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error. Please try again.'); }
         });
     }
 
@@ -858,7 +865,7 @@
                     alert(result.message || 'Failed to cancel order.');
                 }
             },
-            error: function () { alert('Server error. Please try again.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error. Please try again.'); }
         });
     }
 
@@ -936,7 +943,7 @@
             data: JSON.stringify({ items: arr }),
             contentType: 'application/json',
             success: function () { location.reload(); },
-            error: function () { alert('Failed to update sorting.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Failed to update sorting.'); }
         });
     }
 
@@ -975,7 +982,7 @@
                     alert(result.message || 'Failed to load ingredients.');
                 }
             },
-            error: function () { alert('Server error loading ingredients.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error loading ingredients.'); }
         });
     }
 
@@ -998,7 +1005,7 @@
                     alert(result.message || 'Failed to add ingredient.');
                 }
             },
-            error: function () { alert('Server error adding ingredient.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error adding ingredient.'); }
         });
     }
 
@@ -1017,7 +1024,7 @@
                     alert(result.message || 'Failed to remove ingredient.');
                 }
             },
-            error: function () { alert('Server error removing ingredient.'); }
+            error: function (xhr) { handleSafetyError(xhr, 'Server error removing ingredient.'); }
         });
     }
 </script>

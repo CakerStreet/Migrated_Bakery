@@ -1,0 +1,126 @@
+@*
+    Iframe Order Manifest View
+    Migrated from: iframeordermenfest.aspx
+    Layout: null (standalone page for iframe/print use)
+*@
+@{
+    Layout = null;
+    var showPrintButtons = (bool)(ViewBag.ShowPrintButtons ?? false);
+    var contentHtml = ViewBag.ContentHtml as string ?? "";
+}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <style type="text/css" media="all">
+        .table a.reload {
+            background-attachment: scroll;
+            background-clip: border-box;
+            background-image: url("images/icons/reload-icon-white.png");
+            background-origin: padding-box;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: 12px auto;
+            height: 22px;
+            width: 22px;
+        }
+        a.btnsite {
+            background-color: rgb(133, 0, 0);
+            border: 1px solid rgb(133, 0, 0);
+            border-radius: 3px;
+            color: rgb(255, 255, 255);
+            display: inline-table;
+            margin: 10px auto;
+            padding: 5px;
+            text-decoration: unset;
+        }
+        .table .form-control {
+            padding: 5px;
+        }
+        .table a.orderids {
+            display: inline-table;
+        }
+        .Emailouter {
+            display: inline-table;
+            float: left;
+            text-align: left;
+            width: 350px;
+        }
+        .Flavour_outer {
+            display: block;
+            float: left;
+            margin: 1%;
+            width: 38%;
+        }
+        .caln {
+            text-align: center;
+        }
+        .raln {
+            text-align: right;
+        }
+        .Flavour_outerr.attr {
+            display: block;
+            float: left;
+            margin: 1%;
+            width: 58%;
+        }
+        .Flavour_outer .headertext, .Flavour_outerr.attr .headertext {
+            color: #850000;
+            font-size: 14px;
+            line-height: 24px;
+            width: 100%;
+        }
+        .Flavour_outer .maindata {
+            display: table;
+            width: 100%;
+        }
+        .Flavour_outer .maindata > div.headertext {
+            width: 30%;
+        }
+        .Flavour_outer .maindata > div {
+            float: left;
+            font-size: 12px;
+            line-height: 20px;
+            width: 70%;
+        }
+        .Flavour_outerr .maindata > div, .Flavour_outerr .maindata > div.headertext {
+            font-size: 12px;
+            line-height: 20px;
+        }
+        .Flavour_outer .maindata > div.sizetext {
+            font-size: 16px;
+            line-height: 20px;
+        }
+        .Flavour_outerr .maindata > div.valtext.msgtext {
+            font-size: 16px;
+        }
+    </style>
+    <style type="text/css" media="print">
+        @@media page {
+            size: A4 landscape;
+        }
+        @@page {
+            size: auto;
+            margin: 0;
+        }
+        #dvPrintButtons {
+            visibility: hidden;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        @if (showPrintButtons)
+        {
+            <div id="dvPrintButtons" class="row" style="margin-top: 10px; text-align: center;">
+                <div class="btn-group">
+                    <input type="button" id="btnPrint" value="Print" onclick="javascript:window.print();" />&nbsp;
+                </div>
+            </div>
+        }
+
+        @Html.Raw(contentHtml)
+    </div>
+</body>
+</html>

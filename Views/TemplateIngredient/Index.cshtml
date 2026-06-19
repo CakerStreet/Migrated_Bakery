@@ -1,0 +1,265 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Manage Cake Baking Ingredient";
+
+    var sponges = (List<CakerStreet.Business.Controllers.TemplateIngredientController.DropdownItem>)ViewBag.Sponges;
+    var dietaries = (List<CakerStreet.Business.Controllers.TemplateIngredientController.DropdownItem>)ViewBag.Dietaries;
+    var sizes = (List<CakerStreet.Business.Controllers.TemplateIngredientController.DropdownItem>)ViewBag.Sizes;
+    var shapes = (List<CakerStreet.Business.Controllers.TemplateIngredientController.DropdownItem>)ViewBag.Shapes;
+    var ingredients = (System.Data.DataTable)ViewBag.Ingredients;
+    var showIngredients = (bool)ViewBag.ShowIngredients;
+    var selectedSponge = ViewBag.SelectedSponge as string ?? (sponges.Count > 0 ? sponges[0].Id : "");
+    var selectedDietary = ViewBag.SelectedDietary as string ?? (dietaries.Count > 0 ? dietaries[0].Id : "");
+    var selectedShape = ViewBag.SelectedShape as string ?? (shapes.Count > 0 ? shapes[0].Id : "");
+    var selectedSize = ViewBag.SelectedSize as string ?? (sizes.Count > 0 ? sizes[0].Id : "");
+    var message = TempData["Message"] as string;
+}
+
+@section head {
+    <style type="text/css">
+        .font-weight-normal
+        {
+            font-weight: normal;
+        }
+        .th1
+        {
+            background-color: #ffeeee;
+        }
+        .th1.mainth
+        {
+            color: #ff5555;
+        }
+        .td1.mainth
+        {
+            color: #ff5555;
+        }
+        .th2
+        {
+            background-color: #ffdddd;
+        }
+        .th2.mainth
+        {
+            color: #ff5555;
+        }
+        .td2.mainth
+        {
+            color: #ff5555;
+        }
+        .th3
+        {
+            background-color: #ffcccc;
+        }
+        .th3.mainth
+        {
+            color: #ff5555;
+        }
+        .finalcost
+        {
+            color: #ff0000;
+            font-size: 14px;
+        }
+        .formula
+        {
+            width: 40px !important;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        .salary
+        {
+            max-width: 250px;
+        }
+       .table.table-bordred.table-striped
+        {
+            font-size: 12px;margin:0;
+        }
+        td, th
+        {
+            font-size: 12px;
+        }
+        .input-group.input-group-sm.rightaln
+        {
+            max-width: 62px;
+        }
+        #dvSaveSalary
+        {
+            float: left;
+        }
+        .tblformula .input-group-addon
+        {
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+        .style1
+        {
+            height: 19px;
+        }
+        .table.table-bordred.table-striped.tblformula.tbl_inner {
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+    width: 50%;
+}
+.table.table-bordred.table-striped.tblformula.tbl_inner th {
+    background-color: #faa;
+}
+.chk label {
+
+    font-weight: normal;
+
+}
+    </style>
+}
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-1">
+                    <a data-toggle="collapse" href="#collapse3" aria-expanded="true"><span class="glyphicon glyphicon-minus">
+                    </span></a>
+                </div>
+                <div class="col-md-11">
+                    <h2>
+                        Manage Cake Baking Ingredient</h2>
+                </div>
+            </div>
+            <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+                
+                <div id="div_templateOuter">
+                <form method="post" action="/managetemplateforingredients/load">
+                <div class="col-md-12 laln">
+                <table class="table table-bordred table-striped tblformula">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Sponge
+                                            </th>
+                                            <th>
+                                                Deitary
+                                            </th>
+                                            <th>
+                                                Shape
+                                            </th>
+                                            <th>
+                                                Size
+                                            </th>
+                                            <th>
+                                                Action
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                    <td>
+                                        <select name="spongeId" class="form-control max250" style="display: inline;">
+                                            @foreach (var s in sponges)
+                                            {
+                                                <option value="@s.Id" @(selectedSponge == s.Id ? "selected" : "")>@s.Title</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="dietaryId" class="form-control max250" style="display: inline;">
+                                            @foreach (var d in dietaries)
+                                            {
+                                                <option value="@d.Id" @(selectedDietary == d.Id ? "selected" : "")>@d.Title</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="shapeId" class="form-control max250" style="display: inline;">
+                                            @foreach (var sh in shapes)
+                                            {
+                                                <option value="@sh.Id" @(selectedShape == sh.Id ? "selected" : "")>@sh.Title</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="sizeId" class="form-control max250" style="display: inline;">
+                                            @foreach (var sz in sizes)
+                                            {
+                                                <option value="@sz.Id" @(selectedSize == sz.Id ? "selected" : "")>@sz.Title</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button type="submit" class="saveshippingtemplate btn btn-danger">Submit</button>
+                                    </td>
+                                    </tr>
+                                    </tbody>
+                                    </table>
+                </div>
+                </form>
+                
+                   @if (showIngredients)
+                   {
+                    <div class="col-md-12 top-margin">
+                        <div id="dvPriceFormula">
+                            <div class="clearfix">
+                            </div>
+                            <form method="post" action="/managetemplateforingredients/save">
+                            <input type="hidden" name="spongeId" value="@selectedSponge" />
+                            <input type="hidden" name="dietaryId" value="@selectedDietary" />
+                            <input type="hidden" name="shapeId" value="@selectedShape" />
+                            <input type="hidden" name="sizeId" value="@selectedSize" />
+                            <div class="table">
+                                <table class="table table-bordred table-striped tblformula tbl_inner">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Ingredient
+                                            </th>
+                                            <th>
+                                                Usage Per Item
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (System.Data.DataRow row in ingredients.Rows)
+                                    {
+                                        var ingId = row["BakeryIngredient_ID"].ToString();
+                                        var isChecked = Convert.ToBoolean(row["IsChecked"]);
+                                        var linkId = row["lnktemplateIngredirent_ID"].ToString();
+                                        var qty = row["lnktemplateIngredirent_Qty"] != DBNull.Value ? Convert.ToDecimal(row["lnktemplateIngredirent_Qty"]).ToString("G29") : "";
+                                        <tr class="rowtext">
+                                        <td class="chk">
+                                            <label>
+                                                <input type="checkbox" name="chk_@ingId" value="@ingId" @(isChecked ? "checked" : "") /> @row["BakeryIngredient_title"]
+                                            </label>
+                                            @if (!isChecked && linkId != "0")
+                                            {
+                                                <input type="hidden" name="del_@ingId" value="@linkId" />
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="input-group" style="max-width: 120px;">
+                                                <input type="text" name="qty_@ingId" value="@qty" placeholder="e.g 0.75" class="form-control input-sm qty" style="display:inline;" />
+                                                <div class="input-group-addon">
+                                                    @row["BakeryIngredient_Unit"]</div>
+                                            </div>
+                                        </td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                             <div class="clearfix">
+                            </div>
+                            <br />
+                            @if (!string.IsNullOrEmpty(message))
+                            {
+                                <div class="alert alert-success">@message</div>
+                            }
+                            <div class="clearfix">
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="submit" class="saveshippingtemplate btn btn-danger">Save Prices</button>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                   }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

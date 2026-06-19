@@ -121,9 +121,9 @@ public class SupplyOrderService
             SELECT 
                 SUM(CASE WHEN PO_Status = 0 AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS PendingCount,
                 SUM(CASE WHEN PO_Status IN (1,2) AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS ApprovedCount,
-                SUM(CASE WHEN PO_Status = 3 AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS SentToUnitCount,
-                SUM(CASE WHEN PO_Status = 4 AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS CompletedCount,
-                SUM(CASE WHEN PO_isdeleted = 1 THEN 1 ELSE 0 END) AS DeclinedCount
+                SUM(CASE WHEN PO_Status = 5 AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS SentToUnitCount,
+                SUM(CASE WHEN PO_Status = 6 AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS CompletedCount,
+                SUM(CASE WHEN PO_Status = 3 AND PO_isdeleted = 0 THEN 1 ELSE 0 END) AS DeclinedCount
             FROM suppliers.tbl_PO";
 
         await using (var countCmd = new SqlCommand(countSql, conn))
@@ -145,12 +145,14 @@ public class SupplyOrderService
             where = "WHERE p.PO_Status = 0 AND p.PO_isdeleted = 0";
         else if (status == 1 || status == 2)
             where = "WHERE p.PO_Status IN (1,2) AND p.PO_isdeleted = 0";
-        else if (status == 3)
+        else if (status == 5) // Sent to Unit (legacy PO_Status=5)
+            where = "WHERE p.PO_Status = 5 AND p.PO_isdeleted = 0";
+        else if (status == 6) // SO Completed (legacy PO_Status=6)
+            where = "WHERE p.PO_Status = 6 AND p.PO_isdeleted = 0";
+        else if (status == 3) // Declined (legacy PO_Status=3)
             where = "WHERE p.PO_Status = 3 AND p.PO_isdeleted = 0";
-        else if (status == 4)
-            where = "WHERE p.PO_Status = 4 AND p.PO_isdeleted = 0";
-        else if (status == 5) // declined
-            where = "WHERE p.PO_isdeleted = 1";
+        else if (status == -1) // All
+            where = "WHERE p.PO_isdeleted = 0";
         else
             where = "WHERE p.PO_isdeleted = 0";
 
@@ -280,7 +282,7 @@ public class SupplyOrderService
     }
 
     /// <summary>
-    /// Send supply order to unit: set PO_Status=3, add log.
+    /// Send supply order to unit: set PO_Status=5 (legacy value), add log.
     /// </summary>
     public async Task<bool> SendToUnitAsync(long poId, int userId)
     {
@@ -289,7 +291,7 @@ public class SupplyOrderService
             await using var conn = new SqlConnection(_businessConnection);
             await conn.OpenAsync();
 
-            var sql = "UPDATE suppliers.tbl_PO SET PO_Status = 3 WHERE PO_ID = @poId";
+            var sql = "UPDATE suppliers.tbl_PO SET PO_Status = 5 WHERE PO_ID = @poId";
             await using (var cmd = new SqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@poId", poId);
@@ -298,7 +300,7 @@ public class SupplyOrderService
 
             // Add PO log
             var logSql = @"INSERT INTO suppliers.tbl_POLog (PO_ID, POLog_UserID, POLog_Status, POLog_Date) 
-                           VALUES (@poId, @userId, 3, @now)";
+                           VALUES (@poId, @userId, 5, @now)";
             await using (var logCmd = new SqlCommand(logSql, conn))
             {
                 logCmd.Parameters.AddWithValue("@poId", poId);
@@ -379,7 +381,7 @@ public class SupplyOrderService
 
     /// <summary>
     /// Gets supply order header + line items for the Item Received page.
-    /// Validates PO_Status == 3 (Sent to Unit). Returns null if invalid.
+    /// Validates PO_Status == 5 (Sent to Unit, legacy value). Returns null if invalid.
     /// Uses suppliers.* schema tables.
     /// </summary>
     public async Task<SupplyOrderItemReceivedViewModel?> GetSOForItemReceivedAsync(long poId)
@@ -399,7 +401,7 @@ public class SupplyOrderService
             if (await reader.ReadAsync())
             {
                 var status = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
-                if (status != 3) return null; // Only status 3 (Sent to Unit) allowed
+                if (status != 5) return null; // Only status 5 (Sent to Unit) allowed — legacy value
 
                 model = new SupplyOrderItemReceivedViewModel
                 {
@@ -616,8 +618,8 @@ public class SupplyOrderService
                 await batchCmd.ExecuteNonQueryAsync();
             }
 
-            // 4. UPDATE suppliers.tbl_PO SET PO_Status = 4
-            var statusSql = "UPDATE suppliers.tbl_PO SET PO_Status = 4 WHERE PO_ID = @poId";
+            // 4. UPDATE suppliers.tbl_PO SET PO_Status = 6 (legacy Completed value)
+            var statusSql = "UPDATE suppliers.tbl_PO SET PO_Status = 6 WHERE PO_ID = @poId";
             await using (var statusCmd = new SqlCommand(statusSql, conn, transaction))
             {
                 statusCmd.Parameters.AddWithValue("@poId", model.PO_ID);

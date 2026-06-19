@@ -1,0 +1,363 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Other Checklists";
+
+    var categories = ViewBag.Categories as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+    var categoryFiles = ViewBag.CategoryFiles as Dictionary<long, List<Dictionary<string, object>>> ?? new Dictionary<long, List<Dictionary<string, object>>>();
+    var staffList = ViewBag.StaffList as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+    var successMessage = ViewBag.SuccessMessage as string;
+    var editItem = ViewBag.EditItem as Dictionary<string, object>;
+    var todayDate = (DateTime)ViewBag.TodayDate;
+    var userType = ViewBag.UserType as string ?? "";
+}
+
+<style type="text/css">
+    .inventoryWrapper .innerhead {
+        display: table;
+        width: 100%;
+    }
+
+    .normallink, .normallink:hover, .normallink:focus {
+        font-size: 14px;
+        text-decoration: underline;
+        color: #fff;
+    }
+
+    .headertext {
+        display: table;
+        margin-bottom: 10px;
+        width: 100%;
+        background-color: #ddd;
+        line-height: 34px;
+        padding: 0 10px;
+        text-align: right;
+    }
+
+        .headertext label {
+            float: left;
+        }
+
+    .div_QuestionMain_outer {
+        display: table;
+        margin: 0px auto 20px;
+        width: 100%;
+    }
+
+    ol, ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .div_QuestionMain > ul.UL_QuestionMain {
+        display: table;
+        width: 100%;
+    }
+
+    .div_QuestionMain_outer li {
+        line-height: 30px;
+    }
+
+    .div_QuestionMain > ul.UL_QuestionMain li {
+        float: left;
+        line-height: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        width: 100%;
+        position: relative;
+        padding: 5px 0 5px 90px;
+    }
+
+    ul.UL_QuestionMain li span {
+        position: absolute;
+        left: 0;
+        top: 5px;
+    }
+
+    .UL_rpAnswersMain {
+        display: table;
+        width: 100%;
+    }
+
+    .div_rpAnswersMain {
+        display: table;
+        width: 100%;
+        padding: 7px 0 7px 90px;
+    }
+
+    .UL_rpAnswersMain li {
+        float: left;
+        width: 50%;
+        padding: 5px 0 0 0;
+        display: flex;
+        height: 40px;
+    }
+
+        .UL_rpAnswersMain li label {
+            font-weight: normal;
+            font-size: 13px;
+            line-height: 18px;
+            display: inline;
+        }
+
+    .informationNotes {
+        display: table;
+        width: 100%;
+        padding: 10px 0;
+        color: #f55;
+        font-style: italic;
+        text-decoration: underline;
+    }
+
+        .informationNotes span {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+    .moudlebuttons_outer {
+        display: table;
+        width: 100%;
+        text-align: center;
+        padding: 10px 0 10px 0;
+    }
+
+    .informationNotes.st {
+        color: green;
+        text-decoration: unset;
+        font-style: normal;
+    }
+
+    .informationNotes.stf {
+        text-decoration: unset;
+        font-style: normal;
+    }
+
+    @@media screen and (max-width:991px) {
+
+        .UL_rpAnswersMain li {
+            float: left;
+            width: 100%;
+            padding: 5px 0 0 0;
+            display: flex;
+            height: auto;
+        }
+    }
+
+    .informationDetail {
+        display: table;
+        width: 100%;
+        line-height: 20px;
+    }
+
+    .rpad10 {
+        padding-right: 10px;
+    }
+
+    .div_QuestionMainList_outer, .div_ResultMain {
+        display: table;
+        width: 100%;
+    }
+
+    .UL_ResultMain {
+        display: table-row;
+        line-height: 20px;
+    }
+
+
+        .UL_ResultMain.headertext {
+            background-color: #ccc;
+            font-weight: bold;
+        }
+
+        .UL_ResultMain > li {
+            display: table-cell;
+            padding: 10px 7px;
+            text-align: left;
+        }
+
+        .UL_ResultMain.headertext > li {
+            line-height: 34px;
+            padding: 0 7px;
+        }
+
+    .padding-top-mobile {
+        border-top: 1px solid #ccc;
+        padding-top: 20px;
+    }
+</style>
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                <div class="orderWrappernew">
+                    <div class="innerhead">
+
+                        <div class="col-md-12">
+                            <h2>Manage Other Checklists
+                                <a href="/dailydairychecklists" class="pull-right normallink">Back</a>
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse4" aria-expanded="true">
+                        <div class="col-sm-12">
+                            @if (!string.IsNullOrEmpty(successMessage))
+                            {
+                                <div class="alert alert-success">@successMessage</div>
+                            }
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        <div id="dvCleaningChecklist" class="table-responsive">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Checklist Name</th>
+                                    <th></th>
+                                    <th>@todayDate.DayOfWeek.ToString() - @todayDate.ToString("dd/M/yyyy")</th>
+                                </tr>
+                                @foreach (var cat in categories)
+                                {
+                                    var catId = Convert.ToInt64(cat["checklistCat_ID"]);
+                                    var catTitle = cat["checklistCat_title"]?.ToString() ?? "";
+                                    var catFile = cat["checklistCat_file"]?.ToString() ?? "";
+                                    var files = categoryFiles.ContainsKey(catId) ? categoryFiles[catId] : new List<Dictionary<string, object>>();
+
+                                    // Determine if this category is being edited
+                                    var isEditing = editItem != null && Convert.ToInt32(editItem["checklistFileUploaded_catID"]) == catId;
+                                    var editFileId = isEditing ? Convert.ToInt64(editItem["checklistFileUploaded_ID"]) : 0;
+                                    var editOldFile = isEditing ? editItem["checklistFileUploaded_file"]?.ToString() ?? "" : "";
+                                    var editTitle = isEditing ? editItem["checklistFileUploaded_filetitle"]?.ToString() ?? "" : "";
+                                    var editDate = isEditing ? Convert.ToDateTime(editItem["checklistFileUploaded_filedate"]).ToString("d") : DateTime.Now.ToString("d");
+                                    var editStaffId = isEditing ? Convert.ToInt32(editItem["checklistFileUploaded_staffID"]) : 0;
+                                    var editRemarks = isEditing ? editItem["checklistFileUploaded_remarks"]?.ToString() ?? "" : "";
+
+                                    <tr>
+                                        <td>
+                                            @catTitle
+                                            <br />
+                                            @if (!string.IsNullOrEmpty(catFile))
+                                            {
+                                                <a href="/addupduploadchecks/downloadtemplate?file=@Uri.EscapeDataString(catFile)">Download Sample</a>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (files.Count > 0)
+                                            {
+                                                <table class="table table-bordered">
+                                                    @foreach (var file in files)
+                                                    {
+                                                        var fileId = Convert.ToInt64(file["checklistFileUploaded_ID"]);
+                                                        var fileTitle2 = file["checklistFileUploaded_filetitle"]?.ToString() ?? "";
+                                                        var fileDate2 = file["checklistFileUploaded_filedate"];
+                                                        var fileName2 = file["checklistFileUploaded_file"]?.ToString() ?? "";
+                                                        var fileDateStr = fileDate2 != null && fileDate2 != DBNull.Value ? Convert.ToDateTime(fileDate2).ToString("d") : "";
+
+                                                        <tr>
+                                                            <td>
+                                                                @fileTitle2 (@fileDateStr)
+                                                                @if (!string.IsNullOrEmpty(fileName2))
+                                                                {
+                                                                    <a href="/addupduploadchecks/downloadfile?file=@Uri.EscapeDataString(fileName2)">
+                                                                        <span class="glyphicon glyphicon-download-alt"></span>
+                                                                    </a>
+                                                                }
+
+                                                                @if (userType != "3")
+                                                                {
+                                                                    <form method="post" action="/addupduploadchecks/delete/@fileId" class="pull-right" style="display:inline;"
+                                                                          onsubmit="return confirm('Are you sure to delete this file?');">
+                                                                        <button type="submit" class="btn btn-link" style="padding:0;">
+                                                                            <span class="glyphicon glyphicon-trash"></span>
+                                                                        </button>
+                                                                    </form>
+                                                                }
+
+                                                                <a href="/addupduploadchecks?editId=@fileId" class="pull-right" style="margin-right:10px;">
+                                                                    <span class="glyphicon glyphicon-edit"></span>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </table>
+                                            }
+                                        </td>
+                                        <td>
+                                            <form method="post" action="/addupduploadchecks/submit" enctype="multipart/form-data">
+                                                <input type="hidden" name="checklistCatId" value="@catId" />
+                                                <input type="hidden" name="checklistFileUploadedId" value="@editFileId" />
+
+                                                <div class="form">
+                                                    <div class="form-group">
+                                                        <label>Browse Document: <span class="text-danger">*</span></label>
+                                                        <input type="file" name="fileUpload" @(isEditing ? "" : "required") />
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Document Title: </label>
+                                                        <input type="text" name="fileTitle" value="@editTitle" placeholder="Document Title" class="form-control input-sm" />
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Document Date: <span class="text-danger">*</span></label>
+                                                        <input type="text" name="docDate" value="@editDate" placeholder="Document Date" class="form-control input-sm" required />
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Choose Staff:</label>
+                                                        <select name="staffId" class="form-control">
+                                                            <option value="0">--Select--</option>
+                                                            @foreach (var staff in staffList)
+                                                            {
+                                                                var sId = Convert.ToInt64(staff["customer_ID"]);
+                                                                var sName = staff["customer_Name"]?.ToString() ?? "";
+                                                                <option value="@sId" @(editStaffId == sId ? "selected" : "")>@sName</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Remarks:</label>
+                                                        <textarea name="remarks" placeholder="Remarks" class="form-control">@editRemarks</textarea>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <button type="submit" class="btn btn-black square">Submit</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+
+        $(document).on("click", "#chkAll", function () {
+            $("#dvCleaningChecklist input:checkbox").prop('checked', $(this).prop("checked"));
+        });
+    </script>
+}

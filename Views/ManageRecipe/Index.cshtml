@@ -1,0 +1,389 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Receipes";
+    var recipes = ViewBag.Recipes as List<CakerStreet.Business.Controllers.ManageRecipeController.RecipeRow> ?? new List<CakerStreet.Business.Controllers.ManageRecipeController.RecipeRow>();
+    var books = ViewBag.Books as List<CakerStreet.Business.Controllers.ManageRecipeController.BookItem> ?? new List<CakerStreet.Business.Controllers.ManageRecipeController.BookItem>();
+    var categories = ViewBag.Categories as List<CakerStreet.Business.Controllers.ManageRecipeController.ReceipeCatItem> ?? new List<CakerStreet.Business.Controllers.ManageRecipeController.ReceipeCatItem>();
+    var tags = ViewBag.Tags as List<CakerStreet.Business.Controllers.ManageRecipeController.ReceipeCatItem> ?? new List<CakerStreet.Business.Controllers.ManageRecipeController.ReceipeCatItem>();
+    var pages = ViewBag.Pages as List<CakerStreet.Business.Controllers.ManageRecipeController.PageInfo> ?? new List<CakerStreet.Business.Controllers.ManageRecipeController.PageInfo>();
+    int totalRecords = ViewBag.TotalRecords ?? 0;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 0;
+    int filterStatus = ViewBag.FilterStatus ?? 0;
+    int cookingStatus = ViewBag.CookingStatus ?? 0;
+    int selectedCatId = ViewBag.SelectedCatId ?? 0;
+    int selectedReceipeCatId = ViewBag.SelectedReceipeCatId ?? 0;
+    int selectedReceipeTagId = ViewBag.SelectedReceipeTagId ?? 0;
+    string search = ViewBag.Search ?? "";
+    string searchTags = ViewBag.SearchTags ?? "";
+    string cdnBase = ViewBag.CdnBase ?? "https://cakerstreet1.s3.amazonaws.com/";
+    string topMsg = ViewBag.TopMessage ?? "";
+}
+
+<style type="text/css">
+    .filter-radio { display: inline-table; }
+    .li_chkouter.lvl { padding-left: 25px; }
+    .modal.in { display: block; }
+    .normallink14 { line-height: 20px; margin-bottom: 10px; float: left; }
+    .input-group { position: relative; display: table; border-collapse: separate; }
+    .div_txtTag_outer { position: relative; }
+    .litags .input-group-addon { border: medium none; padding: 0; position: relative; width: 30px; }
+    .litags.input-group { background-color: #fff; border: 1px solid #aaa; border-radius: 5px; float: left; line-height: 34px; margin: 5px; padding-left: 5px; }
+    .litags .input-group-addon a { background-color: #ffaaaa; height: 100%; left: 0; line-height: 34px; margin-left: 5px; position: absolute; top: 0; width: 25px; }
+    .middleSection { width: 100%; }
+    .filter-radio li { float: left; }
+    .txtReceipeTitle { color: #f00; }
+    .divIngredientlistOuter ul { width: 100%; padding-left: 10px; float: left; position: relative; }
+    .divIngredient h4 { color: #f55; }
+    .divIngredientlistOuter ul li { display: table-cell; width: 100%; padding: 5px; }
+    .divIngredientlistOuter ul li.ligrp { width: 30%; float: left; display: block; }
+    .divIngredientlistOuter ul li.ligrp.cuttype { width: 10%; }
+    .divIngredientlistOuter ul li.ligrp.cuttype1 { width: 20%; }
+    .divIngredientlistOuter ul li.ligrp1 { width: 30%; float: left; display: block; }
+    .divIngredientlistOuter ul li.ligrp1.ins { width: 25%; }
+    .divIngredientlistOuter ul li.ligrp2 { width: 25%; float: left; display: block; }
+    .divIngredientlistOuter ul.nact li, font.nact { text-decoration: line-through; }
+    .divIngredientlistOuter ul li.ligrp2.ing { width: 20%; }
+    .divIngredientlistOuter ul li.ligrp3 { width: 15%; float: left; display: block; }
+    .drpIngredienUnit.form-control { float: left; max-width: 90px; }
+    .divIngredientlistOuter .input-group { float: left; }
+    .divIngredientlistOuter ul li.ligrp5.cuttype { width: 25%; float: left; display: block; }
+    .divIngredientlistOuter ul li.ligrp4 { width: 5%; float: left; display: block; }
+    .divIngredientlistOuter ul::before { content: "-"; position: absolute; left: 3px; line-height: 28px; top: 0; font-weight: bold; color: #f00; }
+    .div_reciepe h3 { color: #f55; }
+    .divIngredientlistOuter .form-control { padding: 5px; }
+    .div_taglist { display: table; width: 100%; }
+    .div_taglist a { cursor: pointer; text-decoration: none; position: absolute; right: 5px; top: 5px; width: 20px; background: #ff5555; color: #fff; text-align: center; }
+    .div_taglist .headertext { float: left; width: 100%; font-size: 14px; color: #000; margin: 10px 0 5px 0; }
+    .div_taglist .itemli { float: left; font-size: 14px; color: #ff5555; padding: 5px 30px 5px 5px; border: 1px solid #ffaaaa; position: relative; margin: 0 10px 10px 0; }
+    .img_outer input.stt { display: none; }
+    .img_outer:hover input.stt { display: block; }
+</style>
+
+<div class="row top-margin"></div>
+<div class="clearfix"></div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">Manage Receipes</h2>
+        <div class="btn-group pull-right" style="margin-right:14px;margin-top: -4px;">
+            <button class="btn btn-danger bg-black" type="button" style="padding: 6px;">Manage</button>
+            <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button" aria-expanded="false">
+                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul role="menu" class="dropdown-menu">
+                <li><a href="/manageingredient">Manage Ingredients</a></li>
+                <li><a href="/managereceipecategory">Manage Ingredients Category</a></li>
+                <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                <li><a href="/managereceipematrix">Receipe Matrix</a></li>
+                <li><a href="/managereceipe-findandreplace">Replace Ingredients</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        @if (!string.IsNullOrEmpty(topMsg))
+        {
+            <div class="alert alert-danger">@topMsg</div>
+        }
+        <div class="clearfix"></div>
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="row-fluid category_box">
+                <div class="clearfix"></div>
+
+                <div class="col-md-12 form-group flush">
+                    <div class="col-md-3">
+                        <div class="btn-group" id="actionbutton">
+                            <button class="btn btn-danger bg-red" type="button">
+                                Action on <span id="spnfilterselected">0</span> selected
+                            </button>
+                            <button data-toggle="dropdown" class="btn btn-danger bg-red dropdown-toggle" type="button" aria-expanded="false">
+                                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul role="menu" class="dropdown-menu">
+                                <li><a href="#" onclick="bulkAction('setinactive'); return false;">Set as Inactive</a></li>
+                                <li><a href="#" onclick="bulkAction('setactive'); return false;">Set as Active</a></li>
+                                <li><a href="#" onclick="bulkAction('deleterecipes'); return false;">Remove Item(s)</a></li>
+                                <li><a href="#" onclick="printSelected(); return false;">Print Receipe</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <ul class="filter-radio">
+                            <li><label><input type="radio" name="filterstatus" value="0" @(filterStatus == 0 ? "checked" : "") onchange="applyFilters();" /> All</label></li>
+                            <li><label><input type="radio" name="filterstatus" value="1" @(filterStatus == 1 ? "checked" : "") onchange="applyFilters();" /> Active</label></li>
+                            <li><label><input type="radio" name="filterstatus" value="2" @(filterStatus == 2 ? "checked" : "") onchange="applyFilters();" /> Inactive</label></li>
+                        </ul>
+                        <ul class="filter-radio">
+                            <li><label><input type="radio" name="cookingstatus" value="0" @(cookingStatus == 0 ? "checked" : "") onchange="applyFilters();" /> All</label></li>
+                            <li><label><input type="radio" name="cookingstatus" value="1" @(cookingStatus == 1 ? "checked" : "") onchange="applyFilters();" /> Cooking</label></li>
+                            <li><label><input type="radio" name="cookingstatus" value="2" @(cookingStatus == 2 ? "checked" : "") onchange="applyFilters();" /> Non-Cooking</label></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="drpcategories" class="form-control" style="width: 100%" onchange="applyFilters();">
+                            <option value="0">--All Books--</option>
+                            @foreach (var book in books)
+                            {
+                                <option value="@book.Id" @(selectedCatId == book.Id ? "selected" : "")>@book.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="txtsearch" class="form-contro input-sm" placeholder="Search keyword" value="@search" />
+                        <a class="btn btn-danger btn-sm" onclick="applyFilters();">Go</a>
+                        @if (!string.IsNullOrEmpty(search))
+                        {
+                            <a class="btn btn-danger btn-sm" onclick="$('#txtsearch').val('');applyFilters();">X</a>
+                        }
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+                <div class="col-md-12 form-group flush">
+                    <div class="col-md-4">
+                        <select id="drpReceipeCategory" class="form-control" style="width: 100%" onchange="applyFilters();">
+                            <option value="0">--All Receipe Categories--</option>
+                            @foreach (var cat in categories)
+                            {
+                                <option value="@cat.Id" @(selectedReceipeCatId == cat.Id ? "selected" : "")>@cat.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="drpReceipeTag" class="form-control" style="width: 100%" onchange="applyFilters();">
+                            <option value="0">--All Receipe Tags--</option>
+                            @foreach (var tag in tags)
+                            {
+                                <option value="@tag.Id" @(selectedReceipeTagId == tag.Id ? "selected" : "")>@tag.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="clearfix"></div>
+                <div class="col-md-12 form-group flush">
+                    <div class="col-md-12">
+                        @totalRecords Records found
+                        <a style="float:right" href="#" onclick="printAll(); return false;">Print All</a>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+
+                <div class="col-md-12 form-group flush">
+                    <a href="/addnewreceipe" target="_blank" class="btn btn-danger bg-red btn-lg square">Add New Receipe</a>
+                </div>
+                <div class="clearfix"></div>
+
+                @if (recipes.Count > 0)
+                {
+                    <div class="table prdlstouter" id="our_products">
+                        <table class="table table-bordred table-striped">
+                            <thead>
+                                <th class="chk headertext"><input type="checkbox" id="chkAll" onchange="chkuncheckbyheader();" /></th>
+                                <th class="status">Status</th>
+                                <th class="status">Cooking</th>
+                                <th class="status">Serving</th>
+                                <th class="status"></th>
+                                <th class="name">Title</th>
+                                <th class="status" style="min-width:80px">Sale Price</th>
+                                <th class="action">Section</th>
+                                <th class="status">Modified</th>
+                                <th class="action">Action</th>
+                            </thead>
+                            <tbody>
+                                @foreach (var recipe in recipes)
+                                {
+                                    <tr class="rowtext">
+                                        <td class="chk">
+                                            <input type="checkbox" class="chkrow" data-id="@recipe.ReceipeBookReceipe_ID" onchange="chkuncheckHeadernRowbyrow();" />
+                                        </td>
+                                        <td class="status">@(recipe.ReceipeBookReceipe_isActive ? "Active" : "Inactive")</td>
+                                        <td class="status">@(recipe.ReceipeBookReceipe_isCooking ? "Cooking" : "Non-Cooking")</td>
+                                        <td class="status">@recipe.ReceipeBookReceipe_serving</td>
+                                        <td class="status img_outer">
+                                            @if (!string.IsNullOrEmpty(recipe.ReceipeBookReceipe_image))
+                                            {
+                                                <img alt="" class="imgReceipe" src="@(cdnBase + "upload/receipeImages/resized_80_80/" + recipe.ReceipeBookReceipe_image)" />
+                                            }
+                                        </td>
+                                        <td class="name">
+                                            <input type="text" class="form-control txtprdname" data-id="@recipe.ReceipeBookReceipe_ID" value="@recipe.ReceipeBookReceipe_title" />
+                                        </td>
+                                        <td class="status">
+                                            <input type="text" class="form-control txtprdprice" data-id="@recipe.ReceipeBookReceipe_ID" value="@recipe.ReceipeBookReceipe_price" />
+                                        </td>
+                                        <td class="action">
+                                            @recipe.ReceipeBook_bookname
+                                            @if (!string.IsNullOrEmpty(recipe.ReceipeBookChapter_chaptername))
+                                            {
+                                                <br /><text>>> @recipe.ReceipeBookChapter_chaptername</text>
+                                            }
+                                        </td>
+                                        <td class="status">
+                                            @recipe.ReceipeBookReceipe_modifiedOn.ToString("dd/MM/yy")<br />
+                                        </td>
+                                        <td class="action" style="min-width: 150px;">
+                                            <a class="btn btn-danger btn-red btn-sm btn-savelist" onclick="saveItem(@recipe.ReceipeBookReceipe_ID);">Save</a>
+                                            <div class="btn-group" style="min-width: 150px;">
+                                                <a onclick="ShowReceipeByID(@recipe.ReceipeBookReceipe_ID, 0);" class="btn edtBtn smalledit" type="button">Show | Hide</a>
+                                                <button onclick="ShowReceipeByID(@recipe.ReceipeBookReceipe_ID, 0);" class="btn dropdown-toggle btnedit" type="button" aria-expanded="false">
+                                                    <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="8" style="border: 1px solid #ccc" data-id="@recipe.ReceipeBookReceipe_ID" class="hide"></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                @if (totalPages > 1)
+                {
+                    <div class="pagination pagination-right">
+                        <div class="paging_outer">
+                            <ul class="left">
+                                <li><a href="@buildPageUrl(1)">First</a></li>
+                                <li><a href="@buildPageUrl(currentPage > 1 ? currentPage - 1 : 1)" class="@(currentPage > 1 ? "prev_page" : "disabled prev_page")">Prev</a></li>
+                            </ul>
+                            <ul class="numbering">
+                                @foreach (var p in pages)
+                                {
+                                    <li class="@p.PageCss">
+                                        @if (p.PageNo != "...")
+                                        {
+                                            <a href="@buildPageUrl(int.Parse(p.PageNo))">@p.PageNo</a>
+                                        }
+                                        else
+                                        {
+                                            <span>...</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                            <ul class="right">
+                                <li><a href="@buildPageUrl(currentPage < totalPages ? currentPage + 1 : totalPages)" class="@(currentPage < totalPages ? "next_page" : "disabled next_page")">Next</a></li>
+                                <li><a href="@buildPageUrl(totalPages)">Last</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                @if (recipes.Count == 0)
+                {
+                    <div class="alert alert-error">No Products Found</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script type="text/javascript">
+    function applyFilters() {
+        var url = '/managereceipe';
+        var params = [];
+        var s = $('#txtsearch').val().trim();
+        if (s) params.push('search=' + encodeURIComponent(s));
+        var fs = $('input[name=filterstatus]:checked').val();
+        if (fs && fs !== '0') params.push('filterstatus=' + fs);
+        var cs = $('input[name=cookingstatus]:checked').val();
+        if (cs && cs !== '0') params.push('cookingstatus=' + cs);
+        var cat = $('#drpcategories').val();
+        if (cat && cat !== '0') params.push('catid=' + cat);
+        var rc = $('#drpReceipeCategory').val();
+        if (rc && rc !== '0') params.push('receipecatid=' + rc);
+        var rt = $('#drpReceipeTag').val();
+        if (rt && rt !== '0') params.push('receipetagid=' + rt);
+        if (params.length > 0) url += '?' + params.join('&');
+        window.location.href = url;
+    }
+
+    function chkuncheckbyheader() {
+        var checked = $('#chkAll').is(':checked');
+        $('.chkrow').prop('checked', checked);
+        $('#spnfilterselected').html($('.chkrow:checked').length);
+    }
+
+    function chkuncheckHeadernRowbyrow() {
+        if ($('.chkrow').not(':checked').length > 0) {
+            $('#chkAll').prop('checked', false);
+        } else {
+            $('#chkAll').prop('checked', true);
+        }
+        $('#spnfilterselected').html($('.chkrow:checked').length);
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.chkrow:checked').each(function () { ids.push(parseInt($(this).attr('data-id'))); });
+        return ids;
+    }
+
+    function bulkAction(action) {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('please select any item'); return; }
+        if (action === 'deleterecipes' && !confirm('Are you sure to remove selected ' + ids.length + ' item(s)?')) return;
+        $.ajax({
+            type: 'POST', url: '/managereceipe/' + action,
+            data: JSON.stringify(ids), contentType: 'application/json',
+            success: function () { location.reload(); }
+        });
+    }
+
+    function saveItem(id) {
+        var tr = $('input.txtprdname[data-id=' + id + ']').closest('tr');
+        var title = tr.find('.txtprdname').val();
+        var price = tr.find('.txtprdprice').val();
+        $.post('/managereceipe/save', { id: id, title: title, price: price }, function () { location.reload(); });
+    }
+
+    function ShowReceipeByID(id, mode) {
+        var td = $('td[data-id=' + id + ']');
+        if (td.hasClass('hide')) {
+            td.removeClass('hide');
+            td.html('<div class="text-center"><em>Loading...</em></div>');
+        } else {
+            td.addClass('hide');
+            td.html('');
+        }
+    }
+
+    function printSelected() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('please select any item'); return; }
+        window.open('/managereceipe-print?strIDs=' + ids.join(','), '_blank');
+    }
+
+    function printAll() {
+        var url = '/managereceipe-print?' + window.location.search.substring(1);
+        window.open(url, '_blank');
+    }
+</script>
+}
+
+@functions {
+    string buildPageUrl(int page)
+    {
+        string url = "/managereceipe";
+        if (page > 1) url += "/page-" + page;
+        var parts = new System.Collections.Generic.List<string>();
+        string s = ViewBag.Search ?? "";
+        if (!string.IsNullOrEmpty(s)) parts.Add("search=" + Uri.EscapeDataString(s));
+        int fs = ViewBag.FilterStatus ?? 0;
+        if (fs != 0) parts.Add("filterstatus=" + fs);
+        int cs = ViewBag.CookingStatus ?? 0;
+        if (cs != 0) parts.Add("cookingstatus=" + cs);
+        int ci = ViewBag.SelectedCatId ?? 0;
+        if (ci != 0) parts.Add("catid=" + ci);
+        int rci = ViewBag.SelectedReceipeCatId ?? 0;
+        if (rci != 0) parts.Add("receipecatid=" + rci);
+        int rti = ViewBag.SelectedReceipeTagId ?? 0;
+        if (rti != 0) parts.Add("receipetagid=" + rti);
+        string st = ViewBag.SearchTags ?? "";
+        if (!string.IsNullOrEmpty(st)) parts.Add("searchtags=" + Uri.EscapeDataString(st));
+        if (parts.Count > 0) url += "?" + string.Join("&", parts);
+        return url;
+    }
+}

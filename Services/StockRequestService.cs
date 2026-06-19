@@ -130,8 +130,8 @@ public class StockRequestService
                 SUM(CASE WHEN Status = 0 AND IsDeleted = 0 THEN 1 ELSE 0 END),
                 SUM(CASE WHEN Status = 1 AND IsDeleted = 0 AND ISNULL(PO_Status, -1) = -1 THEN 1 ELSE 0 END),
                 SUM(CASE WHEN Status = 1 AND IsDeleted = 0 AND ISNULL(PO_Status, -1) IN (0,1,2) THEN 1 ELSE 0 END),
-                SUM(CASE WHEN Status = 1 AND IsDeleted = 0 AND ISNULL(PO_Status, -1) = 3 THEN 1 ELSE 0 END),
-                SUM(CASE WHEN Status = 1 AND IsDeleted = 0 AND ISNULL(PO_Status, -1) = 4 THEN 1 ELSE 0 END),
+                SUM(CASE WHEN Status = 1 AND IsDeleted = 0 AND ISNULL(PO_Status, -1) = 5 THEN 1 ELSE 0 END),
+                SUM(CASE WHEN Status = 1 AND IsDeleted = 0 AND ISNULL(PO_Status, -1) = 6 THEN 1 ELSE 0 END),
                 SUM(CASE WHEN Status = 3 AND IsDeleted = 0 THEN 1 ELSE 0 END)
             FROM tbl_PrdStockRequest";
         }
@@ -168,9 +168,10 @@ public class StockRequestService
             case 0: where += " AND r.Status = 0"; break;
             case 1: where += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = -1" : " AND r.Status = 1"; break;
             case 2: where += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) IN (0,1,2)" : " AND 1=0"; break;
-            case 3: where += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 3" : " AND 1=0"; break;
-            case 4: where += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 4" : " AND 1=0"; break;
+            case 3: where += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 5" : " AND 1=0"; break; // PO_Status=5 (legacy Sent to Supplier)
+            case 4: where += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 6" : " AND 1=0"; break; // PO_Status=6 (legacy Completed)
             case 5: where += " AND r.Status = 3"; break;
+            case -1: break; // All — no additional status filter
             default: where += " AND r.Status = 0"; break; // default to pending
         }
 
@@ -198,9 +199,10 @@ public class StockRequestService
             case 0: actualWhere += " AND r.Status = 0"; break;
             case 1: actualWhere += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = -1" : " AND r.Status = 1"; break;
             case 2: actualWhere += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) IN (0,1,2)" : " AND 1=0"; break;
-            case 3: actualWhere += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 3" : " AND 1=0"; break;
-            case 4: actualWhere += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 4" : " AND 1=0"; break;
+            case 3: actualWhere += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 5" : " AND 1=0"; break; // PO_Status=5 (legacy Sent to Supplier)
+            case 4: actualWhere += hasPOStatus ? " AND r.Status = 1 AND ISNULL(r.PO_Status, -1) = 6" : " AND 1=0"; break; // PO_Status=6 (legacy Completed)
             case 5: actualWhere += " AND r.Status = 3"; break;
+            case -1: break; // All — no additional status filter
             default: actualWhere += " AND r.Status = 0"; break;
         }
 

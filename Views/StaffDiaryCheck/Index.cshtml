@@ -1,0 +1,455 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Daily Checks - Opening and Closing";
+
+    var today = (DateTime)ViewBag.TodayDate;
+    var showBack = (bool)ViewBag.ShowBackButton;
+    var staffList = (List<CakerStreet.Business.Controllers.StaffDiaryCheckController.StaffItem>)ViewBag.StaffList;
+    var openingChecks = (List<CakerStreet.Business.Controllers.StaffDiaryCheckController.CheckItem>)ViewBag.OpeningChecks;
+    var closingChecks = (List<CakerStreet.Business.Controllers.StaffDiaryCheckController.CheckItem>)ViewBag.ClosingChecks;
+    var openingTasks = (List<CakerStreet.Business.Controllers.StaffDiaryCheckController.TaskItem>)ViewBag.OpeningTasks;
+    var closingTasks = (List<CakerStreet.Business.Controllers.StaffDiaryCheckController.TaskItem>)ViewBag.ClosingTasks;
+    var savedOpening = ViewBag.SavedOpening as CakerStreet.Business.Controllers.StaffDiaryCheckController.SavedChecklist;
+    var savedClosing = ViewBag.SavedClosing as CakerStreet.Business.Controllers.StaffDiaryCheckController.SavedChecklist;
+    var savedOpeningTasks = (Dictionary<long, string>)ViewBag.SavedOpeningTasks;
+    var savedClosingTasks = (Dictionary<long, string>)ViewBag.SavedClosingTasks;
+    var results = (System.Data.DataTable)ViewBag.Results;
+    var showResults = (bool)ViewBag.ShowResults;
+    var fromDate = (string)ViewBag.FromDate;
+    var toDate = (string)ViewBag.ToDate;
+}
+
+@section head {
+    <style type="text/css">
+.ul_checklist {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+.ul_checklist > li {
+    margin: 0 0 10px;
+    line-height: 18px;
+    font-size: 14px;
+}
+.ul_checklist > li::before {
+    content: " - ";
+}
+.ul_checktasklist li:first-child
+{
+  text-align: right;
+  font-weight: bold;
+}
+.headertext {
+    display: table;
+    margin-bottom: 10px;
+    width: 100%;
+    background-color: #ddd;
+    line-height: 34px;
+    padding: 0 10px;text-align: right;
+}
+.ul_checktasklist
+{
+  display: table-row;
+}
+.ul_checktasklist li
+{
+  display: table-cell;
+  vertical-align: middle;
+  padding: 5px;
+}
+.headertext label {
+  float: left;
+}.inventoryWrapper .innerhead {
+    display: table;
+    width: 100%;
+}
+.normallink,.normallink:hover,.normallink:focus {  font-size:14px;  text-decoration: underline;color:#fff;}
+.div_QuestionMain_outer
+        {
+            display: table;
+            margin: 0px auto 20px;
+            width: 100%;
+        }
+        ol, ul
+        {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .div_QuestionMain > ul.UL_QuestionMain
+        {
+            display: table;
+            width: 100%;
+        }
+        .div_QuestionMain_outer li
+        {
+            line-height: 30px;
+        }
+        .div_QuestionMain > ul.UL_QuestionMain li
+        {
+            float: left;
+            line-height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            position: relative;
+            padding: 5px 0 5px 90px;
+        }
+        
+        .div_QuestionMainList_outer, .div_ResultMain
+        {
+            display: table;
+            width: 100%;
+        }
+        .UL_ResultMain
+        {
+            display: table-row;
+            line-height: 20px;
+        }
+        
+        
+        .UL_ResultMain.headertext
+        {
+            background-color: #ccc;
+            font-weight: bold;
+        }
+        .UL_ResultMain > li
+        {
+            display: table-cell;
+            padding: 10px 7px;
+            text-align: left;
+        }
+        .padding-top-mobile {
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+}
+    </style>
+}
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+            
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                <div class="orderWrappernew">
+                    <div class="innerhead">
+                       
+                        <div class="col-md-12">
+                            <h2>Daily Checks - Opening and Closing
+                <a href="/dailydairy_checklists" class="pull-right normallink">Back</a>
+                            </h2>
+                        </div>
+                    </div>
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse4" aria-expanded="true">
+                        <div class="col-md-6 col-sm-12 checklist_outer">
+                            <div class="form-group">
+                                <p>
+                                   <strong>Opening Check</strong>
+                                </p>
+                            </div>
+                            <div class="form-group">
+                            <ul class="ul_checklist">
+                                @foreach (var check in openingChecks)
+                                {
+                                    <li>@check.Title</li>
+                                }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-sm-12 checklist_outer">
+                            <div class="form-group">
+                                <p>
+                                    <strong>Closing Check</strong>
+                                </p>
+                            </div>
+                            <div class="form-group">
+                            <ul class="ul_checklist">
+                                @foreach (var check in closingChecks)
+                                {
+                                     <li>@check.Title</li>
+                                }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        <!-- Opening Check Form -->
+                        <form method="post" action="/addupdopeningnclosingchecks/submit">
+                        <input type="hidden" name="checkType" value="1" />
+                        <input type="hidden" name="dateStr" value="@today.ToString("dd/MM/yyyy")" />
+                        <div class="form-group">
+                            <div class="col-md-6 col-sm-12">
+
+                        <div class="headertext">
+                            <label>
+                              Opening Check</label>
+                              <input type="text" name="openingDate" value="@today.ToString("dd/MM/yyyy")" class="form-control" style="width:110px;float: right;margin-top: 3px;" />
+                            </div>
+                        <div class="clearfix"></div>
+                       
+
+                        <div class="col-md-6 col-sm-6">
+                        <div class="form-group">
+                            <label>
+                                Choose Staff*
+                            </label>
+                           <select name="staffId" class="form-control" required>
+                               <option value="0">Select Staff</option>
+                               @foreach (var s in staffList)
+                               {
+                                   <option value="@s.Id" @(savedOpening != null && savedOpening.StaffId == s.Id ? "selected" : "")>@s.Name</option>
+                               }
+                           </select>
+                        </div>
+                    </div>
+
+                         <div class="clearfix"></div>
+
+                         <div class="col-md-8 col-sm-12">
+                         <div class="form-group">
+                            @foreach (var task in openingTasks)
+                            {
+                                <ul class="ul_checktasklist">
+                                     <li>@task.Title:</li>
+                                     <li>
+                                         <input type="text" name="task_@task.TaskId" value="@(savedOpeningTasks.ContainsKey(task.TaskId) ? savedOpeningTasks[task.TaskId] : "")" style="width:80px;display:inline" class="form-control" required />
+                                         <span style="display:inline"> °C</span>
+                                     </li>
+                                </ul>
+                            }
+                        </div>
+                         </div>
+                        <div class="clearfix"></div>
+
+                        <div class="col-md-8 col-sm-12">
+                        <div class="form-group">
+                           <label>
+                               <input type="checkbox" name="allDone" value="true" @(savedOpening != null && savedOpening.AllDone ? "checked" : "") /> Checklist All Done
+                           </label>
+                        </div>
+                    </div>
+<div class="clearfix"></div>
+
+                         <div class="col-md-8 col-sm-12">
+                        <div class="form-group">
+                            <label>
+                                Any problems or changes – what did you do? 
+                            </label>
+                            <textarea name="problem" placeholder="Problem If Any" class="form-control" style="height:70px">@(savedOpening?.Problem ?? "")</textarea>
+                        </div>
+                    </div> 
+                       
+
+                        <div class="col-md-8 col-sm-12">
+                        <div class="form-group">
+                           
+                            <button type="submit" class="btn btn-black square">Submit</button>
+
+                            @if (showBack)
+                            {
+                                <a href="/addupdopeningnclosingchecks" class="btn btn-primary btn-xs">Back</a>
+                            }
+                        </div>
+                    </div> 
+
+                    </div>
+                    </div>
+                    </form>
+
+                    <!-- Closing Check Form -->
+                    <form method="post" action="/addupdopeningnclosingchecks/submit">
+                    <input type="hidden" name="checkType" value="2" />
+                    <input type="hidden" name="dateStr" value="@today.ToString("dd/MM/yyyy")" />
+                       <div class="col-md-6 col-sm-12">
+
+                        <div class="headertext">
+
+                            <label>Closing Checks</label>
+                            <input type="text" name="closingDate" value="@today.ToString("dd/MM/yyyy")" class="form-control" style="width:110px;float: right;margin-top: 3px;" />
+                            </div>
+
+
+                           
+                        <div class="clearfix"></div>
+                       
+
+                        <div class="col-md-6 col-sm-6">
+                        <div class="form-group">
+                            <label>
+                                Choose Staff*
+                            </label>
+                           <select name="staffId" class="form-control" required>
+                               <option value="0">Select Staff</option>
+                               @foreach (var s in staffList)
+                               {
+                                   <option value="@s.Id" @(savedClosing != null && savedClosing.StaffId == s.Id ? "selected" : "")>@s.Name</option>
+                               }
+                           </select>
+                        </div>
+                    </div>
+
+                        
+ <div class="clearfix"></div>
+                         <div class="col-md-8 col-sm-12">
+                         <div class="form-group">
+                            @foreach (var task in closingTasks)
+                            {
+                                <ul class="ul_checktasklist">
+                                     <li>@task.Title:</li>
+                                     <li>
+                                         <input type="text" name="task_@task.TaskId" value="@(savedClosingTasks.ContainsKey(task.TaskId) ? savedClosingTasks[task.TaskId] : "")" style="width:80px;display:inline" class="form-control" required />
+                                         <span style="display:inline"> °C</span>
+                                     </li>
+                                </ul>
+                            }
+                        </div>
+                         </div>
+                        <div class="clearfix"></div>
+                        <div class="col-md-8 col-sm-12">
+                        <div class="form-group">
+                           <label>
+                               <input type="checkbox" name="allDone" value="true" @(savedClosing != null && savedClosing.AllDone ? "checked" : "") /> Checklist All Done
+                           </label>
+                        </div>
+                    </div>
+                     <div class="clearfix"></div>
+
+                         <div class="col-md-8 col-sm-12">
+                        <div class="form-group">
+                            <label>
+                                Any problems or changes – what did you do?
+                            </label>
+                            <textarea name="problem" placeholder="Problem If Any" class="form-control" style="height:70px">@(savedClosing?.Problem ?? "")</textarea>
+                        </div>
+                    </div> 
+                       
+
+                        <div class="col-md-8 col-sm-12">
+                        <div class="form-group">
+                           
+                            <button type="submit" class="btn btn-black square">Submit</button>
+                            
+                            @if (showBack)
+                            {
+                                <a href="/addupdopeningnclosingchecks" class="btn btn-primary btn-xs">Back</a>
+                            }
+                        </div>
+                    </div> 
+
+                    </div>
+                    </form>
+                           
+                        <div class="clearfix"></div>
+                         @if (!string.IsNullOrEmpty(Context.Request.Query["msg"].ToString()))
+                         {
+                             <div class="form-group">
+                             <div class="col-sm-12">
+                                 <div class="alert alert-success">
+                                     @Context.Request.Query["msg"]
+                                 </div>
+                             </div>
+                             </div>
+                         }
+                         <div class="clearfix"></div>
+
+
+                         <!-- Result Grid -->
+                         <div class="col-lg-12 padding-top-mobile">
+            <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <form method="get" action="@Context.Request.Path">
+                                    <div class="form-group">
+                                        <div class="col-md-offset-6 col-md-2 col-sm-4">
+                                            <input type="text" name="sdate" value="@fromDate" class="form-control" placeholder="Start Date" autocomplete="off" />
+                                        </div>
+                                        <div class="col-md-2 col-sm-4">
+                                            <input type="text" name="edate" value="@toDate" class="form-control" placeholder="End Date" autocomplete="off" />
+                                        </div>
+                                        <div class="col-md-2 col-sm-4">
+                                            <button type="submit" class="btn btn-primary">Go</button>
+                                        </div>
+                                    </div>
+            </form>
+                                 <div class="form-group">
+                                        <div class="col-sm-12">   
+                <div class="div_QuestionMainList_outer">
+                    @if (showResults)
+                    {
+                    <div class="div_ResultMain">
+                        <ul class="UL_ResultMain headertext">
+                            <li>Date</li>
+                            <li>Opening Check</li>
+                            <li>Closing Check</li>
+                            <li>Action</li>
+                        </ul>
+                        
+                        @foreach (System.Data.DataRow row in results.Rows)
+                        {
+                            var dayDate = DateTime.Parse(row["daydate"].ToString());
+                            var custOpening = row["customername_opening"].ToString();
+                            var problemOpening = row["ProblemDuringChecklist_opening"].ToString();
+                            var checklistOpening = row["ChecklistData_opening"].ToString();
+                            var custClosing = row["customername_closing"].ToString();
+                            var problemClosing = row["ProblemDuringChecklist_closing"].ToString();
+                            var checklistClosing = row["ChecklistData_closing"].ToString();
+                                <ul class="UL_ResultMain">
+                                    <li><span>
+                                        @dayDate.ToString("dddd")<br/>@dayDate.ToString("dd/MM/yyyy")</span></li>
+                                    <li>
+                                    All Checklist Done <font color="red">-
+                                            @custOpening</font> <br />
+                                    @Html.Raw(checklistOpening)<br>
+                                    <b>Any problems or changes – what did you do?</b><br>
+                                        @Html.Raw(string.IsNullOrEmpty(problemOpening) ? "-" : problemOpening.Replace("\n", "<br/>"))
+                                            </li>
+                                    <li>
+                                    @if (string.IsNullOrEmpty(custClosing))
+                                    {
+                                        <div>-</div>
+                                    }
+                                    else
+                                    {
+                                        <div>
+                                        All Checklist Done <font color="red">-
+                                                @custClosing</font><br />
+                                        @Html.Raw(checklistClosing)
+                                        <br>
+                                        <b>Any problems or changes – what did you do?</b><br>
+                                            @Html.Raw(string.IsNullOrEmpty(problemClosing) ? "-" : problemClosing.Replace("\n", "<br/>"))
+                                            </div>
+                                    }
+                                    </li>
+                                    <li><a href="/addupdopeningnclosingchecks/@dayDate.ToString("dd-MM-yyyy")">
+                                        View | Edit</a></li>
+                                        </ul>
+                        }
+                    </div>
+                    }
+                </div>
+                </div>
+                </div>
+                </div>
+            </div>
+        </div>
+
+                        </div>
+                    </div>
+                </div>
+                
+                
+            </div>
+        </div>
+    </div>
+
+@section scripts {
+    <script type="text/javascript">
+        function ValidateOpeningChecking(sender, args) {
+            args.IsValid = $("#chkOpeningAllDone").is(":checked");
+        }
+
+        function ValidateClosingChecking(sender, args) {
+            args.IsValid = $("#chkClosingAllDone").is(":checked");
+        }
+    </script>
+}

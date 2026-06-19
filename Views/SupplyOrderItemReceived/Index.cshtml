@@ -21,7 +21,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 style="display:inline;">Manage Supply Order Items Received</h4>
-                <a href="/managesupplyorder?status=3" class="btn btn-default btn-sm pull-right">Back to SO List</a>
+                <a href="/managesupplyorder?status=5" class="btn btn-default btn-sm pull-right">Back to SO List</a>
             </div>
 
             @* === SO INFO === *@
@@ -275,7 +275,7 @@
             data: JSON.stringify(model),
             success: function (r) {
                 if (r.success) {
-                    window.location.href = '/managesupplyorder?status=4&msg=' + encodeURIComponent('Supply Order Item(s) have been saved successfully');
+                    window.location.href = '/managesupplyorder?status=6&msg=' + encodeURIComponent('Supply Order Item(s) have been saved successfully');
                 } else {
                     showMsg(r.message || 'Failed to save.');
                     $('#btnSave').prop('disabled', false).html('<i class="glyphicon glyphicon-floppy-disk"></i> Save Item Received');

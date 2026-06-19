@@ -12,6 +12,8 @@ namespace CakerStreet.Business.Controllers;
 /// Module 20 permission check.
 /// </summary>
 [Route("managepurchaseorder")]
+[Route("purchaseorder")]
+[Route("managepurchaseorder.aspx")]
 public class PurchaseOrderController : Controller
 {
     private readonly PurchaseOrderService _poService;

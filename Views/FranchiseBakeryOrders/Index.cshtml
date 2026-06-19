@@ -1,0 +1,1173 @@
+@using CakerStreet.Business.Controllers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Franchise Orders";
+
+    int orderType = ViewBag.OrderType ?? 0;
+    string activeTab = ViewBag.ActiveTab ?? "0";
+    string userType = ViewBag.UserType ?? "";
+    string userId = ViewBag.UserId ?? "0";
+    string drpDateValue = ViewBag.DrpDateValue ?? "1";
+    string startDate = ViewBag.StartDate ?? "";
+    string endDate = ViewBag.EndDate ?? "";
+    string searchQuery = ViewBag.SearchQuery ?? "";
+    bool hasOrders = ViewBag.HasOrders ?? false;
+    string totalCount = ViewBag.TotalCount ?? "0";
+    int dayID = ViewBag.DayID ?? 0;
+    int taskType = ViewBag.TaskType ?? 0;
+    int deliveryMode = ViewBag.DeliveryMode ?? 0;
+    bool isAssignedTaskTab = ViewBag.AssignedTaskTab ?? false;
+
+    // Cast complex ViewBag types
+    var orders = ViewBag.Orders as System.Data.DataTable;
+    var orderDetails = ViewBag.OrderDetails as System.Data.DataTable;
+    var taskGroups = ViewBag.TaskGroups as List<FranchiseBakeryOrdersController.TaskGroup>;
+    var taskCounts = ViewBag.TaskCounts as FranchiseBakeryOrdersController.TaskTypeCounts;
+    var dayTabs = ViewBag.DayTabs as List<FranchiseBakeryOrdersController.DayTab>;
+    var staffUsers = ViewBag.StaffUsers as List<FranchiseBakeryOrdersController.StaffUser>;
+    string filterStr = ViewBag.FilterStr ?? "";
+    string manifestUrl = ViewBag.ManifestUrl ?? "";
+    string spongeUrl = ViewBag.SpongeUrl ?? "";
+    bool bakeryClosed = ViewBag.BakeryClosed ?? false;
+    string taskDetName = ViewBag.TaskDetName ?? "Filling";
+    DateTime currentTaskDate = ViewBag.CurrentTaskDate ?? DateTime.Today;
+}
+
+<link href='~/css/bakeryorder.css?ver=1.33' rel="stylesheet" />
+
+<style type="text/css">
+    .normallink.lnkreplyRemarks { cursor: pointer; }
+    .cakeWorth { float: right; padding: 10px; }
+    .divprddet { padding: 0 10px 10px; }
+    .divprddet.stt { background-color: #fcc; }
+</style>
+
+<script type="text/javascript">
+    function pageLoad() {
+        $('#chkConfirm').click(function () {
+            $('#dtlstOrder_confirmed input:checkbox').prop('checked', $(this).prop("checked"));
+        });
+        $('#chkcompleted').click(function () {
+            $('#dtlstOrder_completed input:checkbox').prop('checked', $(this).prop("checked"));
+        });
+        $('#chkcancelled').click(function () {
+            $('#dtlstOrder_cancelled input:checkbox').prop('checked', $(this).prop("checked"));
+        });
+    }
+    $(document).ready(function () { pageLoad(); });
+
+    function ChkSelectAll(chkHeader, containerId) {
+        var isChecked = $(chkHeader).prop('checked');
+        $('#' + containerId + ' input:checkbox').prop('checked', isChecked);
+    }
+    function CheckUncheck(headerName, containerId) {
+        var total = $('#' + containerId + ' input:checkbox').length;
+        var checked = $('#' + containerId + ' input:checkbox:checked').length;
+        $('[name=' + headerName + ']').prop('checked', total === checked);
+    }
+</script>
+
+<input type="hidden" id="hf_bakerusertype" value="@(userType == "3" ? userId : "0")" />
+
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            @* ─── Status Tab Navigation ─── *@
+            <div id="divtalllinksouter" class="panel-heading">
+                <ul>
+                    <li><a href="~/franchiseorders" class="@(activeTab == "0" ? "stt" : "")">Pending</a></li>
+                    <li><a href="~/franchiseorders?ordertype=1" class="@(activeTab == "1" ? "stt" : "")">Confirmed</a></li>
+                    <li><a href="~/franchiseorders?ordertype=5" class="@(activeTab == "5" ? "stt" : "")">Job Assigned</a></li>
+                    <li><a href="~/franchiseorders?ordertype=2" class="@(activeTab == "2" ? "stt" : "")">Processed</a></li>
+                    <li><a href="~/franchiseorders?ordertype=3" class="@(activeTab == "3" ? "stt" : "")">Under Delivery</a></li>
+                    <li><a href="~/franchiseorders?ordertype=4" class="@(activeTab == "4" ? "stt" : "")">Completed</a></li>
+                </ul>
+            </div>
+
+            @* ─── Assigned Tasks Sub-Navigation ─── *@
+            @if (isAssignedTaskTab)
+            {
+                <div id="divtaskassignedlinks" class="panel-heading bot" style="@(userType == "4" || userType == "3" ? "display:none;" : "")">
+                    <ul>
+                        <li><a href="~/franchiseorders?ordertype=5">All</a></li>
+                        <li><a href="~/franchiseorders?ordertype=12" class="stt">Assigned Tasks</a></li>
+                    </ul>
+                </div>
+
+                @* Day tabs *@
+                @if (dayTabs != null)
+                {
+                    <div id="divDayType" class="panel-heading day">
+                        <ul>
+                            <li><a href="~/franchiseorders?ordertype=12" class="@(dayID == 0 ? "stt" : "")">All</a></li>
+                            @foreach (var day in dayTabs)
+                            {
+                                string dayClass = (day.DayDate < DateTime.Today || day.IsClosed) ? "faded" : "norm";
+                                if (dayID == day.DayID) dayClass += " stt";
+                                <li><a class="@dayClass" href="~/franchiseorders?ordertype=12&dayID=@day.DayID">
+                                    <span>@day.DayName (@day.CountCakes)</span><font>(@day.DayDate.ToString("dd/MM/yyyy"))</font>
+                                </a></li>
+                            }
+                            <li class="pull-right">
+                                <input type="text" id="txtStartdate_day" class="spdate order-to" placeholder="Start Date"
+                                       onchange="if(this.value) { window.location.href=window.location.href; }" />
+                            </li>
+                        </ul>
+                    </div>
+                }
+
+                @* Task type tabs *@
+                <div id="divTaskTypeLinks" class="panel-heading bot">
+                    <ul>
+                        <li><a href="~/franchiseorders?ordertype=12@(filterStr)@(dayID > 0 ? "&dayID=" + dayID : "")" class="@(taskType == 0 ? "stt" : "")">All</a></li>
+                        <li><a href="~/franchiseorders?ordertype=12@(filterStr)@(dayID > 0 ? "&dayID=" + dayID : "")&tasktype=11" class="@(taskType == 11 ? "stt" : "")">
+                            Filling@(taskCounts != null && (taskCounts.FillingCakes > 0 || taskCounts.FillingCupcakes > 0) ? $" ({taskCounts.FillingCakes}/{taskCounts.FillingCupcakes})" : "")
+                        </a></li>
+                        <li><a href="~/franchiseorders?ordertype=12@(filterStr)@(dayID > 0 ? "&dayID=" + dayID : "")&tasktype=12" class="@(taskType == 12 ? "stt" : "")">
+                            Icing@(taskCounts != null && (taskCounts.IcingCakes > 0 || taskCounts.IcingCupcakes > 0) ? $" ({taskCounts.IcingCakes}/{taskCounts.IcingCupcakes})" : "")
+                        </a></li>
+                        <li><a href="~/franchiseorders?ordertype=12@(filterStr)@(dayID > 0 ? "&dayID=" + dayID : "")&tasktype=22" class="@(taskType == 22 ? "stt" : "")">
+                            Decoration@(taskCounts != null && (taskCounts.DecorationCakes > 0 || taskCounts.DecorationCupcakes > 0) ? $" ({taskCounts.DecorationCakes}/{taskCounts.DecorationCupcakes})" : "")
+                        </a></li>
+                        <li><a href="~/franchiseorders?ordertype=12@(filterStr)@(dayID > 0 ? "&dayID=" + dayID : "")&tasktype=33" class="@(taskType == 33 ? "stt" : "")">
+                            Finishing@(taskCounts != null && (taskCounts.FinishingCakes > 0 || taskCounts.FinishingCupcakes > 0) ? $" ({taskCounts.FinishingCakes}/{taskCounts.FinishingCupcakes})" : "")
+                        </a></li>
+                        <li><a href="~/franchiseorders?ordertype=12@(filterStr)@(dayID > 0 ? "&dayID=" + dayID : "")&tasktype=44" class="@(taskType == 44 ? "stt" : "")">
+                            Under Delivery@(taskCounts != null && (taskCounts.UnderDeliveryCakes > 0 || taskCounts.UnderDeliveryCupcakes > 0) ? $" ({taskCounts.UnderDeliveryCakes}/{taskCounts.UnderDeliveryCupcakes})" : "")
+                        </a></li>
+                        @if (dayID > 0 && !string.IsNullOrEmpty(manifestUrl))
+                        {
+                            <li class="pull-right">
+                                <a href="@spongeUrl" target="_blank" class="btn btn-info btn-sm" style="font-size: 12px; color: #fff; margin-right: 10px;">Order Sponge</a>
+                            </li>
+                            <li class="pull-right">
+                                <a href="@manifestUrl" target="_blank" class="btn btn-info btn-sm" style="font-size: 12px; color: #fff; margin-right: 10px;">Manifest</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @* ─── Search/Filter Bar ─── *@
+            <div class="search-field">
+                <form method="get" action="/franchiseorders">
+                    @if (orderType > 0)
+                    {
+                        <input type="hidden" name="ordertype" value="@orderType" />
+                    }
+                    <div class="pull-left col-sm-2 flush">
+                        <select name="dt" class="orderdrpdate form-control">
+                            <option value="1" @(drpDateValue == "1" ? "selected" : "")>Order Date</option>
+                            <option value="2" @(drpDateValue == "2" ? "selected" : "")>Occasion date</option>
+                        </select>
+                    </div>
+                    <div class="pull-left col-sm-2 flush-right">
+                        <input type="text" name="from" class="order-from form-control" placeholder="Start Date" value="@startDate" />
+                    </div>
+                    <div class="pull-left col-sm-2 flush-right">
+                        <input type="text" name="to" class="order-to form-control" placeholder="End Date" value="@endDate" />
+                    </div>
+                    <div class="pull-left col-md-4 col-sm-3 flush-right hide">
+                        <input type="text" name="q" class="spdate form-control order-search" placeholder="Search...Order ID / Name" value="@searchQuery" />
+                    </div>
+                    <div class="pull-left col-sm-3 col-md-2 flush-right">
+                        <button type="submit" class="btn btn-danger pull-left btn-sm">Submit</button>
+                        <a href="/franchiseorders@(orderType > 0 ? "?ordertype=" + orderType : "")" style="margin-left: 5px;" class="btn btn-info pull-left btn-sm">Reset</a>
+                    </div>
+                </form>
+
+                <div class="col-sm-12" style="padding: 10px;">
+                    <div class="updatesorting_outer" style="display:none;">
+                        <a href="#" onclick="return updatesorting(this);" class="btn btn-danger updatesorting">Update Sorting</a>
+                    </div>
+
+                    @* Bulk action buttons *@
+                    @if (ViewBag.ShowBulkActions == true)
+                    {
+                        <div class="div_buttons_outer btn-group pull-left" id="div_buttons_outer">
+                            <button class="btn btn-xs btn-danger" type="button">Apply on selected</button>
+                            <button type="button" class="btn btn-xs btn-danger dropdown-toggle" data-toggle="dropdown" style="height: 22px;">
+                                <span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu" role="menu">
+                                @if (ViewBag.ShowJobAssigned == true)
+                                {
+                                    <li><a href="#" onclick="bulkStatusUpdate(5);return false;">Job Assigned</a></li>
+                                }
+                                @if (ViewBag.ShowProcessed == true)
+                                {
+                                    <li><a href="#" onclick="bulkStatusUpdate(2);return false;">Order Processed</a></li>
+                                }
+                                @if (ViewBag.ShowUnderDelivery == true)
+                                {
+                                    <li><a href="#" onclick="bulkStatusUpdate(3);return false;">Order Under Delivery</a></li>
+                                }
+                                @if (ViewBag.ShowComplete == true)
+                                {
+                                    <li><a href="#" onclick="bulkStatusUpdate(4);return false;">Order Completed</a></li>
+                                }
+                                @if (ViewBag.ShowDelete == true)
+                                {
+                                    <li><a href="#" onclick="if(confirm('Are you sure to remove selected order?')){bulkDelete();}return false;">Remove Order</a></li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="pull-right col-sm-12 text-danger raln">
+                        Total: @totalCount
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+
+            @* ─── Order List: Standard orders (non-assigned-task) ─── *@
+            @if (!isAssignedTaskTab)
+            {
+                <div id="div_Pending" class="div_forwarded">
+                    <div class="panel-body">
+                        @if (!hasOrders)
+                        {
+                            <div class="alert alert-danger">No Record found</div>
+                        }
+                        else if (orders != null)
+                        {
+                            <div class="div_not_assigned" id="div_dtlstOrder_pending_tblouter">
+                                <table id="dtlstOrder_pending_tbl" class="table bootstrap-datatable pending_orders">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center;">
+                                                <input type="checkbox" id="chkPending" name="chkHeader" onclick="ChkSelectAll(this,'dtlstOrder_pending');" />
+                                            </th>
+                                            <th>Order Date</th>
+                                            <th>Order ID</th>
+                                            <th>Franchise</th>
+                                            <th>Qty</th>
+                                            <th style="width: 200px">Date</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dtlstOrder_pending">
+                                        @foreach (System.Data.DataRow row in orders.Rows)
+                                        {
+                                            long orderId = Convert.ToInt64(row["order_ID"]);
+                                            int orderStatus = Convert.ToInt32(row["order_status"]);
+                                            DateTime orderDate = Convert.ToDateTime(row["order_date"]);
+                                            DateTime deliveryDate = Convert.ToDateTime(row["ordercollection_Date"]);
+                                            string customerName = row["order_customerName"]?.ToString() ?? "";
+                                            string phone = row["shipping_phone"]?.ToString() ?? "";
+                                            string zip = (row["shipping_zip"]?.ToString() ?? "").ToUpper();
+                                            string quality = row["order_quality"]?.ToString() ?? "";
+                                            string batchTitle = row.Table.Columns.Contains("stockBatch_title") ? (row["stockBatch_title"]?.ToString() ?? orderId.ToString()) : orderId.ToString();
+                                            string postcodedet = row.Table.Columns.Contains("webstore_postcodedet") ? (row["webstore_postcodedet"]?.ToString() ?? "") : "";
+                                            string webstorePostcode = row.Table.Columns.Contains("webstore_postcode") ? (row["webstore_postcode"]?.ToString() ?? "").ToUpper() : "";
+
+                                            <tr class="trOrderlist" data-id="@orderId" data-orderid="@orderId">
+                                                <td valign="top" align="center">
+                                                    <input type="checkbox" class="chkOrder" onclick="CheckUncheck('chkHeader','dtlstOrder_pending');" />
+                                                </td>
+                                                <td valign="top">
+                                                    @orderDate.ToString("dd-MM-yyyy")<br />@orderDate.ToString("hh:mm tt")
+                                                </td>
+                                                <td valign="top">
+                                                    <a target="_blank" href="/franchiseorderdetail?checklistID=@orderId&returl=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)">
+                                                        @batchTitle
+                                                    </a>
+                                                </td>
+                                                <td class="prd-img2" valign="top">
+                                                    @customerName<br />
+                                                    @phone<br />
+                                                    @zip
+                                                    @if (!string.IsNullOrEmpty(postcodedet))
+                                                    {
+                                                        var parts = postcodedet.Split(',');
+                                                        if (parts.Length >= 2)
+                                                        {
+                                                            double miles = double.Parse(parts[0]);
+                                                            double seconds = double.Parse(parts[1]);
+                                                            var ts = TimeSpan.FromSeconds(seconds);
+                                                            <br /><text>(</text>@miles<text> Miles from <b>@webstorePostcode</b>, @ts.ToString(@"hh\:mm"))</text>
+                                                        }
+                                                    }
+                                                </td>
+                                                <td class="qty" valign="top">@quality</td>
+                                                <td valign="top">
+                                                    <u>Delivery Date:</u><br />@deliveryDate.ToString("dd-MM-yyyy") (@deliveryDate.ToString("dddd"))<br />(@deliveryDate.ToString("hh:mm tt") - @deliveryDate.AddHours(1).ToString("hh:mm tt"))
+                                                </td>
+                                                <td valign="top">
+                                                    @if (orderStatus == 0 || orderStatus == 11)
+                                                    {
+                                                        <div class="btn-group">
+                                                            <button type="button" class="btn btn-sm btn-danger">@FranchiseBakeryOrdersController.GetStatusText(orderStatus)</button>
+                                                            <button type="button" class="btn btn-sm btn-danger dropdown-toggle" data-toggle="dropdown">
+                                                                <span class="caret"></span>
+                                                            </button>
+                                                            <ul class="dropdown-menu" role="menu">
+                                                                @if (orderStatus == 0)
+                                                                {
+                                                                    <li><a href="#" onclick="confirmOrder(@orderId);return false;">Confirm Order</a></li>
+                                                                    <li class="divider"></li>
+                                                                }
+                                                                <li><a href="#" onclick="if(confirm('Are you sure to cancel this order?')){showCancelDialog(@orderId);}return false;">Cancel Order</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    }
+                                                    else if (orderStatus == 4)
+                                                    {
+                                                        <div class="btn-group">
+                                                            <button type="button" class="btn btn-sm btn-info">@FranchiseBakeryOrdersController.GetStatusText(orderStatus)</button>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="btn-group">
+                                                            <button type="button" class="btn btn-sm btn-success">@FranchiseBakeryOrdersController.GetStatusText(orderStatus)</button>
+                                                            @if (orderStatus != 5)
+                                                            {
+                                                                <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown">
+                                                                    <span class="caret"></span>
+                                                                </button>
+                                                                <ul class="dropdown-menu" role="menu">
+                                                                    @if (orderStatus <= 1)
+                                                                    {
+                                                                        <li><a href="#" onclick="singleStatusUpdate(@orderId, 5);return false;">Job Assigned</a></li>
+                                                                    }
+                                                                    @if (orderStatus == 5)
+                                                                    {
+                                                                        <li><a href="#" onclick="singleStatusUpdate(@orderId, 2);return false;">Order Processed</a></li>
+                                                                    }
+                                                                    @if (orderStatus <= 2 || orderStatus == 5)
+                                                                    {
+                                                                        <li><a href="#" onclick="singleStatusUpdate(@orderId, 3);return false;">Order Under Delivery</a></li>
+                                                                    }
+                                                                    @if (orderStatus <= 3)
+                                                                    {
+                                                                        <li><a href="#" onclick="singleStatusUpdate(@orderId, 4);return false;">Order Completed</a></li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </td>
+                                                <td valign="top">
+                                                    <a target="_blank" href="/franchiseorderdetail?checklistID=@orderId&returl=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)"
+                                                       class="btn btn-sm bg-black margin">View Detail</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* ─── Assigned Tasks View (ordertype=12) ─── *@
+            @if (isAssignedTaskTab && taskGroups != null)
+            {
+                <div id="div_Pending" class="div_forwarded bggrey">
+                    <div class="panel-body">
+                        @if (!hasOrders)
+                        {
+                            <div class="alert alert-danger">No Record found</div>
+                        }
+                        else
+                        {
+                            @foreach (var group in taskGroups)
+                            {
+                                int unprintedCount = group.Items.Count(w => string.IsNullOrEmpty(w.LogOrderPrintOrderId));
+                                int cakeCount = group.Items.Count(w => w.ProductType == 1);
+                                int cupcakeCount = group.Items.Count(w => w.ProductType == 6);
+                                int accessoryCount = group.Items.Count(w => w.ProductType == 2);
+
+                                <div class="divheadertext">
+                                    <div style="text-align: left;" class="pull-left col-sm-3 laln">
+                                        <a class="btn btn-xs btn-default" onclick="PrintallOrders(this);">Print all</a>
+                                        | <a class="btn btn-xs btn-danger" onclick="PrintUnprintedOrders(this);">Unprinted (@unprintedCount)</a>
+                                    </div>
+                                    @group.GroupDate.ToShortDateString() - <b>@group.GroupDate.DayOfWeek</b>
+                                    - <span class="headertext">
+                                        @cakeCount <span style="font-size:16px;">Cakes</span> | @cupcakeCount <span style="font-size:16px;">Cupcakes</span> | @accessoryCount <span style="font-size:16px;">Party Accessories</span>
+                                    </span>
+                                </div>
+
+                                <div class="div_forwarded_assigned">
+                                    <table class="table bootstrap-datatable pending_orders">
+                                        <thead>
+                                            <tr>
+                                                <th class="hide">Order</th>
+                                                <th style="width: 150px">Dates</th>
+                                                <th style="width: 150px">Item</th>
+                                                <th style="width: 180px">Item Detail</th>
+                                                <th class="visible-lg" style="width: 180px">Customer</th>
+                                                <th style="width: 180px">Picture</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in group.Items)
+                                            {
+                                                string taskIdStr = item.OrderTaskId + "," + item.OrderTaskTaskSts;
+                                                <tr data-id="@item.OrderDetailId" data-tid="0" data-taskid="@taskIdStr">
+                                                    <td valign="top" class="hide">
+                                                        <font>@item.OrderDate.ToString("dd-MM-yyyy")<br />@item.OrderDate.ToString("hh:mm tt")</font>
+                                                    </td>
+                                                    <td valign="top">
+                                                        <u>Delivery Date:</u><br />@item.OrderCollectionDate.ToString("dd-MM-yyyy") (@item.OrderCollectionDate.ToString("dddd"))<br />(@item.OrderCollectionDate.ToString("hh:mm tt") - @item.OrderCollectionDate.AddHours(1).ToString("hh:mm tt"))
+                                                        <span class="deliverymodenorm"><br /><br /></span>
+                                                        <span class="hide spnhide">@item.OrderCollectionDispatchDate.ToString("dd-MM-yyyy")</span>
+                                                    </td>
+                                                    <td class="norm" valign="top">
+                                                        <font color="#a94442">@item.ProductName</font>
+                                                        <br />
+                                                        <span class="orderdetnorm">
+                                                            <a target="_blank" href="/franchiseorderdetail?checklistID=@item.OrderId&returl=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)">
+                                                                @item.OrderId
+                                                            </a>
+                                                            | Qty:@item.OrderDetailQuantity
+                                                        </span>
+                                                        <div class="div_Documents" style="text-align: left">
+                                                            <a href="/franchiseorderdetail?checklistID=@(item.OrderId)#files" target="_blank">Files / Topper / Cutters</a>
+                                                        </div>
+                                                    </td>
+                                                    <td class="deliverymode" valign="top">
+                                                        @if (item.OrderDetailShapeId != 0)
+                                                        {
+                                                            <div class="attDet" data-id="@item.OrderDetailId">
+                                                                @if (!string.IsNullOrEmpty(item.CakeShapeTitle)) { <text>Shape: @item.CakeShapeTitle<br /></text> }
+                                                                @if (!string.IsNullOrEmpty(item.CakeTypeTitle)) { <text>Type: @item.CakeTypeTitle<br /></text> }
+                                                                @if (!string.IsNullOrEmpty(item.SizeTitle)) { <text>Size: @item.SizeTitle<br /></text> }
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                    <td class="visible-lg prd-img2" valign="top">
+                                                        @item.OrderCustomerName<br />
+                                                        @item.ShippingPhone<br />
+                                                        @item.ShippingZip.ToUpper()
+                                                    </td>
+                                                    <td class="img1" data-id="@item.OrderId">
+                                                        <div class="image_main">
+                                                            <a target="_blank" href="/product/@item.ProductSeoUrl">
+                                                                <img border="0" src="/upload/Product_Images/resized_300_300/@item.ProductImage1"
+                                                                     title="@item.ProductName"
+                                                                     onerror="this.src='/images/blankImages/img75.jpg'" />
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @* Action row *@
+                                                <tr class="trOrderlist" data-tid="0"
+                                                    data-userid="@(userType == "3" ? userId : "0")"
+                                                    data-id="@item.OrderDetailId" data-orderid="@item.OrderId"
+                                                    data-taskid="@taskIdStr">
+                                                    <td colspan="8" valign="top" style="border-top-width: 0px; text-align: center">
+                                                        <div class="div_actionouter" id="div_actionouter">
+                                                            @* Staff user dropdown *@
+                                                            <div class="btn-group task-group divUser@(item.OrderTaskTaskSts == "44" ? " hide" : "")">
+                                                                <button type="button" data-toggle="dropdown" class="btnuser btn dropdown-toggle btn-default">
+                                                                    @(userType == "3" ? (Context.Items["BakeryUserName"]?.ToString() ?? "--Select Staff--") : "--Select Staff--")
+                                                                </button>
+                                                                <button type="button" class="btnusertogglebtn btn togglebtn dropdown-toggle btn-default" data-toggle="dropdown">
+                                                                    <span class="caret"></span>
+                                                                </button>
+                                                                <ul class="dropdown-menu drptaskuserlist" data-id="@item.OrderId" role="menu">
+                                                                    @if (staffUsers != null)
+                                                                    {
+                                                                        @foreach (var user in staffUsers)
+                                                                        {
+                                                                            <li><a href="#" onclick="btnSelectUser_Click(this,@user.UserId);return false;">@user.Username</a></li>
+                                                                        }
+                                                                    }
+                                                                </ul>
+                                                            </div>
+                                                            @* Print link *@
+                                                            <a onclick="Printbakercopy(@item.OrderId);"
+                                                               style="@(item.OrderShowPrint == 0 ? "display:none;" : "")"
+                                                               class="ancprintbakercopy pull-left ancprintbakercopy_@(item.OrderId)@(string.IsNullOrEmpty(item.LogOrderPrintOrderId) ? " text-danger" : " fadedbox")">
+                                                                <img border='0' src='/images/icons/print-icon.png' />
+                                                            </a>
+                                                            <span class="spntaskTitle">
+                                                                @FranchiseBakeryOrdersController.GetStatusText_taskBtn(item.ProductType.ToString(), item.OrderTaskTaskSts, item.OrderTaskIsCompleted, item.CustomerName)
+                                                            </span>
+                                                            @{
+                                                                int taskStsInt = 0;
+                                                                int.TryParse(item.OrderTaskTaskSts, out taskStsInt);
+                                                                bool taskCompleted = ParseBool(item.OrderTaskIsCompleted);
+                                                                bool taskDone = ParseBool(item.OrderTaskIsDone);
+                                                            }
+                                                            @* Action Buttons (rewind/play/pause/stop/remarks) *@
+                                                            <div class="btn-group task-group divtaskselectouter@(userType != "3" || item.OrderTaskTaskSts == "44" || (item.OrderTaskTaskSts == "33" && taskCompleted) ? " hide" : "")">
+                                                                <div class="actionButtons">
+                                                                    <ul>
+                                                                        <li><a data-tid="@(item.ProductType == 2 ? "0" : "1")" class="prev@(!taskDone || string.IsNullOrEmpty(item.OrderTaskTaskSts) ? " fd" : "")" onclick="_movetotask(this);return false;">
+                                                                            <img border='0' src='/images/icons/rewind-icon.png' /></a></li>
+                                                                        <li><a onclick="startassignedtask(this);" class="play@(item.ProductType == 2 && string.IsNullOrEmpty(item.OrderTaskTaskSts) ? "" : (item.OrderTaskTaskSts == "33" && item.ProductType != 2 ? (!taskDone ? " st" : " fd") : (!taskDone ? " st" : "")))">
+                                                                            <img border='0' src='/images/icons/play-icon.png' /></a></li>
+                                                                        <li><a onclick="btnpaused_Click(this);return false;" data-tid="@(item.ProductType == 2 ? "0" : "1")" class="pause@(item.ProductType == 2 ? " fd" : (item.OrderTaskTaskSts == "33" ? (!taskDone ? "" : " fd") : (!taskDone ? "" : " fd")))">
+                                                                            <img border='0' src='/images/icons/pause-icon.png' /></a></li>
+                                                                        <li><a onclick="btnSubmitTask_Click(this);" class="stop@(item.ProductType == 2 && string.IsNullOrEmpty(item.OrderTaskTaskSts) ? " fd" : (item.OrderTaskTaskSts == "33" ? (!taskDone ? "" : " fd") : (!taskDone ? "" : " fd")))">
+                                                                            <img border='0' src='/images/icons/stop-icon.png' /></a></li>
+                                                                        <li><a onclick="showRemarks_task(this);" class="remarks@(item.ProductType == 2 && string.IsNullOrEmpty(item.OrderTaskTaskSts) ? " fd" : (item.OrderTaskTaskSts == "33" ? (!taskDone ? "" : " fd") : (!taskDone ? "" : " fd")))">
+                                                                            <img border='0' src='/images/icons/message-icon2.png' /></a></li>
+                                                                    </ul>
+                                                                </div>
+                                                                @* Remarks box *@
+                                                                <div class="dropdown-menu-ul_remarks" style="margin-top: 5px;@(!taskDone ? "" : "display:none;")">
+                                                                    <a class="close" onclick="closediv_remarks(this);">X</a>
+                                                                    <textarea class="form-control input-sm txtRemarks" placeholder="Remarks (optional)" style="margin-top: 5px; height: 50px;">@item.OrderTaskDetRemarks</textarea>
+                                                                    <div class="btn-group task-group divCompletebox" style="margin-top: 5px;">
+                                                                        <a href="#" onclick="btnSaveRemarks_Click(this);return false;" class="lnkSaveRemarks fullradius btn btn-sm btn-default btn-remarks">Incomplete</a>
+                                                                        <a href="#" onclick="btnSubmitTask_Click(this);return false;" class="btncomplete fullradius btn btn-sm btn-danger">Completed</a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @* Steps indicator *@
+                                                            <div class="stepsLeft">
+                                                                <ul>
+                                                                    @if (string.IsNullOrEmpty(item.OrderTaskTaskSts) && item.ProductType != 2)
+                                                                    {
+                                                                        <li class="stepfilling">Filling</li>
+                                                                    }
+                                                                    @if (item.ProductType != 2 && (string.IsNullOrEmpty(item.OrderTaskTaskSts) || taskStsInt < 11 || (taskStsInt == 11 && !taskCompleted)))
+                                                                    {
+                                                                        <li class="stepicing">Icing</li>
+                                                                    }
+                                                                    @if (item.ProductType != 2 && (string.IsNullOrEmpty(item.OrderTaskTaskSts) || taskStsInt < 12 || (taskStsInt == 12 && !taskCompleted)))
+                                                                    {
+                                                                        <li class="stepdecoration">Decoration</li>
+                                                                    }
+                                                                    @if (item.ProductType != 2 && (string.IsNullOrEmpty(item.OrderTaskTaskSts) || taskStsInt < 22 || (taskStsInt == 22 && !taskCompleted)))
+                                                                    {
+                                                                        <li class="stepfininshing">Finishing</li>
+                                                                    }
+                                                                    @if (string.IsNullOrEmpty(item.OrderTaskTaskSts) || taskStsInt < 33 || (taskStsInt == 33 && !taskCompleted))
+                                                                    {
+                                                                        <li class="stepprocessed">Under Delivery</li>
+                                                                    }
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            @* ─── Cancel Order Modal ─── *@
+            <div class="modal fade" id="dvCancelOrder" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #DF3F42;">
+                            <h4 class="modal-title" style="color: #fff;">
+                                Cancel Order - <span id="ltCancelOrderID"></span>
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="hfCancelOrderId" value="" />
+                            <div class="form-group">
+                                <label class="control-label">Select Cancel Reason: <abbr class="text-danger">*</abbr></label>
+                                <select id="ddlCancelReason" class="form-control" style="max-width: 400px;">
+                                    <option value="0">Select Cancel Reason</option>
+                                    <option value="No Inventory">No Inventory</option>
+                                    <option value="Unable To Fulfill The Order By Required Delivery Date">Unable To Fulfill The Order By Required Delivery Date</option>
+                                    <option value="Pricing Error">Pricing Error</option>
+                                    <option value="Customer Exchange">Customer Exchange</option>
+                                    <option value="Buyer Cancelled">Buyer Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label">Description: <abbr class="text-danger">*</abbr></label>
+                                <textarea id="txtCancelComments" class="form-control"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label><input type="checkbox" id="chknotifycustomer" checked /> Notify Customer</label>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-danger updt-acnt" onclick="submitCancelOrder();">Cancel Order</button>
+                                <button class="btn btn-danger updt-acnt" onclick="$('#dvCancelOrder').modal('hide');">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ─── Reviews Modal ─── *@
+            <div class="modal fade" id="dv_customerReviews" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #DF3F42;">
+                            <h4 class="modal-title" style="color: #fff;">Order Reviews</h4>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="hfOrderID_reviews" value="" />
+                            <div class="form-group">
+                                <label class="control-label" style="font-weight: normal">Select Stars:</label>
+                                <select id="drpstars" class="form-control" style="max-width: 400px;">
+                                    <option value="0">No Rating</option>
+                                    <option value="1">1 Star</option>
+                                    <option value="2">2 Stars</option>
+                                    <option value="3">3 Stars</option>
+                                    <option value="4">4 Stars</option>
+                                    <option value="5" selected>5 Stars</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label" style="font-weight: normal">Remarks:</label>
+                                <textarea id="txtRemarks_reviews" class="form-control" style="min-height: 100px"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-danger updt-acnt" onclick="submitReview();">Submit</button>
+                                <button class="btn btn-danger updt-acnt" onclick="$('#dv_customerReviews').modal('hide');">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ─── Remarks Reply Modal (#dv_replyonEnquiry) ─── *@
+            <div class="modal fade" id="dv_replyonEnquiry" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #DF3F42;">
+                            <h4 class="modal-title" style="color: #fff;">Remarks Reply
+                                <input type="hidden" id="hfOrdertaskdetID_Enquiry" value="" />
+                                <input type="hidden" id="hfOrderID_Enquiry" value="" />
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="control-label remarksbox" style="font-weight: normal" id="litReplyRemarks"></label>
+                            </div>
+                            <div class="form-group">
+                                <textarea id="txtReplyRemarks" class="form-control" style="min-height: 100px" placeholder="Enter Remarks"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="txtReplyName" class="form-control" placeholder="Enter Your Name" />
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-danger updt-acnt" onclick="btnAddReply_Click(this);return false;">Submit</button>
+                                <button class="btn btn-danger updt-acnt" onclick="btnCloseReply_Click(this);return false;">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ─── Start Checklist Modal (#dvStartchecklist) ─── *@
+            <div class="dvStartchecklist modal fade" id="dvStartchecklist" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #DF3F42;">
+                            <h4 class="modal-title" style="color: #fff;">Share processing with staff</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="control-label">Select Staff: <abbr class="text-danger">*</abbr></label>
+                                <select id="drpUserForChecklist" class="form-control" style="max-width: 400px;">
+                                    <option value="0">--Select Staff--</option>
+                                    @if (staffUsers != null)
+                                    {
+                                        @foreach (var user in staffUsers)
+                                        {
+                                            <option value="@user.UserId">@user.Username</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <input type="button" id="btnStartchecklist" class="btn btn-danger btnStartchecklist" onclick="set_startOrderprosessingtask_Checklist();" value="Submit" />
+                                <input type="button" class="btn btn-info" value="Cancel" onclick="set_back_Checklist();" />
+                                <input type="hidden" id="hdn_checklistVal" value="" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ─── Floating Task Panel (divfloater_task) ─── *@
+@if (isAssignedTaskTab)
+{
+    <div class="divfloater_task hide">
+        <div class="form-group">
+            <div class="col-sm-12 headertext flush">
+                @taskDetName
+                <font class="pull-right">(<span>0</span>)</font>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-12 flush">
+                <select class="form-control drpiscompleted" onchange="chkaction_taskonpop(this);">
+                    <option value="-1">--Select Action--</option>
+                    <option value="0">Starts</option>
+                    <option value="1">Completed</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group divDrpUserouter hide">
+            <div class="col-sm-12 flush">
+                <select class="form-control drpUsers">
+                    <option value="-1">--Select User--</option>
+                    @if (staffUsers != null)
+                    {
+                        @foreach (var user in staffUsers)
+                        {
+                            <option value="@user.UserId">@user.Username</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-12 flush">
+                <a href="#" id="linkPrintSelected" onclick="return chkbtnPrintSelected();" class="btn btn-sm btn-danger pull-left">Print</a>
+                <a href="#" id="btnSubmittaskselected" onclick="return chkbtnSubmittaskselected();" class="btn btn-default btn-sm pull-right">Submit</a>
+            </div>
+        </div>
+    </div>
+}
+
+<script type="text/javascript">
+    // ─── Single order status update ───
+    function singleStatusUpdate(orderId, newStatus) {
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/status",
+            data: JSON.stringify({ OrderIds: orderId.toString(), NewStatus: newStatus }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    // ─── Bulk status update ───
+    function bulkStatusUpdate(newStatus) {
+        var ids = [];
+        $('#dtlstOrder_pending .chkOrder:checked').each(function () {
+            ids.push($(this).closest('tr').attr('data-id'));
+        });
+        if (ids.length === 0) { alert("Please select at least one order."); return; }
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/status",
+            data: JSON.stringify({ OrderIds: ids.join(','), NewStatus: newStatus }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            }
+        });
+    }
+
+    // ─── Bulk delete ───
+    function bulkDelete() {
+        var ids = [];
+        $('#dtlstOrder_pending .chkOrder:checked').each(function () {
+            ids.push($(this).closest('tr').attr('data-id'));
+        });
+        if (ids.length === 0) { alert("Please select at least one order."); return; }
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/delete",
+            data: JSON.stringify({ OrderIds: ids.join(',') }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            }
+        });
+    }
+
+    // ─── Confirm order ───
+    function confirmOrder(orderId) {
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/confirm",
+            data: JSON.stringify({ OrderId: orderId }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            }
+        });
+    }
+
+    // ─── Cancel order dialog ───
+    function showCancelDialog(orderId) {
+        $('#hfCancelOrderId').val(orderId);
+        $('#ltCancelOrderID').text(orderId);
+        $('#ddlCancelReason').val('0');
+        $('#txtCancelComments').val('');
+        $('#chknotifycustomer').prop('checked', true);
+        $('#dvCancelOrder').modal('show');
+    }
+
+    function submitCancelOrder() {
+        var reason = $('#ddlCancelReason').val();
+        var comments = $('#txtCancelComments').val();
+        if (reason === '0') { alert("Please select a cancel reason."); return; }
+        if (!comments.trim()) { alert("Please provide cancel description."); return; }
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/cancel",
+            data: JSON.stringify({
+                OrderId: parseInt($('#hfCancelOrderId').val()),
+                Reason: reason,
+                Comments: comments,
+                NotifyCustomer: $('#chknotifycustomer').is(':checked')
+            }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) { $('#dvCancelOrder').modal('hide'); location.reload(); }
+                else alert(r.message);
+            }
+        });
+    }
+
+    // ─── Reviews ───
+    function submitReview() {
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/savereview",
+            data: JSON.stringify({
+                OrderId: parseInt($('#hfOrderID_reviews').val()),
+                Stars: parseInt($('#drpstars').val()),
+                Remarks: $('#txtRemarks_reviews').val()
+            }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) { $('#dv_customerReviews').modal('hide'); location.reload(); }
+                else alert(r.message);
+            }
+        });
+    }
+
+    // ─── Print helpers ───
+    function Printbakercopy(id) {
+        $(".ancprintbakercopy_" + id).addClass("fadedbox");
+        window.open("/printorderbakers/" + id, '', 'height=800,width=800');
+    }
+    function PrintallOrders(id) {
+        var url = "/printorderbakers?orderIDs=0";
+        $(id).closest('.divheadertext').next('.div_forwarded_assigned').find('tr[data-id]').each(function () {
+            url += "," + $(this).attr("data-id");
+        });
+        window.open(url, '', 'height=800,width=800');
+    }
+    function PrintUnprintedOrders(id) {
+        var url = "/printorderbakers?orderIDs=0";
+        $(id).closest('.divheadertext').next('.div_forwarded_assigned').find('.text-danger.ancprintbakercopy').each(function () {
+            url += "," + $(this).closest("tr").attr("data-orderid");
+        });
+        window.open(url, '', 'height=800,width=800');
+    }
+
+    // ─── Sorting ───
+    function moveupward(id) {
+        var thisRow = $(id).closest('tr');
+        var prevRow = thisRow.prev();
+        if (prevRow.length) {
+            prevRow.before(thisRow);
+            $(id).closest('table').find('tr').removeClass("bg");
+            thisRow.addClass("bg");
+        }
+        $(".updatesorting_outer").show();
+    }
+    function movedownward(id) {
+        var thisRow = $(id).closest('tr');
+        var nextRow = thisRow.next();
+        if (nextRow.length) {
+            nextRow.after(thisRow);
+            $(id).closest('table').find('tr').removeClass("bg");
+            thisRow.addClass("bg");
+        }
+        $(".updatesorting_outer").show();
+    }
+    function updatesorting(id) {
+        var arr = [];
+        $(".trOrderlist").each(function (i) {
+            arr.push({ OrderID: $(this).attr("data-id"), Ordersts: 5, DisplayOrder: i + 1 });
+        });
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/updatesorting",
+            data: JSON.stringify({ Items: arr }),
+            contentType: "application/json; charset=utf-8",
+            success: function () { location.reload(); },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+        return false;
+    }
+
+    // ─── Task action helpers ───
+    function btnSelectUser_Click(el, userId) {
+        $(el).closest('.divUser').find('.btnuser').text($(el).text());
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        var detailId = tr.attr('data-id');
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/assign-task-user",
+            data: JSON.stringify({ OrderId: parseInt(orderId), OrderDetailId: parseInt(detailId), UserId: userId }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) { if (!r.success) alert(r.message); },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    // ─── Task checkbox management (divfloater_task) ───
+    function chktasksubmision() {
+        $(".drpiscompleted").val("-1");
+        $(".drpUsers").val("-1");
+        $(".divDrpUserouter").addClass("hide");
+        if ($(".chkassigntask input:checkbox:checked").length > 0) {
+            $(".divfloater_task").removeClass("hide");
+            $(".divfloater_task .headertext span").html($(".chkassigntask input:checkbox:checked").length);
+        } else {
+            $(".divfloater_task").addClass("hide");
+        }
+    }
+
+    function chkaction_taskonpop(id) {
+        $(".drpUsers").val("-1");
+        $(".divDrpUserouter").addClass("hide");
+        if ($(id).val() == "0") {
+            $(".divDrpUserouter").removeClass("hide");
+        }
+    }
+
+    function chkbtnPrintSelected() {
+        var url = "/printorderbakers?orderIDs=0";
+        $(".chkassigntask input:checkbox:checked").each(function () {
+            url += "," + $(this).closest("tr.trOrderlist").attr("data-id").toString();
+        });
+        window.open(url, '', 'height=800,width=800');
+        return false;
+    }
+
+    function chkbtnSubmittaskselected() {
+        var alerttext = "";
+        if ($(".drpiscompleted").val() == "-1") {
+            alerttext += "Please Select Action.\n\r";
+        } else if ($(".drpiscompleted").val() == "0" && $(".drpUsers").val() == "-1") {
+            alerttext += "Please Select Users.\n\r";
+        }
+        if (alerttext == "") {
+            var ids = [];
+            $(".chkassigntask input:checkbox:checked").each(function () {
+                ids.push($(this).closest("tr.trOrderlist").attr("data-id").toString());
+            });
+            $.ajax({
+                type: "POST",
+                url: "/franchiseorders/submit-task-selected",
+                data: JSON.stringify({
+                    OrderIds: ids.join(','),
+                    Action: parseInt($(".drpiscompleted").val()),
+                    UserId: parseInt($(".drpUsers").val()),
+                    TaskType: "@taskType"
+                }),
+                contentType: "application/json; charset=utf-8",
+                success: function (r) {
+                    if (r.success) location.reload();
+                    else alert(r.message);
+                },
+                error: function (x) { alert("Error: " + x.responseText); }
+            });
+            return false;
+        } else {
+            alert(alerttext);
+            return false;
+        }
+    }
+
+    // ─── Individual task management ───
+    function startassignedtask(el) {
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        var userId = parseInt($('#hf_bakerusertype').val()) || 0;
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/select-task",
+            data: JSON.stringify({ OrderId: parseInt(orderId), UserId: userId, Remarks: '' }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    function updateassignedtask(el) {
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        var userId = parseInt($('#hf_bakerusertype').val()) || 0;
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/select-task",
+            data: JSON.stringify({ OrderId: parseInt(orderId), UserId: userId, Remarks: '' }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    function btnSubmitTask_Click(el) {
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        var remarks = tr.find('.txtRemarks').val() || '';
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/submit-task",
+            data: JSON.stringify({ OrderId: parseInt(orderId), Remarks: remarks }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    function btnSaveRemarks_Click(el) {
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        var remarks = tr.find('.txtRemarks').val() || '';
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/save-remarks",
+            data: JSON.stringify({ OrderId: parseInt(orderId), Remarks: remarks }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    function btnpaused_Click(el) {
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/save-remarks",
+            data: JSON.stringify({ OrderId: parseInt(orderId), Remarks: 'Paused' }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    function showRemarks_task(el) {
+        var tr = $(el).closest('tr.trOrderlist');
+        tr.find('.dropdown-menu-ul_remarks').toggle();
+    }
+
+    function closediv_remarks(el) {
+        $(el).closest('.dropdown-menu-ul_remarks').hide();
+    }
+
+    function closediv(el) {
+        $(el).closest('.dropdown-menu-ul_moveto').hide();
+    }
+
+    function _movetotask(el) {
+        // Move to previous task stage (rewind)
+        var tr = $(el).closest('tr.trOrderlist');
+        var orderId = tr.attr('data-orderid');
+        var userId = parseInt($('#hf_bakerusertype').val()) || 0;
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/select-task",
+            data: JSON.stringify({ OrderId: parseInt(orderId), UserId: userId, Remarks: '' }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) location.reload();
+                else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    // ─── Remarks Reply ───
+    function lnkreplyRemarks_OnClick(el) {
+        var detId = $(el).attr('data-id') || $(el).data('id');
+        $('#hfOrderID_Enquiry').val(detId);
+        var remarksTxt = $(el).closest('ul').find('.liremarks').first().text() || '';
+        $('#litReplyRemarks').text(remarksTxt);
+        $('#dv_replyonEnquiry').modal('show');
+    }
+
+    function btnAddReply_Click(el) {
+        var detId = parseInt($('#hfOrderID_Enquiry').val());
+        var message = $('#txtReplyRemarks').val();
+        var name = $('#txtReplyName').val();
+        if (!message.trim()) { alert('Please enter remarks.'); return; }
+        $.ajax({
+            type: "POST",
+            url: "/franchiseorders/reply-remarks",
+            data: JSON.stringify({ TaskDetId: detId, Message: message, Name: name }),
+            contentType: "application/json; charset=utf-8",
+            success: function (r) {
+                if (r.success) {
+                    $('#dv_replyonEnquiry').modal('hide');
+                    location.reload();
+                } else alert(r.message);
+            },
+            error: function (x) { alert("Error: " + x.responseText); }
+        });
+    }
+
+    function btnCloseReply_Click(el) {
+        $('#hfOrderID_Enquiry').val('');
+        $('#litReplyRemarks').text('');
+        $('#txtReplyRemarks').val('');
+        $('#txtReplyName').val('');
+        $('#dv_replyonEnquiry').modal('hide');
+    }
+
+    // ─── Checklist helpers ───
+    function set_startOrderprosessingtask_Checklist() {
+        var userId = $('#drpUserForChecklist').val();
+        if (userId == "0") { alert('Please select staff.'); return; }
+        // Submit checklist start via existing task assignment
+        var checklistVal = $('#hdn_checklistVal').val();
+        // ... checklist-specific logic would go here
+        $('#dvStartchecklist').modal('hide');
+    }
+
+    function set_back_Checklist() {
+        $('#dvStartchecklist').modal('hide');
+    }
+
+    function readmore_reviews(id) {
+        $(id).closest(".remarks").html($(id).closest(".remarks").attr("data-text"));
+    }
+</script>
+
+@functions {
+    static bool ParseBool(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return false;
+        return bool.TryParse(value, out var result) && result;
+    }
+}

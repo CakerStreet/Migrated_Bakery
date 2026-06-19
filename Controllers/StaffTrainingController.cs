@@ -8,18 +8,19 @@ using CakerStreet.Business.Services;
 
 namespace CakerStreet.Business.Controllers;
 
-public class SubmitAssessmentRequest
+public class TrainingSubmitAssessmentRequest
 {
     public long CourseID { get; set; }
-    public List<AnswerEntry> Arr_data_entry { get; set; } = new();
+    public List<TrainingAnswerEntry> Arr_data_entry { get; set; } = new();
 }
 
-public class AnswerEntry
+public class TrainingAnswerEntry
 {
     public long AnsID { get; set; }
     public long QueID { get; set; }
 }
 
+[Route("staff-training-ops")]
 public class StaffTrainingController : Controller
 {
     private readonly StaffTrainingService _trainingService;
@@ -179,7 +180,7 @@ public class StaffTrainingController : Controller
 
     [HttpPost("course/assessment/submit")]
     [Consumes("application/json")]
-    public async Task<IActionResult> SubmitAssessment([FromBody] SubmitAssessmentRequest request)
+    public async Task<IActionResult> SubmitAssessment([FromBody] TrainingSubmitAssessmentRequest request)
     {
         var staffId = Convert.ToInt64(HttpContext.Items["BakeryUserId"] ?? 248);
 

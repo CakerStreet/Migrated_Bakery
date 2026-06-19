@@ -1,0 +1,80 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Receipe Categories | Tags";
+    string businessName = ViewBag.BusinessName as string ?? "";
+    int catType = ViewBag.CatType is int ct ? ct : 1;
+    string backUrl = ViewBag.BackUrl as string ?? "/managereceipe";
+    string categoryHtml = ViewBag.CategoryHtml as string ?? "";
+    string webstoreId = ViewBag.WebstoreId as string ?? "0";
+}
+
+<style>
+    .modal-header {
+        background-color: #e5e5e5;
+        border-radius: 6px 6px 0 0;
+    }
+</style>
+
+<div class="row top-margin-less bakerypagecss">
+    <div class="col-md-12">
+        <div class="panel panel-default no-out-border">
+            <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+                <div class="inventoryWrapper">
+                    <div class="innerhead">
+                        <h2 style="display: inline-block;">
+                            Manage Receipe Categories | Tags</h2>
+                        <div class="btn-group pull-right" style="margin-right:14px;margin-top: -4px;">
+                            <button class="btn btn-danger bg-black" type="button" style="padding: 6px;">
+                                Manage
+                            </button>
+                            <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button"
+                                aria-expanded="false">
+                                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul role="menu" class="dropdown-menu">
+                                <li><a href="/managereceipe">Manage Receipe</a></li>
+                                <li><a href="/manageingredient">Manage Ingredients</a></li>
+                                <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                                <li><a href="/managereceipematrix">Receipe Matrix</a></li>
+                                <li><a href="/managereceipe-findandreplace">Replace Ingredients</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+                        <div class="padding-box-outer">
+                            <div class="form-horizontal">
+                                <div class="form-group">
+                                    <div class="col-sm-8 headertext">
+                                        <select id="drpCat" class="form-control" onchange="window.location.href='/managereceipecategory?catID=' + this.value;">
+                                            <option value="1" @(catType == 1 ? "selected" : "")>Category</option>
+                                            <option value="2" @(catType == 2 ? "selected" : "")>Tags</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>
+                                In this section you build your own category listing as per your receipe classification.
+                                We advise you to keep simple category names which are easily recognizable by your
+                                customers.
+                            </p>
+
+                            <div class="listingOuter">
+                                <div class="form-horizontal">
+                                    <div id="div_businesscategories_outer" class="div_businesscategories_outer">
+                                        @Html.Raw(categoryHtml)
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-sm-8 headertext">
+                                            <a href="@backUrl" class="backbtn1">Cancel</a>
+                                            <input type="hidden" id="hdnWebstoreID" value="@webstoreId" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

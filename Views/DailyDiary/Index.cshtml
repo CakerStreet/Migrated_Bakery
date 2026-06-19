@@ -1,0 +1,70 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Daily Diary";
+}
+
+<style type="text/css">
+    .dairyBox_outer {
+        display: table;
+        width: 100%;
+    }
+    .dairyBox {
+        display: table;
+        width: 100%;
+    }
+    .dairyBox .headertext {
+        display: table;
+        width: 100%;
+        margin-bottom: 10px;
+        background-color: #ddd;
+        line-height: 34px;
+        padding: 0 10px;
+    }
+    .dairymain_form ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    .raln {
+        text-align: right;
+    }
+</style>
+
+<div class="section">
+    <div class="container">
+        <div class="dairyBox_outer">
+            <div class="dairyBox">
+                <div class="headertext">
+                    DAIRY
+                </div>
+                <div class="dairymain_form form-horizontal">
+                    <ul class="form-group">
+                        <li class="col-sm-3 raln label">NAME:</li>
+                        <li class="col-sm-9">
+                            <input type="text" id="txtMain_Name" class="form-control" /></li>
+                    </ul>
+                    <ul class="form-group">
+                        <li class="col-sm-3 raln label">BUSINESS:</li>
+                        <li class="col-sm-9">
+                            <input type="text" id="txtMain_business" class="form-control" /></li>
+                    </ul>
+                    <ul class="form-group">
+                        <li class="col-sm-3 raln label">ADDRESS:</li>
+                        <li class="col-sm-9">
+                            <textarea id="txtMAin_Address" class="form-control"></textarea></li>
+                    </ul>
+                    <ul class="form-group">
+                        <li class="col-sm-3 raln label">START DATE:</li>
+                        <li class="col-sm-9">
+                            <input type="text" id="txtMain_staDate" class="form-control" /></li>
+                    </ul>
+                    <ul class="form-group">
+                        <li class="col-sm-3 raln label">End DATE:</li>
+                        <li class="col-sm-9">
+                            <input type="text" id="txtMain_endDate" class="form-control" /></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

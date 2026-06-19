@@ -34,10 +34,11 @@
             @* === STATUS RADIO BUTTONS === *@
             <div class="panel-body status-tabs">
                 <label><input type="radio" name="rbStatus" value="0" @(statusFilter == 0 ? "checked" : "") onchange="filterByStatus(0)" /> Pending (@(result?.PendingCount ?? 0))</label>
-                <label><input type="radio" name="rbStatus" value="1" @(statusFilter == 1 ? "checked" : "") onchange="filterByStatus(1)" /> Approved (@(result?.ApprovedCount ?? 0))</label>
-                <label><input type="radio" name="rbStatus" value="3" @(statusFilter == 3 ? "checked" : "") onchange="filterByStatus(3)" /> Sent to Unit (@(result?.SentToUnitCount ?? 0))</label>
-                <label><input type="radio" name="rbStatus" value="4" @(statusFilter == 4 ? "checked" : "") onchange="filterByStatus(4)" /> Supply Completed (@(result?.CompletedCount ?? 0))</label>
-                <label><input type="radio" name="rbStatus" value="5" @(statusFilter == 5 ? "checked" : "") onchange="filterByStatus(5)" /> Declined (@(result?.DeclinedCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="2" @(statusFilter == 2 ? "checked" : "") onchange="filterByStatus(2)" /> Approved (@(result?.ApprovedCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="5" @(statusFilter == 5 ? "checked" : "") onchange="filterByStatus(5)" /> Sent to Unit (@(result?.SentToUnitCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="6" @(statusFilter == 6 ? "checked" : "") onchange="filterByStatus(6)" /> Supply Completed (@(result?.CompletedCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="3" @(statusFilter == 3 ? "checked" : "") onchange="filterByStatus(3)" /> Declined (@(result?.DeclinedCount ?? 0))</label>
+                <label><input type="radio" name="rbStatus" value="-1" @(statusFilter == -1 ? "checked" : "") onchange="filterByStatus(-1)" /> All</label>
             </div>
 
             @* === SEARCH (no Add New button — supply orders created by supplier) === *@

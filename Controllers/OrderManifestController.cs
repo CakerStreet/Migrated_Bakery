@@ -10,6 +10,8 @@ namespace CakerStreet.Business.Controllers;
 /// Migrated from manageordermenifest.aspx.
 /// </summary>
 [Route("manageordermenifest")]
+[Route("ordermanifest")]
+[Route("manageordermenifest.aspx")]
 public class OrderManifestController : Controller
 {
     private readonly OrderManifestService _manifestService;

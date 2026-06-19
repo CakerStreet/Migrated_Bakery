@@ -13,6 +13,7 @@ namespace CakerStreet.Business.Controllers;
 [Route("mywebstore")]
 [Route("manageinventory")]
 [Route("manageinventory.aspx")]
+[Route("bakeryinventory")]
 public class BakeryInventoryController : Controller
 {
     private readonly BakeryInventoryService _inventoryService;

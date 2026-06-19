@@ -13,6 +13,8 @@ namespace CakerStreet.Business.Controllers;
 /// Hierarchical category CRUD (3 levels: main → sub → sub-sub) on tbl_webstoreCat.
 /// </summary>
 [Route("managewebstorecategory")]
+[Route("webstorecategory")]
+[Route("managewebstorecategory.aspx")]
 public class WebstoreCategoryController : Controller
 {
     private readonly BakeryMenuService _menuService;

@@ -11,6 +11,8 @@ namespace CakerStreet.Business.Controllers;
 /// READ-ONLY financial dashboard with feature-flagged withdrawal.
 /// </summary>
 [Route("myaccountbalance")]
+[Route("accountbalance")]
+[Route("myaccountbalance.aspx")]
 public class AccountBalanceController : Controller
 {
     private readonly AccountBalanceService _accountBalanceService;

@@ -1,0 +1,119 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Find and Replace Ingredients";
+    var records = ViewBag.Records as List<CakerStreet.Business.Controllers.RecipeIngredientKeywordController.ReplaceRecord>
+        ?? new List<CakerStreet.Business.Controllers.RecipeIngredientKeywordController.ReplaceRecord>();
+    int totalRecords = ViewBag.TotalRecords is int tr ? tr : 0;
+    string searchKeyword = ViewBag.SearchKeyword as string ?? "";
+    int currentPage = ViewBag.CurrentPage is int cp ? cp : 1;
+    int pageSize = ViewBag.PageSize is int ps ? ps : 20;
+    int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalRecords / pageSize) : 1;
+}
+
+<div class="row top-margin">
+</div>
+<div class="clearfix">
+</div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">
+            Find and Replace ingredients</h2>
+        <div class="btn-group pull-right" style="margin-right:14px;margin-top: -4px;">
+            <button class="btn btn-danger bg-black" type="button" style="padding: 6px;">
+                Manage
+            </button>
+            <button data-toggle="dropdown" class="btn btn-danger bg-black dropdown-toggle" type="button"
+                aria-expanded="false">
+                <span class="caret"></span>&nbsp; <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul role="menu" class="dropdown-menu">
+                <li><a href="/managereceipe">Manage Receipes</a></li>
+                <li><a href="/manageingredient">Manage Ingredients</a></li>
+                <li><a href="/managereceipecategory">Manage Ingredients Category</a></li>
+                <li><a href="/manageIngredientastag">Manage Ingredients Tags</a></li>
+                <li><a href="/managereceipematrix">Receipe Matrix</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+
+        <div role="form" class="form-inline">
+            <div class="navbar-form navbar-left" role="search">
+                <div class="form-group">
+                    <form method="get" action="/managereceipe-findandreplace" style="display:inline;">
+                        <input type="text" id="txtSearch" name="searchKeyword" class="form-control" placeholder="Search" value="@searchKeyword" />
+                        <button type="submit" class="btn btn-primary" onclick="if($.trim($('#txtSearch').val())==''){alert('Please enter search keyword');return false;}">Search</button>
+                        <a href="/managereceipe-findandreplace" class="btn btn-primary">View All</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="clearfix"></div>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">
+                @TempData["Message"]
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-striped table-condensed table-bordered">
+                <thead>
+                    <tr>
+                        <th>From Text</th>
+                        <th>To Text</th>
+                        <th>Created On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (records.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="3" class="text-danger">No Record Found</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var rec in records)
+                        {
+                            <tr>
+                                <td>@rec.SourceUrl</td>
+                                <td>@rec.DestinationUrl</td>
+                                <td>@rec.CreatedOn.ToString("d")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="clearfix"></div>
+
+        @if (totalPages > 1)
+        {
+            <nav>
+                <ul class="pagination">
+                    @if (currentPage > 1)
+                    {
+                        <li><a href="/managereceipe-findandreplace?page=1&searchKeyword=@Uri.EscapeDataString(searchKeyword)">First</a></li>
+                        <li><a href="/managereceipe-findandreplace?page=@(currentPage - 1)&searchKeyword=@Uri.EscapeDataString(searchKeyword)">&laquo;</a></li>
+                    }
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="@(i == currentPage ? "active" : "")">
+                            <a href="/managereceipe-findandreplace?page=@i&searchKeyword=@Uri.EscapeDataString(searchKeyword)">@i</a>
+                        </li>
+                    }
+                    @if (currentPage < totalPages)
+                    {
+                        <li><a href="/managereceipe-findandreplace?page=@(currentPage + 1)&searchKeyword=@Uri.EscapeDataString(searchKeyword)">&raquo;</a></li>
+                        <li><a href="/managereceipe-findandreplace?page=@totalPages&searchKeyword=@Uri.EscapeDataString(searchKeyword)">Last</a></li>
+                    }
+                </ul>
+            </nav>
+        }
+
+        <p class="text-muted">Total Records: @totalRecords</p>
+    </div>
+</div>

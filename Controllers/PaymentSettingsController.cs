@@ -14,6 +14,8 @@ namespace CakerStreet.Business.Controllers;
 [Route("seller-payment-settings")]
 [Route("sellerpaymentsettings")]
 [Route("sellerPaymentSettings.aspx")]
+[Route("paymentssettings")]
+[Route("paymentsettings")]
 public class PaymentSettingsController : Controller
 {
     private readonly PaymentSettingsService _service;

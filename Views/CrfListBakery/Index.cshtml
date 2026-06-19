@@ -1,0 +1,436 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Customer Requirements";
+
+    var crfList = (System.Data.DataTable)ViewBag.CrfList;
+    var sizes = (List<CakerStreet.Business.Controllers.CrfListBakeryController.SizeItem>)ViewBag.Sizes;
+    var crfQuotes = (Dictionary<long, System.Data.DataTable>)ViewBag.CrfQuotes;
+    var crfImages = (Dictionary<long, List<CakerStreet.Business.Controllers.CrfListBakeryController.ImageItem>>)ViewBag.CrfImages;
+    var crfAttrs = (Dictionary<long, string>)ViewBag.CrfAttrs;
+    var webshopId = (string)ViewBag.WebshopId;
+    var sortId = (string)ViewBag.SortId;
+    var noRecords = (bool)ViewBag.NoRecords;
+    var cdnBase = ViewBag.CdnBase as string ?? "https://cakerstreet1.s3.amazonaws.com/";
+    var message = TempData["Message"] as string;
+}
+
+@section head {
+    <style type="text/css">
+.col-sm-12.Quotebox.bdred { background-color: #ffeeee; }
+.bold { font-weight: 600; font-size: 15px; line-height: 26px; }
+.quotelist .boxouter { margin: 10px 0; border: 1px solid #aaa; }
+.AddyourQuotationhere { display: table; width: 100%; background-color: #aa041c; line-height: 24px; padding: 5px; color: #fff; text-align: center; }
+.col-sm-12.Quotebox { margin: 10px 0; display: table; width: 100%; }
+.chkbox > label { font-weight: normal; margin: 0; float: none; display: inline-block; }
+.OptionAttr_outer ul { margin: inherit; }
+    </style>
+}
+
+<div class="box-body">
+    <h3 class="list-head">
+    <div class="pull-left col-sm-4">
+        Customer Requirements
+        </div>
+        <div class="col-sm-4">
+        </div>
+        <div class="pull-right col-sm-3">
+            <form method="get" action="/business-quotation" style="display:inline">
+            <select name="sortid" onchange="this.form.submit()" class="form-control">
+                <option value="1" @(sortId == "1" ? "selected" : "")>Sort By: New Arrivals</option>
+                <option value="2" @(sortId == "2" ? "selected" : "")>Sort By: Occasion Date</option>
+            </select>
+            </form>
+        </div>
+    </h3>
+</div>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-success">@message</div>
+}
+
+<div role="form" class="quotelist">
+    @if (noRecords)
+    {
+        <div class="alert alert-danger">No request found</div>
+    }
+    else
+    {
+        @foreach (System.Data.DataRow row in crfList.Rows)
+        {
+            long crfId = Convert.ToInt64(row["CRF_ID"]);
+            var crfDesc = row["CRF_Cakedesc"]?.ToString() ?? "";
+            var crfPostcode = row["CRF_Postcode"]?.ToString() ?? "";
+            var crfCreatedOn = DateTime.Parse(row["CRF_createdOn"].ToString());
+            var crfDatetime = DateTime.Parse(row["CRF_datetime"].ToString());
+            var isDelivery = row["CRF_isdelivery"] != DBNull.Value && Convert.ToBoolean(row["CRF_isdelivery"]);
+            var isCollection = row["CRF_iscollection"] != DBNull.Value && Convert.ToBoolean(row["CRF_iscollection"]);
+            var cakeShapeTitle = row.Table.Columns.Contains("CakeShapeTitle") && row["CakeShapeTitle"] != DBNull.Value ? row["CakeShapeTitle"].ToString() : "-";
+            var cakeTypeTitle = row.Table.Columns.Contains("CakeTypeTitle") && row["CakeTypeTitle"] != DBNull.Value ? row["CakeTypeTitle"].ToString() : "-";
+            var categoryName = row.Table.Columns.Contains("category_Name") && row["category_Name"] != DBNull.Value ? row["category_Name"].ToString() : "-";
+            var allergyAdvice = row.Table.Columns.Contains("CRF_Alergyadvice") ? row["CRF_Alergyadvice"]?.ToString() ?? "" : "";
+            var crfRemarks = row.Table.Columns.Contains("CRF_remarks") ? row["CRF_remarks"]?.ToString() ?? "" : "";
+            var orderId = row["orderid"]?.ToString() ?? "0";
+            var budgetFrom = row.Table.Columns.Contains("CRF_budgetFrom") && row["CRF_budgetFrom"] != DBNull.Value ? row["CRF_budgetFrom"].ToString() : "0";
+            var budgetTo = row.Table.Columns.Contains("CRF_budgetTo") && row["CRF_budgetTo"] != DBNull.Value ? row["CRF_budgetTo"].ToString() : "0";
+            var images = crfImages.ContainsKey(crfId) ? crfImages[crfId] : new List<CakerStreet.Business.Controllers.CrfListBakeryController.ImageItem>();
+            var quotes = crfQuotes.ContainsKey(crfId) ? crfQuotes[crfId] : new System.Data.DataTable();
+            var attrs = crfAttrs.ContainsKey(crfId) ? crfAttrs[crfId] : "";
+
+            <div class="boxouter" data-id="@crfId">
+                <div class="div_crfContent">
+
+                <div class="col-sm-12 col-md-6 col-sm-pad5">
+                 <div class="col-sm-6">
+                        <div class="col-sm-12 col-xs-4 redcolor">
+                            Quotation Ref.
+                        </div>
+                        <p class="col-sm-12 col-xs-8">
+                            <b>#@crfId</b>
+                        </p>
+                    </div>
+                      <div class="col-sm-6">
+                      <div class="col-sm-12">
+                        <span class="redcolor">Requested On:</span>
+                        @crfCreatedOn.ToString("dd/MM/yyyy hh:mm tt")
+                    </div>
+                    <div class="col-sm-12">
+                        <span class="redcolor">Occasion Date:</span> <span style="display:inline-table;font-weight:bold;">@crfDatetime.ToString("dd/MM/yyyy")
+                                @crfDatetime.ToString("h:mm tt") - @crfDatetime.AddHours(2).ToString("h:mm tt")</span>
+                    </div>
+                      </div>
+<div class="col-sm-12">
+                    <div class="col-sm-12">
+                        <div class="redcolor">
+                            Customer Requirement:
+                        </div>
+                        <p>
+                            @crfDesc
+                        </p>
+                    </div>
+</div>
+ <div class="col-sm-6">
+                        <div class="redcolor">
+                            Postcode
+                        </div>
+                        <p>
+                            @crfPostcode
+                        </p>
+                    </div>
+                     <div class="col-sm-6">
+                        <div class="redcolor">
+                           Delivery Options:
+                        </div>
+                        @if (isDelivery)
+                        {
+                            <div class="col-sm-12 deliveroption">Delivery to @crfPostcode</div>
+                        }
+                        @if (isCollection)
+                        {
+                            <div class="col-sm-12 deliveroption">Can Collect</div>
+                        }
+                    </div>
+
+                </div>
+                <div class="col-sm-12 col-md-6 col-sm-pad5">
+                 <div class="col-sm-12 OptionAttr_outer">
+                        @Html.Raw(attrs)
+                    </div>
+                    <div class="col-sm-12 OptionAttr_outer">
+                        <div class="col-sm-4">
+                            <ul>
+                                <li class="parentli">Shape</li>
+                                <li>@(string.IsNullOrEmpty(cakeShapeTitle) ? "-" : cakeShapeTitle)</li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-4">
+                            <ul>
+                                <li class="parentli">Type</li>
+                                <li>@(string.IsNullOrEmpty(cakeTypeTitle) ? "-" : cakeTypeTitle)</li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-4">
+                            <ul>
+                                <li class="parentli">Occasion</li>
+                                <li>@(string.IsNullOrEmpty(categoryName) ? "-" : categoryName)</li>
+                            </ul>
+                        </div>
+                    </div>
+                     @if (!string.IsNullOrEmpty(allergyAdvice))
+                     {
+                        <div class="col-sm-12">
+                            <div class="col-sm-12 redcolor">Allergy Advice:</div>
+                            <div class="col-sm-12">@allergyAdvice</div>
+                        </div>
+                     }
+                    @if (!string.IsNullOrEmpty(crfRemarks))
+                    {
+                        <div class="col-sm-12">
+                            <div class="col-sm-12 redcolor">Remarks:</div>
+                            <div class="col-sm-12">@crfRemarks</div>
+                        </div>
+                    }
+                </div>
+                </div>
+                
+                @if (quotes.Rows.Count > 0)
+                {
+                    <div class="div_orferlistheading">My Quote(s):</div>
+                    @foreach (System.Data.DataRow q in quotes.Rows)
+                    {
+                        var qPrice = Math.Round(Convert.ToDecimal(q["crfQuote_QuotePrice"]), 2);
+                        var qDelivery = Convert.ToBoolean(q["crfQuote_isdelivery"]);
+                        var qDelMode = q["crfQuote_deliverymode"]?.ToString() ?? "1";
+                        var qDelCharges = q["crfQuote_Deliverycharges"]?.ToString() ?? "0";
+                        var qTotal = Math.Round((qDelMode == "2" ? Convert.ToDecimal(qDelCharges) : 0) + qPrice, 2);
+                        var qSizeTitle = q["SizeTitle"]?.ToString() ?? "";
+                        var qRemarks = q["crfQuote_Remarks"]?.ToString() ?? "";
+                        var qModifiedOn = DateTime.Parse(q["crfQuote_modifiedOn"].ToString());
+                        var qBakeryId = q["crfQuote_bakeryID"]?.ToString() ?? "";
+                        var qIsBakeryConfirmed = Convert.ToBoolean(q["crfQuote_isbakeryConfirmed"]);
+                        var qIsBakeryDeclined = Convert.ToBoolean(q["crfQuote_isbakerydeclined"]);
+                        var qOrderId = Convert.ToInt32(q["order_id"]);
+                        var qId = Convert.ToInt64(q["crfQuote_ID"]);
+                        var declineReason = q["declineReason"]?.ToString() ?? "";
+                        var declineRemarks = q["declineremarks"]?.ToString() ?? "";
+                        var businessAddress = q["businessAddress"]?.ToString() ?? "";
+
+                        <div class="col-sm-12 Quotebox">
+                            <div class="col-sm-6 centerbox">
+                                <div class="col-sm-12">
+                                    <span class="redcolor">Size:</span> @qSizeTitle
+                                </div>
+                                <div class="col-sm-12 redcolor">Delivery Options:</div>
+                                @if (qDelivery && qDelMode == "2")
+                                {
+                                    <div class="col-sm-12 deliveroption">Delivery to @crfPostcode</div>
+                                }
+                                @if (!qDelivery || qDelMode == "3")
+                                {
+                                    <div class="col-sm-12 deliveroption">Collection From:<br/><i>@businessAddress</i></div>
+                                }
+                                @if (!string.IsNullOrEmpty(qRemarks))
+                                {
+                                    <div class="col-sm-12 OptionAttr_outer">
+                                        <ul><li class="parentli">Remarks</li><li>@qRemarks</li></ul>
+                                    </div>
+                                }
+                                <div class="col-sm-12">
+                                    <span class="redcolor">Quoted On:</span> @qModifiedOn.ToString("dd/MM/yyyy hh:mm tt")
+                                </div>
+                                @if (!string.IsNullOrEmpty(declineReason))
+                                {
+                                    <div class="col-sm-12 OptionAttr_outer">
+                                        <div class="col-sm-12"><span class="redcolor">Not Interested Reason:</span> @declineReason</div>
+                                        @if (!string.IsNullOrEmpty(declineRemarks))
+                                        {
+                                            <ul><li class="parentli">Not Interested Remarks:</li><li>@declineRemarks</li></ul>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-sm-3 rightbox">
+                                <div class="col-sm-12 OptionAttr_outer prc">
+                                    <ul>
+                                        <li class="parentli">Quoted Price</li>
+                                        <li>£@qPrice</li>
+                                    </ul>
+                                    @if (qDelivery && qDelMode == "2")
+                                    {
+                                        <ul>
+                                            <li class="parentli">Delivery Charges</li>
+                                            <li>£@qDelCharges</li>
+                                        </ul>
+                                    }
+                                    <ul class="borderbox">
+                                        <li class="parentli">Total Price</li>
+                                        <li class="prc">£@qTotal</li>
+                                    </ul>
+                                    @if (qBakeryId == webshopId)
+                                    {
+                                        <ul>
+                                            <li>
+                                                @if (qOrderId == 0 && qIsBakeryConfirmed && !qIsBakeryDeclined)
+                                                {
+                                                    <form method="post" action="/business-quotation/submit-quote" style="display:inline">
+                                                        <input type="hidden" name="crfId" value="@crfId" />
+                                                        <input type="hidden" name="quoteId" value="@qId" />
+                                                        <button type="button" class="btn black-btn btn-sm" onclick="editQuote(this, @qId, @crfId)">Edit Quote</button>
+                                                    </form>
+                                                }
+                                                @if (!qIsBakeryConfirmed && !qIsBakeryDeclined)
+                                                {
+                                                    <form method="post" action="/business-quotation/accept-quote" style="display:inline">
+                                                        <input type="hidden" name="quoteId" value="@qId" />
+                                                        <input type="hidden" name="crfId" value="@crfId" />
+                                                        <button type="submit" class="btn btn-success btn-xs">Accept Offer</button>
+                                                    </form>
+                                                    <form method="post" action="/business-quotation/decline-quote" style="display:inline">
+                                                        <input type="hidden" name="quoteId" value="@qId" />
+                                                        <input type="hidden" name="crfId" value="@crfId" />
+                                                        <button type="submit" class="btn black-btn btn-xs">Decline Offer</button>
+                                                    </form>
+                                                }
+                                                @if (qOrderId == 0 && qIsBakeryConfirmed && !qIsBakeryDeclined)
+                                                {
+                                                    <form method="post" action="/business-quotation/remove-quote" style="display:inline" onsubmit="return confirm('Are you sure to remove this quote?');">
+                                                        <input type="hidden" name="crfId" value="@crfId" />
+                                                        <button type="submit" class="btn btn-danger btn-sm">Remove Quote</button>
+                                                    </form>
+                                                }
+                                                @if (qOrderId > 0)
+                                                {
+                                                    <a href="/printorder/@qOrderId" target="_blank" class="btn btn-success btn-sm">View Order</a>
+                                                }
+                                            </li>
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <!-- Add Quote Section -->
+                @if (quotes.Rows.Count == 0 && orderId == "0")
+                {
+                    <div class="AddyourQuotationhere">Add your Quote</div>
+                    <div class="div_quotebox">
+                        <div class="col-sm-3 leftouter">
+                            <div class="col-sm-12 imgouter">
+                                @foreach (var img in images)
+                                {
+                                    <div class="divomgbox" style="background-image:url(@img.SmallImg);">
+                                        <a href="@img.LargeImg" target="_blank" class="absolute-anchor" rel="lightbox-cats@img.ImgNo"></a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                       
+                        <form method="post" action="/business-quotation/submit-quote">
+                        <input type="hidden" name="crfId" value="@crfId" />
+                        <input type="hidden" name="quoteId" value="0" />
+                        <input type="hidden" name="counterQuoteId" value="0" />
+
+                        <div class="col-sm-3 rightouter">
+                            <div class="col-sm-12 OptionAttr_outer">
+                                <ul>
+                                    <li class="col-sm-12 redcolor bold"><span class="required">*</span> Select Size</li>
+                                    <li>
+                                        <select name="sizeId" class="form-control" style="max-width: 200px" required>
+                                            <option value="0">--Choose Size--</option>
+                                            @foreach (var sz in sizes)
+                                            {
+                                                <option value="@sz.SizeId">@sz.SizeTitle</option>
+                                            }
+                                            <option value="-1">--Add new size--</option>
+                                        </select>
+                                    </li>
+                                </ul>
+                            </div>
+                            @if (double.Parse(budgetTo) > 0)
+                            {
+                                <div class="col-sm-12 OptionAttr_outer">
+                                    <ul>
+                                        <li class="col-sm-12"><span class="redcolor">Budget:</span>
+                                            £@budgetFrom - £@budgetTo</li>
+                                    </ul>
+                                </div>
+                            }
+                            <div class="col-sm-12 OptionAttr_outer">
+                                <ul>
+                                    <li class="col-sm-12 redcolor bold"><span class="required">*</span> Quote Price</li>
+                                    <li>£
+                                        <input type="text" name="quotePrice" class="form-control" style="max-width: 100px" required />
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 centerouter">
+                         <div class="col-sm-12 col-xs-12 form-group">
+                                <label class="col-sm-12 col-xs-12 redcolor control-label">
+                                    <abbr class="required">*</abbr> Valid upto:</label>
+                                <div class="col-sm-12 col-xs-12">
+                                   <input type="text" name="validDate" class="form-control" style="width:95px;float:left;margin-right:7px;" placeholder="dd/mm/yyyy" required />
+                                    <select name="validHour" class="form-control" style="width:50px;float:left;margin-right:7px;">
+                                        @for (int i = 1; i <= 24; i++)
+                                        {
+                                            <option value="@i.ToString("00")">@i.ToString("00")</option>
+                                        }
+                                    </select>
+                                    <select name="validMin" class="form-control" style="width:50px;float:left;margin-right:7px;">
+                                        @for (int i = 0; i <= 59; i++)
+                                        {
+                                            <option value="@i.ToString("00")">@i.ToString("00")</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-xs-12 OptionAttr_outer">
+                                <ul>
+                                    <li class="col-sm-12 col-xs-12 redcolor">Add your remarks to customer:</li>
+                                    <li class="col-sm-12 col-xs-12">
+                                        <textarea name="remarks" class="form-control" placeholder="Enter your Remarks"></textarea>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+@if (isDelivery)
+{
+<div class="col-sm-12 OptionAttr_outer">
+    <label><input type="checkbox" name="isDelivery" value="true" checked /> I can Deliver the cake to @crfPostcode</label>
+    <div class="col-sm-12 OptionAttr_outer">
+        <ul>
+            <li class="col-sm-12 redcolor bold"><span class="required">*</span> Delivery Charges:</li>
+            <li>£ <input type="text" name="deliveryCharges" value="0" class="form-control" style="width:120px" placeholder="e.g. 10" /></li>
+        </ul>
+    </div>
+</div>
+}
+else
+{
+    <input type="hidden" name="isDelivery" value="false" />
+    <input type="hidden" name="deliveryCharges" value="0" />
+}
+                        <div class="col-sm-12 caln btnouterbox">
+                            <button type="submit" class="btn btn-danger">Submit your Quote</button>
+                            <a href="/businessavailability" target="_blank" class="btn black-btn btn-sm">Set Availabilty Calender</a>
+                        </div>
+                        </form>
+                    </div>
+                }
+
+                <!-- Decline Modal (inline form) -->
+                <form method="post" action="/business-quotation/decline">
+                    <input type="hidden" name="crfId" value="@crfId" />
+                    <button type="button" class="btn black-btn" onclick="if(confirm('Are you sure you want to decline this quotation?')){this.closest('form').querySelector('.decline-fields').style.display='block';}">Decline</button>
+                    <div class="decline-fields" style="display:none;margin-top:10px;">
+                        <div class="form-group">
+                            <label>Select Reason</label>
+                            <select name="declineReason" class="form-control" required>
+                                <option value="">--Select Reason--</option>
+                                <option value="I am busy on those dates">I am busy on those dates</option>
+                                <option value="I don't do these kind of cakes">I don't do these kind of cakes</option>
+                                <option value="I have got better quotation somewhere else">I have got better quotation somewhere else</option>
+                                <option value="Short Notice">Short Notice</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Remarks</label>
+                            <textarea name="declineRemarks" class="form-control" style="height:70px"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger">Submit</button>
+                    </div>
+                </form>
+
+                @if (orderId != "0")
+                {
+                    <div class="soldout"></div>
+                }
+                <hr />
+            </div>
+        }
+    }
+</div>

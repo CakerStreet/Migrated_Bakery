@@ -23,7 +23,7 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 style="display:inline;">Manage Purchase Order Items Received</h4>
-                <a href="/managepurchaseorder?status=3" class="btn btn-default btn-sm pull-right">Back to PO List</a>
+                <a href="/managepurchaseorder?status=5" class="btn btn-default btn-sm pull-right">Back to PO List</a>
             </div>
 
             @* === PO INFO === *@
@@ -319,7 +319,7 @@
             data: JSON.stringify(model),
             success: function (r) {
                 if (r.success) {
-                    window.location.href = '/managepurchaseorder?status=4&msg=' + encodeURIComponent('Purchase Order Item(s) have been saved successfully');
+                    window.location.href = '/managepurchaseorder?status=6&msg=' + encodeURIComponent('Purchase Order Item(s) have been saved successfully');
                 } else {
                     showMsg(r.message || 'Failed to save.');
                     $('#btnSave').prop('disabled', false).html('<i class="glyphicon glyphicon-floppy-disk"></i> Save Item Received');

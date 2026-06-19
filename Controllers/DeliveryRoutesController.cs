@@ -28,6 +28,8 @@ public class CalculateRouteRequest
 /// Migrated from managedeliveryroutes.aspx + webservices.aspx (get_DeliveryRoute_container, updateDeliveryRoute_toOrder).
 /// </summary>
 [Route("managedeliveryroutes")]
+[Route("deliveryroutes")]
+[Route("managedeliveryroutes.aspx")]
 public class DeliveryRoutesController : Controller
 {
     private readonly DeliveryRoutesService _routesService;

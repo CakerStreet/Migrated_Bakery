@@ -9,6 +9,7 @@ using CakerStreet.Business.Services;
 
 namespace CakerStreet.Business.Controllers;
 
+[Route("personalised-cake-ops")]
 public class PersonalisedCakeController : Controller
 {
     private readonly PersonalisedCakeService _personalisedCakeService;

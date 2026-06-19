@@ -12,6 +12,8 @@ namespace CakerStreet.Business.Controllers;
 /// Tables: tbl_deliveryRouteChargeTemplate, tbl_deliveryRouteChargesCalc (BusinessConnection).
 /// </summary>
 [Route("managedeliveryroutecharges")]
+[Route("deliveryroutecharges")]
+[Route("managedeliveryroutecharges.aspx")]
 public class DeliveryRouteChargesController : Controller
 {
     private readonly BakeryMenuService _menuService;

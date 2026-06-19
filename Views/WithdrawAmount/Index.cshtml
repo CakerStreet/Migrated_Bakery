@@ -1,0 +1,106 @@
+@model WithdrawAmountViewModel
+@using CakerStreet.Business.Controllers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "My Account Balance";
+    var siteUrl = ViewBag.SiteUrl?.ToString() ?? "/";
+    var message = TempData["Message"]?.ToString();
+}
+
+@section head {
+    <link href="/bakery_content/css/orddet.css" rel="stylesheet" type="text/css" />
+    <style>
+        .tr_account_res td {
+            font-size: 18px;
+            line-height: 34px;
+        }
+        .tr_account_res .normallink12 {
+            color: #df3f42;
+            font-size: 16px;
+            line-height: 16px;
+            text-decoration: underline;
+        }
+    </style>
+}
+
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin">
+        <div class="orderWrappernew">
+            <div class="innerhead">
+                <div class="col-md-7">
+                    <h2>
+                        My Account Balance
+                    </h2>
+                </div>
+            </div>
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">
+                        Available Balance:</label>
+                    <div class="col-sm-10">
+                        <p class="form-control-static" style="color: #DF3F42">
+                            &pound;@Model.AvailableBalance.ToString("N2")</p>
+                    </div>
+                </div>
+                @if (false) @* div_withdrawBox visible=false in legacy *@
+                {
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">
+                            Withdraw:</label>
+                        <div class="col-sm-8">
+                            <form method="post" action="/withdrawamount/withdraw">
+                                &pound;
+                                <input type="text" name="txtWidthDrawPrice" maxlength="7" class="form-control"
+                                       style="width: 80px; font-size: 18px; display: inline;"
+                                       value="@Model.DefaultWithdrawAmount" />
+                                <input type="submit" value="Withdraw" class="BtnSave_shipping btn btn-black square"
+                                       style="margin-left: 5px;" @(Model.WithdrawEnabled ? "" : "disabled") />
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                @if (Model.Transactions.Count == 0)
+                {
+                    <div class="alert alert-danger">No Record found</div>
+                }
+                else
+                {
+                    <table class="table bootstrap-datatable pending_orders">
+                        <thead>
+                            <tr bgcolor="#f5f5f5">
+                                <td><b>Date</b></td>
+                                <td><b>Description</b></td>
+                                <td><b>Paid In</b></td>
+                                <td><b>Paid Out</b></td>
+                                <td><b>Balance Left</b></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tx in Model.Transactions)
+                            {
+                                <tr bgcolor="#ffffff">
+                                    <td>@tx.CreatedOn.ToString("dd MMM yyyy hh:mm")</td>
+                                    <td>@Html.Raw(WithdrawAmountController.GetBalanceType(tx.PaymentInOutType, tx.PaymentMode, tx.WebstoreCode, tx.TxID, tx.OrderForwardedId, tx.OrderIsRepeat, siteUrl))</td>
+                                    <td>@(tx.PaymentInOutType == "1" ? "£" + tx.Balance.ToString() : "---")</td>
+                                    <td>@(tx.PaymentInOutType == "2" ? "£" + tx.Balance.ToString() : "---")</td>
+                                    <td>@(decimal.Parse(tx.PaymentInOutType) > 0 ? "£" + tx.AvailableBalance.ToString() : "---")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <script type="text/javascript">alert('@Html.Raw(message)');</script>
+}

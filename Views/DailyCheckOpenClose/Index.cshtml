@@ -1,0 +1,229 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Opening and close Checklist";
+
+    var fromDate = ViewBag.FromDate as string ?? "";
+    var toDate = ViewBag.ToDate as string ?? "";
+    var results = ViewBag.Results as List<Dictionary<string, object>> ?? new List<Dictionary<string, object>>();
+}
+
+<style type="text/css">
+    .div_QuestionMain_outer {
+        display: table;
+        margin: 0px auto 20px;
+        width: 100%;
+    }
+    ol, ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    .div_QuestionMain > ul.UL_QuestionMain {
+        display: table;
+        width: 100%;
+    }
+    .div_QuestionMain_outer li {
+        line-height: 30px;
+    }
+    .div_QuestionMain > ul.UL_QuestionMain li {
+        float: left;
+        line-height: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        width: 100%;
+        position: relative;
+        padding: 5px 0 5px 90px;
+    }
+    ul.UL_QuestionMain li span {
+        position: absolute;
+        left: 0;
+        top: 5px;
+    }
+    .UL_rpAnswersMain {
+        display: table;
+        width: 100%;
+    }
+    .div_rpAnswersMain {
+        display: table;
+        width: 100%;
+        padding: 7px 0 7px 90px;
+    }
+    .UL_rpAnswersMain li {
+        float: left;
+        width: 50%;
+        padding: 5px 0 0 0;
+        display: flex;
+        height: 40px;
+    }
+    .UL_rpAnswersMain li label {
+        font-weight: normal;
+        font-size: 13px;
+        line-height: 18px;
+        display: inline;
+    }
+    .informationNotes {
+        display: table;
+        width: 100%;
+        padding: 10px 0;
+        color: #f55;
+        font-style: italic;
+        text-decoration: underline;
+    }
+    .informationNotes span {
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .moudlebuttons_outer {
+        display: table;
+        width: 100%;
+        text-align: center;
+        padding: 10px 0 10px 0;
+    }
+    .informationNotes.st {
+        color: green;
+        text-decoration: unset;
+        font-style: normal;
+    }
+    .informationNotes.stf {
+        text-decoration: unset;
+        font-style: normal;
+    }
+    @@media screen and (max-width:991px) {
+        .UL_rpAnswersMain li {
+            float: left;
+            width: 100%;
+            padding: 5px 0 0 0;
+            display: flex;
+            height: auto;
+        }
+    }
+    .informationDetail {
+        display: table;
+        width: 100%;
+        line-height: 20px;
+    }
+    .normallink, .normallink:hover, .normallink:focus {
+        text-decoration: underline;
+        color: #fff;
+    }
+    .rpad10 {
+        padding-right: 10px;
+    }
+    .div_QuestionMainList_outer, .div_ResultMain {
+        display: table;
+        width: 100%;
+    }
+    .UL_ResultMain {
+        display: table-row;
+        line-height: 20px;
+    }
+
+    .UL_ResultMain.headertext {
+        background-color: #ccc;
+        font-weight: bold;
+    }
+    .UL_ResultMain > li {
+        display: table-cell;
+        padding: 10px 7px;
+        text-align: left;
+    }
+    .UL_ResultMain.headertext > li {
+        line-height: 34px;
+        padding: 0 7px;
+    }
+    .inventoryWrapper .innerhead {
+        display: table;
+        width: 100%;
+    }
+</style>
+
+<input type="hidden" id="hfCourseID" />
+<div class="row top-margin">
+</div>
+<div class="clearfix">
+</div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+        <h2 style="display: inline-block;">
+            Opening and Closing Checklists</h2>
+        <a href="/addupdopeningnclosingchecks" class="pull-right normallink rpad10">Add New Checklist</a>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <form method="get" action="/managedailycheck_openingnclosing" class="form-horizontal">
+                <div class="form-group">
+                    <div class="col-md-2 col-sm-4">
+                        <input type="text" name="sdate" autocomplete="off" class="form-control" placeholder="Start Date" value="@fromDate" />
+                    </div>
+                    <div class="col-md-2 col-sm-4">
+                        <input type="text" name="edate" autocomplete="off" class="form-control" placeholder="End Date" value="@toDate" />
+                    </div>
+                    <div class="col-md-2 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Go</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <div class="div_QuestionMainList_outer">
+                            <div class="div_ResultMain">
+                                <ul class="UL_ResultMain headertext">
+                                    <li>Date</li>
+                                    <li>Opening Check</li>
+                                    <li>Closing Check</li>
+                                    <li>Action</li>
+                                </ul>
+
+                                @foreach (var row in results)
+                                {
+                                    var daydate = (DateTime)row["daydate"];
+                                    var customernameOpening = row["customername_opening"]?.ToString() ?? "";
+                                    var problemOpening = row["ProblemDuringChecklist_opening"]?.ToString() ?? "";
+                                    var customernameClosing = row["customername_closing"]?.ToString() ?? "";
+                                    var problemClosing = row["ProblemDuringChecklist_closing"]?.ToString() ?? "";
+
+                                    <ul class="UL_ResultMain">
+                                        <li><span>
+                                            @daydate.ToString("dddd")<br />@daydate.ToString("dd/MM/yyyy")</span></li>
+                                        <li>
+                                            @if (string.IsNullOrEmpty(problemOpening))
+                                            {
+                                                @Html.Raw("No Change / Problem Found!<br/>")
+                                            }
+                                            else
+                                            {
+                                                @Html.Raw("<b>Any problems or changes – what did you do?</b><br>")
+                                                @Html.Raw(problemOpening.Replace("\n", "<br/>"))
+                                            }
+                                            <br />
+                                            All Checklist Done <font color="red">-
+                                                @customernameOpening</font>
+                                        </li>
+                                        <li>
+                                            <div class="checklistdet@(string.IsNullOrEmpty(customernameClosing) ? "" : " hide")">-</div>
+                                            <div class="checklistdet@(string.IsNullOrEmpty(customernameClosing) ? " hide" : "")">
+                                                @if (string.IsNullOrEmpty(problemClosing))
+                                                {
+                                                    @Html.Raw("No Change / Problem Found!<br/>")
+                                                }
+                                                else
+                                                {
+                                                    @Html.Raw("<b>Any problems or changes – what did you do?</b><br>")
+                                                    @Html.Raw(problemClosing.Replace("\n", "<br/>"))
+                                                }
+                                                <br />
+                                                All Checklist Done <font color="red">-
+                                                    @customernameClosing</font>
+                                            </div>
+                                        </li>
+                                        <li><a href="/addupdopeningnclosingchecks/@daydate.ToString("dd-MM-yyyy")">
+                                            View | Edit</a></li>
+                                    </ul>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

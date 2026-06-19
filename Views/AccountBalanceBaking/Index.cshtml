@@ -1,0 +1,672 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Trade Account";
+    var overview = ViewBag.Overview as CakerStreet.Business.Services.BakingAccountOverviewModel ?? new CakerStreet.Business.Services.BakingAccountOverviewModel();
+    var isFranchise = (bool)(ViewBag.IsFranchise ?? false);
+    var isBakingOff = (bool)(ViewBag.IsBakingOff ?? false);
+    var franchiseOrders = ViewBag.FranchiseOrders as List<CakerStreet.Business.Services.BakingFranchiseOrderItem> ?? new List<CakerStreet.Business.Services.BakingFranchiseOrderItem>();
+    var baseCosts = ViewBag.BaseCosts as List<CakerStreet.Business.Services.BakingBaseCostItem> ?? new List<CakerStreet.Business.Services.BakingBaseCostItem>();
+    var miscPayments = ViewBag.MiscPayments as List<CakerStreet.Business.Services.BakingMiscPaymentItem> ?? new List<CakerStreet.Business.Services.BakingMiscPaymentItem>();
+    var siteUrl = ViewBag.SiteUrl as string ?? "/";
+    var paypalClientId = ViewBag.PaypalClientId as string ?? "";
+}
+
+@section Head {
+    <link href='@Url.Content("~/bakery_content/css/orddet.css")' rel="stylesheet" type="text/css" />
+    <style>
+        .normallink12
+        {
+            cursor: pointer;
+        }
+        .tr_account_res td
+        {
+            font-size: 18px;
+            line-height: 34px;
+        }
+        .printorder
+        {
+            cursor: pointer;
+        }
+        .normallink12
+        {
+            color: #df3f42;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        .div_reviews li.lirefund
+        {
+            background-color: #eee;
+            border-bottom: 1px solid #000;
+            color: #000;
+            text-align: center;
+            padding: 0 5px;
+        }
+        .div_reviews
+        {
+            display: table;
+            width: 100%;
+            background-color: #fff;
+            color: #555;
+            text-align: justify;
+            line-height: 18px;
+            border: 1px solid #ccc;
+        }
+        .div_reviews li.liimg
+        {
+            text-align: center;
+        }
+        .div_reviews li.remarks
+        {
+            padding: 0 5px;
+        }
+        .modal-body
+        {
+            display: table;
+        }
+        .trbgred {
+            background-color: #faa;
+        }
+    </style>
+}
+
+<input type="hidden" id="hdPrint" value="@siteUrl" />
+<div class="row top-margin">
+    <div class="col-lg-12 col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h2>
+                    Account Overview
+                </h2>
+            </div>
+            <div class="panel-body">
+                <table class="table bootstrap-datatable pending_orders">
+                    <thead>
+                        <tr>
+                            <th>
+                                Total Trade
+                            </th>
+                            <th>
+                                Pending
+                            </th>
+                            <th>
+                                Confirmed
+                            </th>
+                            <th>
+                                Cancelled
+                            </th>
+                            <th>
+                                Fee Charges
+                            </th>
+                            <th>
+                                Payouts
+                            </th>
+                            <th>
+                                Available
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="tr_account_res">
+                            <td>
+                                &pound;@overview.TotalTrade
+                            </td>
+                            <td>
+                                &pound;@overview.PendingAmount
+                            </td>
+                            <td>
+                                &pound;@overview.ConfirmedAmount
+                            </td>
+                            <td>
+                                &pound;@overview.CancelledAmount
+                            </td>
+                            <td>
+                                - &pound;@overview.FeeCharged
+                            </td>
+                            <td>
+                                &pound;@overview.PayoutAmount
+                            </td>
+                            <td style="color: Green">
+                                &pound;@overview.AvailableAmount
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="height: 10px; border: none;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="8" style="color: #a5a5a5; padding: 5px;">
+                                The above figures may not include recent updates
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            @if (isFranchise)
+            {
+                <div id="divFranchise" class="form-group">
+                    <div class="panel-heading">
+                        <h2>
+                            Franchise Account <a href="withdrawamount" class="normallink12">View Statement</a>
+                        </h2>
+                        <a class="normallink12 pull-right" href="#miscellaneous">Miscellaneous Transactions</a>
+                    </div>
+                    <div class="panel-body">
+                        @if (franchiseOrders.Count == 0)
+                        {
+                            <div class="alert alert-danger">
+                                No Record found
+                            </div>
+                        }
+                        else
+                        {
+                            <table class="table bootstrap-datatable pending_orders">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            Order Date
+                                        </th>
+                                        <th>
+                                            Col/Del
+                                        </th>
+                                        <th>
+                                            Order No
+                                        </th>
+                                        <th>
+                                            Paid At
+                                        </th>
+                                        <th>
+                                            Order Amount
+                                        </th>
+                                        <th>
+                                            Admin Fee
+                                        </th>
+                                        <th>
+                                            Baking Cost
+                                        </th>
+                                        <th>
+                                            Order Status
+                                        </th>
+                                        <th>
+                                            Net Payout / Reverse
+                                        </th>
+                                        <th>
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in franchiseOrders)
+                                    {
+                                        var rowClass = (order.IsReverseRefundRow == 1) ? "trbgred" : "trnorm";
+                                        var orderAmount = order.TotalPrice - order.CSMargin - order.CouponValue;
+                                        var baseCostItem = baseCosts.FirstOrDefault(b => b.OrderDetailOrderId == order.OrderId.ToString());
+                                        var baseCostText = "";
+                                        if (!isBakingOff && baseCostItem != null)
+                                        {
+                                            baseCostText = string.Format("Cake Base Cost: £{0}<br/>Profit Margin: £{1}", baseCostItem.CakeBaseCost, baseCostItem.ProfitMargin);
+                                        }
+                                        var payoutAmt = Math.Round(order.PayoutAmount - order.PayoutRefund, 2);
+                                        var paypalFeeNet = order.PaypalFee - order.PayoutRefund;
+                                        var showPayOnline = paypalFeeNet > 0 && order.PaidType == 1 && !order.IsPayout;
+
+                                        <tr class="@rowClass">
+                                            <td>
+                                                @order.OrderDate.ToString("d")
+                                            </td>
+                                            <td>
+                                                @order.CollectionDate.ToString("dd/MM/yyyy hh:mm tt")
+
+                                                @if (order.IsReverseRefundRow == 1 && Convert.ToDecimal(order.RefundAmount) > 0)
+                                                {
+                                                    <div class="div_reviews">
+                                                        <ul>
+                                                            <li class="lirefund" style="padding:5px;text-align:left;">Refunded: £@Math.Round(order.RefundAmount, 2)</li>
+                                                            @if (!string.IsNullOrEmpty(order.RefundRemarks))
+                                                            {
+                                                                <li class="liimg" style="text-align:justify;color:#333;border-bottom:1px solid #333;padding-bottom: 5px;">
+                                                                    @order.RefundRemarks
+                                                                </li>
+                                                            }
+                                                            @if (order.IsReverseRefundRow == 1)
+                                                            {
+                                                                <li class="liimg" style="text-align:left;color:#333;padding: 5px;">
+                                                                    Refunded at: @order.RefundOrderDate.ToString("dd/MM/yyyy hh:mm tt")
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a class="printorder" onclick="PrintFranchiseOrder(@order.OrderId, '@order.WebstoreCode');">@GetOrderIdWithRepeatCheck(order.OrderId.ToString(), order.ForwardedOrderId, order.IsRepeat)</a>
+                                            </td>
+                                            <td>
+                                                @(order.PaidType == 0 ? "Paypal" : "Counter")
+                                            </td>
+                                            <td style="max-width:150px">
+                                                &pound;@orderAmount
+                                                <div>@Html.Raw(baseCostText)</div>
+                                                @if (order.IsReverseRefundRow == 0 && (Convert.ToDecimal(order.PayoutRefund) > 0 || Convert.ToDecimal(order.CsRefund) > 0))
+                                                {
+                                                    <div class="div_reviews">
+                                                        <ul>
+                                                            <li class="lirefund">Refunded: £@Math.Round(order.PayoutRefund + order.CsRefund, 2)</li>
+                                                            @if (Convert.ToDecimal(order.PayoutRefund) > 0)
+                                                            {
+                                                                <li class="liimg">
+                                                                    Bakery: £@order.PayoutRefund
+                                                                </li>
+                                                            }
+                                                            @if (Convert.ToDecimal(order.CsRefund) > 0)
+                                                            {
+                                                                <li class="liimg">
+                                                                    CS: £@order.CsRefund
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                &pound;@order.OrderWorthBakingCost
+                                            </td>
+                                            <td>
+                                                &pound;@order.PaypalFee
+                                                @if (showPayOnline)
+                                                {
+                                                    <a class="hpPayonline_@order.OrderId normallink12"
+                                                       onclick="MakePaypalPayment(@order.OrderId);"
+                                                       data-amount="@order.PaypalFee"
+                                                       data-fname="@order.BillingFName"
+                                                       data-lname="@order.BillingLName"
+                                                       data-address="@order.BillingAddress"
+                                                       data-city="@order.BillingCity"
+                                                       data-zip="@order.BillingZip"
+                                                       data-email="@order.BillingEmailId"
+                                                       data-guid="@order.OrderGuid">Pay Online</a>
+                                                }
+                                            </td>
+                                            <td>
+                                                @GetStatusText(order.Status)
+                                            </td>
+                                            <td>
+                                                &pound;
+                                                @if (order.IsReverseRefundRow == 0)
+                                                {
+                                                    @payoutAmt
+                                                }
+                                                else
+                                                {
+                                                    @order.ReverseAmount
+                                                }
+                                                <br />
+                                                @Html.Raw(GetAmountText(order.Status, order.IsPayout, order.CustWithdrawalId, payoutAmt, order.TotalPrice, order.CustWithdrawalAmount.ToString(), order.IsReverseRefundRow, order.ReversalStatus))
+
+                                                @if (order.IsReverseRefundRow == 1)
+                                                {
+                                                    <div class="div_reviews" style="min-width: 120px;">
+                                                        <ul>
+                                                            <li class="lirefund">Already Withdrew: £@Math.Round(order.Withdrew, 2)</li>
+                                                            <li class="liimg">
+                                                                - Payout (£@Math.Round(order.PayoutTotal, 2))
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var canWithdrawOrder = (order.PayoutAmount - order.PayoutRefund) > 0
+                                                        && string.IsNullOrEmpty(order.CustWithdrawalId.Replace("0", "").Trim())
+                                                        && !isBakingOff
+                                                        && order.PaidType == 0
+                                                        && order.Status == 4
+                                                        && order.CollectionDate.AddDays(7).Date < DateTime.Now.Date
+                                                        && !order.IsPayout;
+                                                }
+                                                @if (canWithdrawOrder)
+                                                {
+                                                    <a class="normallink12" href="javascript:void(0);" onclick="withdrawOrder(@order.OrderId)">withdraw</a>
+                                                }
+
+                                                @{
+                                                    var canReverseRefund = order.ReverseAmount > 0
+                                                        && order.IsReverseRefundRow == 1
+                                                        && order.ReversalStatus == 0;
+                                                }
+                                                @if (canReverseRefund)
+                                                {
+                                                    <a class="normallink12" href="javascript:void(0);" onclick="reverseRefund(@order.OrderId, @order.CustWithdrawalMode, @order.ReverseAmount)">Reverse Refund</a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="panel-heading">
+                <h2>
+                    <a name="miscellaneous"></a>Miscellaneous Transactions</h2>
+            </div>
+            <div class="panel-body">
+                @if (miscPayments.Count == 0)
+                {
+                    <div class="alert alert-danger">
+                        No Record found
+                    </div>
+                }
+                else
+                {
+                    <table class="table bootstrap-datatable pending_orders">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Created On
+                                </th>
+                                <th class="laln">
+                                    Amount
+                                </th>
+                                <th class="laln">
+                                    Remarks
+                                </th>
+                                <th class="laln">
+                                    is Payout
+                                </th>
+                                <th class="laln">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in miscPayments)
+                            {
+                                <tr>
+                                    <td>
+                                        @payment.ModifiedOn.ToString("d")
+                                    </td>
+                                    <td>
+                                        &pound;@payment.Amount
+                                    </td>
+                                    <td class="laln">
+                                        @payment.Remarks
+                                    </td>
+                                    <td class="laln">
+                                        @(payment.IsPaid ? "Yes" : "No")
+                                        @if (payment.IsPaid)
+                                        {
+                                            <div class="divtxdetail">
+                                                <ul>
+                                                    <li>Payout On:
+                                                        @payment.PayoutOn.ToString("dd/MM/yyyy hh:mm tt")</li>
+                                                    <li>Payout Via:
+                                                        @GetPaymentVia(payment.PaymentVia)</li>
+                                                    @if (!string.IsNullOrEmpty(payment.TxId))
+                                                    {
+                                                        <li>Txn ID: @payment.TxId</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!payment.IsPaid)
+                                        {
+                                            <a class="normallink12" href="javascript:void(0);" onclick="withdrawPayout(@payment.StripepaymentId)">withdraw</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* PayPal Modal *@
+<div id="dv_modalFP" class="modal" aria-hidden="true" aria-labelledby="myModalLabel"
+     role="dialog" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <button id="btnClosesearch" onclick="$('#dv_modalFP').modal('hide');"
+                            type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;</button>
+                    <h4 class="modal-title" style="color: #fff;">
+                        Select Method
+                    </h4>
+                </div>
+                <div class="modal-body" style="width: 100%;">
+                    <div class="col-sm-12 caln">
+                        <div id="paypal-button">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+    </div>
+</div>
+
+@section FooterScripts {
+    @if (!string.IsNullOrEmpty(paypalClientId))
+    {
+        <script src="https://www.paypal.com/sdk/js?client-id=@paypalClientId&currency=GBP&intent=capture&commit=true&vault=false&components=buttons&disable-funding=credit&locale=en_GB"></script>
+    }
+    <script type="text/javascript">
+
+        function MakePaypalPayment(orderid) {
+            $("#dv_modalFP").modal('show');
+
+            var hp = $(".hpPayonline_" + orderid);
+
+            paypal.Buttons({
+                style: {
+                    color: 'blue',
+                    size: 'responsive',
+                    shape: 'rect',
+                    layout: 'vertical'
+                },
+                createOrder: function (data, actions) {
+                    return actions.order.create({
+                        payer: {
+                            name: {
+                                "given_name": $(hp).attr("data-fname"),
+                                "surname": $(hp).attr("data-lname")
+                            },
+                            address: {
+                                "address_line_1": $(hp).attr("data-address"),
+                                "address_line_2": "",
+                                "admin_area_2": $(hp).attr("data-city"),
+                                "admin_area_1": "UK",
+                                "postal_code": $(hp).attr("data-zip"),
+                                "country_code": "GB"
+                            },
+                            "email_address": $(hp).attr("data-email")
+                        },
+                        purchase_units: [{
+                            reference_id: $(hp).attr("data-guid"),
+                            amount: {
+                                "currency_code": "GBP",
+                                "value": $(hp).attr("data-amount")
+                            }
+                        }]
+                    });
+                },
+                onApprove: function (data, actions) {
+                    $("#dv_modalFP").modal("hide");
+                    showpop_modalpop();
+                    return actions.order.capture()
+                            .then(function (details) {
+                                location.href = $("#hdGlobalUrl").val() + "/paypalipn.aspx?paymentId=" + data.orderID + "&customID=" + $(hp).attr("data-guid");
+                            });
+                }
+            }).render('#paypal-button');
+
+        }
+
+        function PrintFranchiseOrder(orderid, wscode) {
+            var printWindow = window.open($('#hdPrint').val() + 'printorder/' + orderid + "?fccode=" + wscode, '', 'height=800,width=800');
+        }
+
+        function withdrawOrder(orderId) {
+            if (!confirm('Are you sure you want to request withdrawal for order #' + orderId + '?')) {
+                return;
+            }
+            $.ajax({
+                url: '/myaccountbalanceforbaking/withdraw-order',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ orderId: orderId }),
+                success: function (r) {
+                    if (r.success) {
+                        alert(r.message || 'Widthrawal Request Sent successfully!');
+                        location.reload();
+                    } else if (r.redirect) {
+                        location.href = r.redirect;
+                    } else {
+                        alert(r.message || 'Withdrawal failed.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        }
+
+        function reverseRefund(orderId, mode, reverseAmount) {
+            if (!confirm('Are you sure you want to reverse the refund for order #' + orderId + '?')) {
+                return;
+            }
+            $.ajax({
+                url: '/myaccountbalanceforbaking/reverse-refund',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ orderId: orderId, mode: mode, reverseAmount: reverseAmount }),
+                success: function (r) {
+                    if (r.success) {
+                        alert(r.message || 'Reversal Request Sent successfully!');
+                        location.reload();
+                    } else {
+                        alert(r.message || 'Reverse refund failed.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        }
+
+        function withdrawPayout(paymentId) {
+            if (!confirm('Are you sure you want to withdraw this payout?')) {
+                return;
+            }
+            $.ajax({
+                url: '/myaccountbalanceforbaking/withdraw-payout',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ paymentId: paymentId }),
+                success: function (r) {
+                    if (r.success) {
+                        alert(r.message || 'Your widthdrawal progress is successfully done.');
+                        location.reload();
+                    } else if (r.redirect) {
+                        location.href = r.redirect;
+                    } else {
+                        alert(r.message || 'Withdrawal failed.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        }
+
+    </script>
+}
+
+@functions {
+    string GetOrderIdWithRepeatCheck(string orderId, string forwardedOrderId, bool isRepeat)
+    {
+        if (isRepeat && !string.IsNullOrEmpty(forwardedOrderId) && forwardedOrderId != "0")
+        {
+            return forwardedOrderId + " (R)";
+        }
+        return orderId;
+    }
+
+    string GetStatusText(int orderStatus)
+    {
+        return orderStatus switch
+        {
+            0 => "Pending",
+            1 => "Confirmed",
+            5 => "Under Processing",
+            2 => "Processed",
+            3 => "Under Delivery",
+            4 => "Completed",
+            11 => "Cancelled",
+            _ => ""
+        };
+    }
+
+    string GetAmountText(int orderStatus, bool ispayout, string strcustwithdrawalId, double payoutamt, double totalamt, string custwithdrawalAmount, int isReverseRefundRow, int reversalStatus)
+    {
+        if (isReverseRefundRow == 1)
+        {
+            if (reversalStatus == 1)
+                return "(Reversal request sent)";
+            else if (reversalStatus == 2)
+                return "(Reversal completed)";
+            else
+                return "";
+        }
+        else
+        {
+            if (ispayout)
+            {
+                if (string.IsNullOrEmpty(custwithdrawalAmount)) { custwithdrawalAmount = "0"; }
+                return "(<font style='color: Green'>Paid Out</font>" + ((double.Parse(custwithdrawalAmount) != payoutamt) ? " <font style='color: #df3f42;'>£" + double.Parse(custwithdrawalAmount) + "</font>" : "") + ")";
+            }
+            else if (!string.IsNullOrEmpty(strcustwithdrawalId) && strcustwithdrawalId != "0")
+            {
+                return "(Widthrawal request sent)";
+            }
+            else if (payoutamt > 0)
+            {
+                return orderStatus switch
+                {
+                    0 => "(Pending)",
+                    1 or 2 or 3 or 5 => "(<font style='color: Orange'>Confirmed</font>)",
+                    4 => "(<font style='color: Green'>Available</font>)",
+                    11 => "(<font style='color: #df3f42;'>Cancelled</font>)",
+                    _ => ""
+                };
+            }
+            else
+            {
+                return "<font style='color: #df3f42;'>£" + payoutamt.ToString() + "</font>";
+            }
+        }
+    }
+
+    string GetPaymentVia(string paymentType)
+    {
+        return paymentType switch
+        {
+            "1" => "Stripe",
+            "2" => "Paypal",
+            "3" => "Bank Transfer",
+            "4" => "Cheque",
+            "5" => "Cash",
+            _ => "Others"
+        };
+    }
+}

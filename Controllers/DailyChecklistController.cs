@@ -8,6 +8,7 @@ using CakerStreet.Business.Services;
 
 namespace CakerStreet.Business.Controllers;
 
+[Route("dailychecklist-hub")]
 public class DailyChecklistController : Controller
 {
     private readonly DailyChecklistService _service;

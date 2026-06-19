@@ -42,7 +42,7 @@ public class WebservicesResponse
     public string data_optionalstr { get; set; } = "";
 }
 
-[Route("managereceipe")]
+[Route("recipe-ops")]
 public class RecipeController : Controller
 {
     private readonly RecipeService _service;
@@ -446,9 +446,7 @@ public class RecipeController : Controller
 
     // ─── Add New Recipe View (GET / POST) ──────────────────────────────────────
 
-    [HttpGet("addnewreceipe")]
-    [HttpGet("/addnewreceipe")]
-    [HttpGet("/addnewreceipe.aspx")]
+    [HttpGet("create")]
     public async Task<IActionResult> Create()
     {
         var webshopId = HttpContext.Items["BakeryWebshopId"]?.ToString() ?? "0";

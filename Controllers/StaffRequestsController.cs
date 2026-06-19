@@ -10,6 +10,9 @@ namespace CakerStreet.Business.Controllers;
 /// Migrated from managestafftimingrequest.aspx.
 /// </summary>
 [Route("managestafftimingrequest")]
+[Route("staffrequests")]
+[Route("managestafftimingrequest.aspx")]
+[Route("managestafftimirequest.aspx")]
 public class StaffRequestsController : Controller
 {
     private readonly StaffRequestsService _service;

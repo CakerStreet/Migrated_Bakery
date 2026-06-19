@@ -1,0 +1,166 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Add New Receipe";
+    var books = ViewBag.Books as List<CakerStreet.Business.Controllers.RecipeAddController.BookItem> ?? new List<CakerStreet.Business.Controllers.RecipeAddController.BookItem>();
+}
+
+<link href="/bakery_content/css/sellcss.css?ver=1.14" rel="stylesheet" />
+<link href="/bakery_content/autocomplete/jquery-ui.min.css" rel="stylesheet" />
+<style type="text/css">
+    .font-weight-normal {
+        font-weight: normal;
+    }
+    .img img {
+        max-height: 60px;
+        max-width: 60px;
+    }
+    .table.prdlstouter {
+        margin-top: 20px;
+    }
+    .ui-menu img {
+        width: 40px;
+        height: 40px;
+    }
+    .ui-menu li span {
+        font-size: 1em;
+        padding: 0 0 10px 10px;
+        margin: 0 0 10px 0 !important;
+        white-space: nowrap;
+    }
+</style>
+
+<input type="hidden" id="hfProductID" />
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12 top-margin" id="divspecification">
+        <div class="col-md-12 panel-collapse collapse in" id="collapse3" aria-expanded="true">
+            <div class="clearfix"></div>
+            <div class="orderWrappernew">
+                <div class="innerhead">
+                    <div class="col-md-1">
+                        <a data-toggle="collapse" href="#collapse2" aria-expanded="true"><span class="glyphicon glyphicon-minus"></span></a>
+                    </div>
+                    <div class="col-md-11">
+                        <h2>Add New Recipe</h2>
+                    </div>
+                </div>
+
+                <form method="post" action="/addnewreceipe" id="frmAddRecipe">
+                    <div class="col-md-12 panel-collapse collapse in" id="collapse2" aria-expanded="true">
+                        <div class="form-horizontal">
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Title *</label>
+                                <div class="col-sm-3">
+                                    <input type="text" name="txtTitle" id="txtTitle" class="form-control" placeholder="Recipe Title" required />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Price *</label>
+                                <div class="col-sm-3">
+                                    <input type="text" name="txtPrice" id="txtPrice" class="form-control" placeholder="Price" required />
+                                    <span class="text-danger small" id="priceError" style="display:none;">Price must be numeric</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Select Book *</label>
+                                <div class="col-sm-3">
+                                    <select name="ddlBook" id="ddlBook" class="form-control" required>
+                                        <option value="0">--Select Book--</option>
+                                        @foreach (var book in books)
+                                        {
+                                            <option value="@book.Id">@book.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Select Chapter *</label>
+                                <div class="col-sm-3">
+                                    <select name="ddlChapter" id="ddlChapter" class="form-control" required>
+                                        <option value="0">--Select Chapter--</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-sm-offset-2 col-sm-3">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="chkIsCooking" value="true" /> Is Cooking
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Servings *</label>
+                                <div class="col-sm-3">
+                                    <input type="text" name="txtServings" id="txtServings" class="form-control" placeholder="e.g 10" required />
+                                    <span class="text-danger small" id="servingsError" style="display:none;">Servings must be numeric</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-sm-offset-2 col-sm-3">
+                                    <button type="submit" class="btn btn-danger btm-sm">Save Details</button>
+                                    <a href="/managereceipe" class="btn btn-danger btm-sm">Back</a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div id="pnlMsg" style="display:none;">
+                    </div>
+                </form>
+            </div>
+
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#ddlBook').change(function () {
+            var bookId = $(this).val();
+            var ddlChapter = $('#ddlChapter');
+            ddlChapter.empty();
+            ddlChapter.append('<option value="0">--Select Chapter--</option>');
+            if (bookId !== '0') {
+                $.getJSON('/addnewreceipe/getchapters?bookId=' + bookId, function (data) {
+                    $.each(data, function (i, item) {
+                        ddlChapter.append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                });
+            }
+        });
+
+        $('#frmAddRecipe').submit(function () {
+            var price = $('#txtPrice').val();
+            if (isNaN(price) || price.trim() === '') {
+                $('#priceError').show();
+                return false;
+            }
+            var servings = $('#txtServings').val();
+            if (isNaN(servings) || servings.trim() === '' || servings.indexOf('.') > -1) {
+                $('#servingsError').show();
+                return false;
+            }
+            if ($('#ddlBook').val() === '0') {
+                alert('Please select a book');
+                return false;
+            }
+            if ($('#ddlChapter').val() === '0') {
+                alert('Please select a chapter');
+                return false;
+            }
+            return true;
+        });
+    });
+</script>
+}

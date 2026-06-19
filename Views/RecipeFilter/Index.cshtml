@@ -1,0 +1,87 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Recipe Filter";
+    var categories = ViewBag.Categories as List<CakerStreet.Business.Controllers.RecipeFilterController.ReceipeCatItem>
+        ?? new List<CakerStreet.Business.Controllers.RecipeFilterController.ReceipeCatItem>();
+    var tags = ViewBag.Tags as List<CakerStreet.Business.Controllers.RecipeFilterController.ReceipeCatItem>
+        ?? new List<CakerStreet.Business.Controllers.RecipeFilterController.ReceipeCatItem>();
+    int selectedReceipeCatId = ViewBag.SelectedReceipeCatId is int src ? src : 0;
+    int selectedReceipeTagId = ViewBag.SelectedReceipeTagId is int srt ? srt : 0;
+    int totalRecords = ViewBag.TotalRecords is int tr ? tr : 0;
+    string printContent = ViewBag.PrintContent as string ?? "";
+    var pages = ViewBag.Pages as List<CakerStreet.Business.Controllers.RecipeFilterController.PageInfo>
+        ?? new List<CakerStreet.Business.Controllers.RecipeFilterController.PageInfo>();
+    int totalPages = ViewBag.TotalPages is int tp ? tp : 0;
+    int currentPage = ViewBag.CurrentPage is int cp ? cp : 1;
+}
+
+<link href="~/css/receipecss.css" rel="stylesheet" />
+
+<div class="container">
+    <div id="dvPrintButtons" class="row" style="margin-top: 10px; text-align: center;">
+        <form method="get" action="/managereceipe-filter" style="display:inline;">
+            <select name="receipecatid" class="form-control" style="width: 100%; max-width: 400px; display: inline-block; margin-bottom: 5px;" onchange="this.form.submit();">
+                <option value="0">--All Receipe Categories--</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id" @(selectedReceipeCatId == cat.Id ? "selected" : "")>@cat.Name</option>
+                }
+            </select>
+            <select name="receipetagid" class="form-control" style="width: 100%; max-width: 400px; display: inline-block; margin-bottom: 5px;" onchange="this.form.submit();">
+                <option value="0">--All Receipe Tags--</option>
+                @foreach (var tag in tags)
+                {
+                    <option value="@tag.Id" @(selectedReceipeTagId == tag.Id ? "selected" : "")>@tag.Name</option>
+                }
+            </select>
+        </form>
+        <p>Total Records: @totalRecords</p>
+    </div>
+
+    @Html.Raw(printContent)
+
+    @if (totalPages > 1)
+    {
+        <div class="pagination pagination-right">
+            <div class="paging_outer">
+                <ul class="left">
+                    <li>
+                        <a href="/managereceipe-filter?pageno=1&receipecatid=@selectedReceipeCatId&receipetagid=@selectedReceipeTagId">First</a>
+                    </li>
+                    @if (currentPage > 1)
+                    {
+                        <li>
+                            <a href="/managereceipe-filter?pageno=@(currentPage - 1)&receipecatid=@selectedReceipeCatId&receipetagid=@selectedReceipeTagId">&laquo;</a>
+                        </li>
+                    }
+                </ul>
+                <ul class="numbering">
+                    @foreach (var pg in pages)
+                    {
+                        <li class="@pg.PageCss">
+                            @if (pg.PageNo == "...")
+                            {
+                                <span>...</span>
+                            }
+                            else
+                            {
+                                <a href="/managereceipe-filter?pageno=@pg.PageNo&receipecatid=@selectedReceipeCatId&receipetagid=@selectedReceipeTagId">@pg.PageNo</a>
+                            }
+                        </li>
+                    }
+                </ul>
+                <ul class="right">
+                    @if (currentPage < totalPages)
+                    {
+                        <li>
+                            <a href="/managereceipe-filter?pageno=@(currentPage + 1)&receipecatid=@selectedReceipeCatId&receipetagid=@selectedReceipeTagId">&raquo;</a>
+                        </li>
+                    }
+                    <li>
+                        <a href="/managereceipe-filter?pageno=@totalPages&receipecatid=@selectedReceipeCatId&receipetagid=@selectedReceipeTagId">Last</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    }
+</div>

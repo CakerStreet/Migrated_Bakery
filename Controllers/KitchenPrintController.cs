@@ -18,6 +18,7 @@ public class TempPrintCutter
     public string itemperrow { get; set; } = "4";
 }
 
+[Route("kitchen-print-ops")]
 public class KitchenPrintController : Controller
 {
     private readonly KitchenPrintService _printService;

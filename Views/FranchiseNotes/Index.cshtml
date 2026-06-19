@@ -1,0 +1,69 @@
+@{
+    Layout = null;
+    var crfId = (long)ViewBag.CrfId;
+    var imgSrc = (string)ViewBag.ImgSrc;
+    var productDesc = (string)ViewBag.ProductDesc;
+    var notes = (List<CakerStreet.Business.Controllers.FranchiseNotesController.NoteItem>)ViewBag.Notes;
+    var noRecords = (bool)ViewBag.NoRecords;
+    var selectedNoteType = (string)ViewBag.SelectedNoteType;
+}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Cakerstreet Franchise Notes</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css" media="all" />
+    <link href="/css/notescss.css" rel="stylesheet" type="text/css" media="all" />
+</head>
+<body>
+    <div class="DivMainOuter">
+            <div class="col-sm-12">
+                <div class="col-sm-12 imgOuter">
+                    <img src="@imgSrc" id="imgQuote" />
+                    <input type="hidden" id="hdCrfID" value="@crfId" />
+                    @Html.Raw(productDesc)
+                </div>
+
+            </div>
+            <div class="col-sm-12 notesdescouter">
+                <ul>
+                @foreach (var note in notes)
+                {
+                    <li class="rowouter" data-id="@note.NoteId">
+                        <span class="name">@note.CustName:</span>
+                        <span class="type"></span>
+                        <span class="dateouter">@note.ModifiedOn.ToString("dd/MM/yyyy HH:mm")</span>
+                        <span class="spnDesc">@note.Remarks</span>
+                    </li>
+                }
+                @if (noRecords)
+                {
+                    <li class="rowouter norecord">
+                        <span class="spnDesc">No Record Found</span>
+                    </li>
+                }
+                </ul>
+            </div>
+            <div class="col-sm-12 addnotesouter">
+                <form method="post" action="/franchisenotes/addnote">
+                <input type="hidden" name="crfId" value="@crfId" />
+                <div class="col-sm-3 col-xs-4 drpOuter hide">
+                     <select name="noteType" id="drpNotes" class="form-control">
+                        <option value="1" @(selectedNoteType == "1" ? "selected" : "")>Business User</option>
+                        <option value="2" @(selectedNoteType == "2" ? "selected" : "")>Franchise User</option>
+                    </select>
+                </div>
+                <div class="col-sm-9  col-xs-8 textOuter">
+                    <textarea name="remarks" id="txtRemarks" class="form-control" style="height:70px" placeholder="Enter Keyword"></textarea>
+                </div>
+                <div class="col-sm-3  col-xs-4 drpOuter">
+                    <button type="submit" class="btn btn-danger btn-sm btnsend">Submit</button>
+                    <div class="divloading"><img src="/images/loading_wall.gif" class="imgloading"/></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+</body>
+</html>

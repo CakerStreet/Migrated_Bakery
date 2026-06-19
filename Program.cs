@@ -1,6 +1,9 @@
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<CakerStreet.Business.Filters.MigrationSafetyFilter>();
+});
 builder.Services.AddSingleton<CakerStreet.Business.Services.BakeryAuthHelper>();
 builder.Services.AddScoped<CakerStreet.Business.Services.BakeryMenuService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.BusinessOrdersService>();
@@ -26,6 +29,7 @@ builder.Services.AddScoped<CakerStreet.Business.Services.EditBusinessInfoService
 builder.Services.AddScoped<CakerStreet.Business.Services.TradeAccountService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.BakerWorkTimeService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.AccountBalanceService>();
+builder.Services.AddScoped<CakerStreet.Business.Services.AccountBalanceBakingService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.SocialLinksService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.PaymentSettingsService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.DeliveryRoutePaymentsService>();

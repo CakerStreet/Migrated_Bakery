@@ -1,0 +1,86 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Opening and close Checklist";
+}
+
+<style type="text/css">
+    .div_QuestionMain_outer {
+        display: table;
+        margin: 0px auto 20px;
+        width: 100%;
+    }
+    ol, ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    .div_QuestionMain > ul.UL_QuestionMain {
+        display: table;
+        width: 100%;
+    }
+    .div_QuestionMain_outer li {
+        line-height: 30px;
+    }
+    .div_QuestionMain > ul.UL_QuestionMain li {
+        float: left;
+        line-height: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        width: 100%;
+        position: relative;
+        padding: 5px 0 5px 90px;
+    }
+    ul.UL_QuestionMain li span {
+        position: absolute;
+        left: 0;
+        top: 5px;
+    }
+    .inventoryWrapper .innerhead {
+        display: table;
+        width: 100%;
+    }
+    .normallink, .normallink:hover, .normallink:focus {
+        font-size: 14px;
+        text-decoration: underline;
+        color: #fff;
+    }
+    .headertext {
+        display: table;
+        margin-bottom: 10px;
+        width: 100%;
+        background-color: #ddd;
+        line-height: 34px;
+        padding: 0 10px;
+        text-align: right;
+    }
+</style>
+
+<input type="hidden" id="hfCourseID" />
+<div class="row top-margin">
+</div>
+<div class="clearfix">
+</div>
+<div class="inventoryWrapper">
+    <div class="innerhead">
+
+        <div class="col-md-12">
+            <h2>
+                Daily Dairy
+
+                <a href="/haccp" class="pull-right normallink">Back</a></h2>
+        </div>
+    </div>
+    <div class="col-lg-12 padding-top-mobile">
+        <div class="col-md-12 col-xs-12 text-left no-left-padding no-right-padding">
+            <div class="div_QuestionMain">
+                <ul class="UL_QuestionMain"><li>
+                    <span>Checklist 1.</span><a href="/addupdopeningnclosingchecks">Opening &amp; Closing Checklist</a>
+                </li><li>
+                    <span>Checklist 2.</span><a href="/addupdcleaningchecks">Cleaning Checklist</a>
+                </li><li>
+                    <span>Checklist 3.</span><a href="/addupduploadchecks">Upload other checklists</a>
+                </li></ul>
+            </div>
+        </div>
+    </div>
+</div>

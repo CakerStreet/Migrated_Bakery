@@ -83,6 +83,7 @@
                         <label><input type="radio" name="rbStatus" value="3" @(status == 3 ? "checked" : "") onchange="switchStatus(3);" /> PO Sent to Supplier (@sentToSupplierCount)</label>
                         <label><input type="radio" name="rbStatus" value="4" @(status == 4 ? "checked" : "") onchange="switchStatus(4);" /> PO Completed (@completedCount)</label>
                         <label><input type="radio" name="rbStatus" value="5" @(status == 5 ? "checked" : "") onchange="switchStatus(5);" /> Declined (@declinedCount)</label>
+                        <label><input type="radio" name="rbStatus" value="-1" @(status == -1 ? "checked" : "") onchange="switchStatus(-1);" /> All</label>
                     </div>
                 </div>
                 <div class="clearfix"></div>

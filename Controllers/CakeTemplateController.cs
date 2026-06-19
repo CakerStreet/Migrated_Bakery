@@ -13,6 +13,8 @@ namespace CakerStreet.Business.Controllers;
 [Route("editCaketemplate")]
 [Route("addnewcaketemplate")]
 [Route("addnewcaketemplate.aspx")]
+[Route("caketemplate")]
+[Route("editcaketemplate.aspx")]
 public class CakeTemplateController : Controller
 {
     private readonly BakeryMenuService _menuService;

@@ -377,9 +377,11 @@ public static class AssignedTasksNavHelper
     /// Source: bakeryorders.aspx line 167:
     ///   href='<%#"~/businessorders?ordertype=12&dayID="+Eval("DayID").ToString() %>'
     /// </summary>
-    public static string BuildDayTabUrl(int dayId)
+    public static string BuildDayTabUrl(int dayId, string? startdate = null)
     {
-        return $"/businessorders?ordertype=12&dayID={dayId}";
+        var url = $"/businessorders?ordertype=12&dayID={dayId}";
+        if (!string.IsNullOrEmpty(startdate)) url += $"&startdate={Uri.EscapeDataString(startdate)}";
+        return url;
     }
 
     /// <summary>
@@ -387,9 +389,11 @@ public static class AssignedTasksNavHelper
     /// Source: bakeryorders.aspx line 192:
     ///   href='<%#"~/businessorders?ordertype=12&dayID="+Request["DayID"].ToString()+"&disptime="+Eval("TimeID").ToString() %>'
     /// </summary>
-    public static string BuildDispatchTimeUrl(int dayId, int timeId)
+    public static string BuildDispatchTimeUrl(int dayId, int timeId, string? startdate = null)
     {
-        return $"/businessorders?ordertype=12&dayID={dayId}&disptime={timeId}";
+        var url = $"/businessorders?ordertype=12&dayID={dayId}&disptime={timeId}";
+        if (!string.IsNullOrEmpty(startdate)) url += $"&startdate={Uri.EscapeDataString(startdate)}";
+        return url;
     }
 
     /// <summary>
@@ -397,9 +401,11 @@ public static class AssignedTasksNavHelper
     /// Source: bakeryorders.aspx.cs line 1196:
     ///   ancAllDispatchTime.HRef = "~/businessorders?ordertype=12&dayID=" + dayId.ToString();
     /// </summary>
-    public static string BuildAllDispatchTimeUrl(int dayId)
+    public static string BuildAllDispatchTimeUrl(int dayId, string? startdate = null)
     {
-        return $"/businessorders?ordertype=12&dayID={dayId}";
+        var url = $"/businessorders?ordertype=12&dayID={dayId}";
+        if (!string.IsNullOrEmpty(startdate)) url += $"&startdate={Uri.EscapeDataString(startdate)}";
+        return url;
     }
 
     // ─── strFindFilter builder ─────────────────────────────────────────────────

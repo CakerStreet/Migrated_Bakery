@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace CakerStreet.Business.Controllers
 {
+    [Route("print-document-ops")]
     public class PrintDocumentController : Controller
     {
         private readonly PrintDocumentService _printService;
