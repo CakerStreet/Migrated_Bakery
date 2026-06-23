@@ -944,6 +944,113 @@ ORDER BY {orderBy}";
 
         return deleted;
     }
+
+    // ─── Google Image Import (legacy lnkimportfromgoogle_OnClick) ────────────────
+    // Calls Google Custom Search API, inserts results via dbo.insertgooglesearch SP
+
+    public async Task<string> GoogleImportAsync(string tagText, int searchFor, string apiKey, string searchEngineId)
+    {
+        if (string.IsNullOrWhiteSpace(tagText)) return "Tag text is empty.";
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(searchEngineId))
+            return "Google API key or Search Engine ID not configured.";
+
+        int totalImported = 0;
+        using var httpClient = new System.Net.Http.HttpClient();
+
+        for (int page = 1; page <= 10; page++)
+        {
+            int start = (page * 10) - 9;
+            var url = $"https://www.googleapis.com/customsearch/v1" +
+                $"?key={Uri.EscapeDataString(apiKey)}" +
+                $"&cx={Uri.EscapeDataString(searchEngineId)}" +
+                $"&q={Uri.EscapeDataString(tagText)}" +
+                $"&start={start}" +
+                $"&safe=high&filter=1&searchType=image&imgType=photo&imgSize=large&num=10";
+
+            try
+            {
+                var json = await httpClient.GetStringAsync(url);
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (!doc.RootElement.TryGetProperty("items", out var items)) continue;
+
+                // Build XML for SP (matches legacy DataTable → XML → SP pattern)
+                var sb = new System.Text.StringBuilder("<DocumentElement>");
+                int idx = 0;
+                foreach (var item in items.EnumerateArray())
+                {
+                    idx++;
+                    sb.Append("<item>");
+                    sb.Append($"<tempID>{(page - 1) * 10 + idx}</tempID>");
+                    sb.Append($"<googlesearch_Title>{EscapeXml(item.GetProperty("title").GetString())}</googlesearch_Title>");
+                    sb.Append($"<googlesearch_HTMLTitle>{EscapeXml(item.TryGetProperty("htmlTitle", out var ht) ? ht.GetString() : "")}</googlesearch_HTMLTitle>");
+                    sb.Append($"<googlesearch_Link>{EscapeXml(item.GetProperty("link").GetString())}</googlesearch_Link>");
+                    sb.Append($"<googlesearch_LinkText>{EscapeXml(item.TryGetProperty("displayLink", out var dl) ? dl.GetString() : "")}</googlesearch_LinkText>");
+                    sb.Append($"<googlesearch_Snippet>{EscapeXml(item.TryGetProperty("snippet", out var sn) ? sn.GetString() : "")}</googlesearch_Snippet>");
+                    sb.Append($"<googlesearch_HTMLSnippet>{EscapeXml(item.TryGetProperty("htmlSnippet", out var hs) ? hs.GetString() : "")}</googlesearch_HTMLSnippet>");
+                    var contextLink = "";
+                    var thumbnailLink = "";
+                    if (item.TryGetProperty("image", out var img))
+                    {
+                        contextLink = img.TryGetProperty("contextLink", out var cl) ? cl.GetString() : "";
+                        thumbnailLink = img.TryGetProperty("thumbnailLink", out var tl) ? tl.GetString() : "";
+                    }
+                    sb.Append($"<googlesearch_ContextLink>{EscapeXml(contextLink)}</googlesearch_ContextLink>");
+                    sb.Append($"<googlesearch_ThumbnailLink>{EscapeXml(thumbnailLink)}</googlesearch_ThumbnailLink>");
+                    sb.Append("</item>");
+                    totalImported++;
+                }
+                sb.Append("</DocumentElement>");
+
+                // Insert via SP (matches legacy clsgooglesearch.insertgooglesearch)
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new SqlCommand("dbo.insertgooglesearch", conn)
+                {
+                    CommandType = System.Data.CommandType.StoredProcedure
+                };
+                cmd.Parameters.AddWithValue("@xml_text", sb.ToString());
+                cmd.Parameters.AddWithValue("@searchfor", searchFor);
+                cmd.Parameters.AddWithValue("@searchtext", tagText.Replace("+", " "));
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch
+            {
+                // Legacy silently catches errors per page
+            }
+        }
+        return $"Images(s) Imported Successfully. ({totalImported} results)";
+    }
+
+    private static string EscapeXml(string? s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        return System.Security.SecurityElement.Escape(s);
+    }
+
+    // ─── Queue Download (legacy lnkdownload_OnClick) ─────────────────────────────
+    // Inserts into tbl_downloadgoogle to queue a background download task
+
+    public async Task<bool> QueueDownloadAsync(long tagId)
+    {
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Check if already queued (legacy: db.downloadgoogle.Where(w => w.downloadgoogle_tagID == tagID).Any())
+        await using var checkCmd = new SqlCommand(
+            "SELECT COUNT(1) FROM tbl_downloadgoogle WHERE downloadgoogle_tagID = @tagId", conn);
+        checkCmd.Parameters.AddWithValue("@tagId", tagId);
+        var exists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync()) > 0;
+
+        if (exists) return false;
+
+        await using var insertCmd = new SqlCommand(@"
+            INSERT INTO tbl_downloadgoogle 
+            (downloadgoogle_custId, downloadgoogle_tagID, downloadgoogle_createdOn, downloadgoogle_isdone, downloadgoogle_modifiedOn, downloadgoogle_searchterm)
+            VALUES (1, @tagId, GETDATE(), 0, GETDATE(), '')", conn);
+        insertCmd.Parameters.AddWithValue("@tagId", tagId);
+        await insertCmd.ExecuteNonQueryAsync();
+        return true;
+    }
 }
 
 // ─── Models ────────────────────────────────────────────────────────────────────

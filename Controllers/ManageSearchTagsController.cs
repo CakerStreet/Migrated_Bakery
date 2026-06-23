@@ -17,10 +17,12 @@ namespace CakerStreet.Business.Controllers;
 public class ManageSearchTagsController : Controller
 {
     private readonly ManageSearchTagService _service;
+    private readonly IConfiguration _config;
 
-    public ManageSearchTagsController(ManageSearchTagService service)
+    public ManageSearchTagsController(ManageSearchTagService service, IConfiguration config)
     {
         _service = service;
+        _config = config;
     }
 
     // ─── List / Search Tags (matches legacy bindgrid) ────────────────────────────
@@ -470,6 +472,52 @@ public class ManageSearchTagsController : Controller
         }
         return Redirect($"/crmsearchtag?tagID={parentTagId}" +
             (searchfor > 0 ? $"&searchfor={searchfor}" : ""));
+    }
+
+    // ─── Google Import (legacy lnkimportfromgoogle_OnClick) ───────────────────
+
+    [HttpPost("googleimport")]
+    public async Task<IActionResult> GoogleImport(
+        int tagId, string tagText, int searchfor = 0,
+        int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        var apiKey = _config["GoogleCustomSearch:ApiKey"] ?? "";
+        var searchEngineId = _config["GoogleCustomSearch:SearchEngineId"] ?? "";
+
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(searchEngineId))
+        {
+            TempData["Message"] = "Google Custom Search API not configured. Set GoogleCustomSearch:ApiKey and SearchEngineId in appsettings.json.";
+        }
+        else
+        {
+            var msg = await _service.GoogleImportAsync(tagText, searchfor, apiKey, searchEngineId);
+            TempData["Message"] = msg;
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Queue Download (legacy lnkdownload_OnClick) ─────────────────────────
+
+    [HttpPost("queuedownload")]
+    public async Task<IActionResult> QueueDownload(
+        int tagId,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        var queued = await _service.QueueDownloadAsync(tagId);
+        TempData["Message"] = queued
+            ? "Download queued successfully."
+            : "Download already queued for this tag.";
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
     }
 
     // ─── Helper: Build URL with current filters (matches legacy GetPageUrl) ─────

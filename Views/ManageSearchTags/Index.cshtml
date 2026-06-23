@@ -173,6 +173,7 @@
                     <th class="col-md-2">Downloaded</th>
                     <th class="col-md-1">Sort Order</th>
                     <th class="col-md-1">Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -240,6 +241,18 @@
                                     @(tag.IsActive ? "Deactivate" : "Activate")
                                 </a>
                             </form>
+                        </td>
+
+                        @* Per-row actions (legacy lnkimportfromgoogle, lnkdownload, lnktagID) *@
+                        <td class="small">
+                            <a href="/crmsearchtag?tagID=@tag.TagId@(Model.SearchFor > 0 ? "&searchfor=" + Model.SearchFor : "")" 
+                               class="btn btn-outline-primary btn-xs me-1" title="View sub-tags">Sub Tags</a>
+                            <button type="button" class="btn btn-outline-info btn-xs me-1" 
+                                onclick="googleImport(@tag.TagId, '@System.Net.WebUtility.HtmlEncode(tag.Text)')" 
+                                title="Import from Google">Import</button>
+                            <button type="button" class="btn btn-outline-warning btn-xs" 
+                                onclick="queueDownload(@tag.TagId)" 
+                                title="Queue download">Download</button>
                         </td>
                     </tr>
                 }
@@ -655,6 +668,44 @@
         addField('tagKeyword', keyword);
         addField('tagIds', document.getElementById('createTagIds').value);
         addField('searchTagFor', document.querySelector('#frmUpdate input[name="searchfor"]')?.value || '0');
+
+        appendFilterInputs(form);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // ── Google Import (legacy lnkimportfromgoogle_OnClick) ─────────────────
+    function googleImport(tagId, tagText) {
+        if (!confirm('Import images from Google for "' + tagText + '"?\nThis may take a while (up to 100 images).')) return;
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/crmsearchtag/googleimport';
+
+        var addField = function(name, value) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = name; inp.value = value;
+            form.appendChild(inp);
+        };
+        addField('tagId', tagId);
+        addField('tagText', tagText);
+
+        appendFilterInputs(form);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // ── Queue Download (legacy lnkdownload_OnClick) ──────────────────────────
+    function queueDownload(tagId) {
+        if (!confirm('Queue download for tag #' + tagId + '?')) return;
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/crmsearchtag/queuedownload';
+
+        var inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'tagId'; inp.value = tagId;
+        form.appendChild(inp);
 
         appendFilterInputs(form);
         document.body.appendChild(form);
