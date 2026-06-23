@@ -1,7 +1,7 @@
 @model CakerStreet.Business.Services.SearchTagListResult
 @using CakerStreet.Business.Controllers
 @{
-    ViewData["Title"] = "Manage Search Tags";
+    ViewData["Title"] = "CRM Search Tag";
     var msg = TempData["Message"]?.ToString();
 }
 <div class="container-fluid py-3">
@@ -22,10 +22,10 @@
     }
 
     @* ── Search/Filter Panel ────────────────────────────────────────────────── *@
-    <form method="get" action="/managesearchtags" class="card mb-3">
+    <form method="get" action="/crmsearchtag" class="card mb-3">
         <div class="card-body py-2">
             <div class="form-group row mb-2">
-                <label class="col-sm-2 col-form-label"><strong>Search Type</strong></label>
+                <label class="col-sm-2 col-form-label"><strong>Search Tags For</strong></label>
                 <div class="col-sm-6">
                     <div class="btn-group" role="group">
                         <input type="radio" class="btn-check" name="searchfor" id="sf0" value="0" @(Model.SearchFor == 0 ? "checked" : "") autocomplete="off">
@@ -40,13 +40,13 @@
             <div class="form-group row mb-2">
                 <label class="col-sm-2 col-form-label"><strong>Keyword</strong></label>
                 <div class="col-sm-3">
-                    <input type="text" name="filterp" value="@Model.FilterP" class="form-control form-control-sm" placeholder="Search Keyword" />
+                    <input type="text" name="filterp" value="@Model.FilterP" class="form-control form-control-sm" placeholder="Search by keyword" />
                 </div>
                 <div class="col-sm-3">
                     <select name="rdsearchtype" class="form-select form-select-sm">
                         <option value="0" @(Model.SearchType == 0 ? "selected" : "")>Keyword Anywhere</option>
-                        <option value="1" @(Model.SearchType == 1 ? "selected" : "")>Starts with</option>
-                        <option value="2" @(Model.SearchType == 2 ? "selected" : "")>Ends with</option>
+                        <option value="1" @(Model.SearchType == 1 ? "selected" : "")>Keyword Starts with</option>
+                        <option value="2" @(Model.SearchType == 2 ? "selected" : "")>Keyword Ends with</option>
                         <option value="3" @(Model.SearchType == 3 ? "selected" : "")>Exact Keyword</option>
                     </select>
                 </div>
@@ -68,20 +68,20 @@
                 <label class="col-sm-2 col-form-label"><strong>Sort</strong></label>
                 <div class="col-sm-3">
                     <select name="sort" class="form-select form-select-sm">
-                        <option value="11" @(Model.Sort == 11 ? "selected" : "")>Default Sort</option>
                         <option value="0" @(Model.Sort == 0 ? "selected" : "")>New Arrivals</option>
-                        <option value="1" @(Model.Sort == 1 ? "selected" : "")>Name</option>
-                        <option value="2" @(Model.Sort == 2 ? "selected" : "")>Search Count (High-Low)</option>
+                        <option value="11" @(Model.Sort == 11 ? "selected" : "")>Default Sort</option>
                         <option value="3" @(Model.Sort == 3 ? "selected" : "")>Popular</option>
-                        <option value="4" @(Model.Sort == 4 ? "selected" : "")>Linked Records (High-Low)</option>
-                        <option value="5" @(Model.Sort == 5 ? "selected" : "")>Linked Records (Low-High)</option>
+                        <option value="1" @(Model.Sort == 1 ? "selected" : "")>Name</option>
+                        <option value="2" @(Model.Sort == 2 ? "selected" : "")>Search count (high to Low)</option>
+                        <option value="4" @(Model.Sort == 4 ? "selected" : "")>Linked Records(high to Low)</option>
+                        <option value="5" @(Model.Sort == 5 ? "selected" : "")>Linked Records(Low to High)</option>
                     </select>
                 </div>
             </div>
             <div class="form-group row">
                 <div class="col-sm-offset-2 col-sm-6 offset-sm-2">
-                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-search"></i> Search</button>
-                    <a href="/managesearchtags" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    <button type="submit" class="btn btn-sm btn-primary">Go</button>
+                    <a href="/crmsearchtag" class="btn btn-sm btn-outline-secondary">Reset</a>
                 </div>
             </div>
         </div>
@@ -95,40 +95,54 @@
         </span>
     </div>
 
+    @* ── Sub-tag breadcrumb bar (matches legacy div_lnktag) ────────────────── *@
+    @if (Model.ParentTagId.HasValue && Model.ParentTagId.Value > 0)
+    {
+        <div class="col-sm-6 alert alert-danger" style="font-size:14px; padding-top:7px; padding-bottom:7px; margin:7px 0 15px">
+            <a href="/crmsearchtag" class="text-primary">All Tags</a>
+            &gt;
+            @Model.ParentTagText
+        </div>
+    }
+
     @* ── Top Action Bar (Phase 2: active mutation buttons) ────────────────── *@
     <div class="btn-toolbar mb-2" role="toolbar">
         <div class="btn-group btn-group-sm me-2">
             <button type="button" class="btn btn-outline-secondary" onclick="checkAll(true)">Select All</button>
             <button type="button" class="btn btn-outline-secondary" onclick="checkAll(false)">Unselect</button>
         </div>
-        @* Phase 2: Bulk Activate/Deactivate *@
+        @* Phase 2: Bulk Activate/Deactivate (matches legacy btnActive/btnDeactive) *@
         <div class="btn-group btn-group-sm me-2">
-            <button type="button" class="btn btn-success" onclick="bulkAction('bulkactivate')">
-                <i class="fas fa-check"></i> Activate
+            <button type="button" class="btn btn-primary" onclick="bulkAction('bulkactivate')">
+                Activate
             </button>
-            <button type="button" class="btn btn-danger" onclick="bulkAction('bulkdeactivate')">
-                <i class="fas fa-ban"></i> Deactivate
+            <button type="button" class="btn btn-primary" onclick="bulkAction('bulkdeactivate')">
+                DeActivate
             </button>
         </div>
         @* Phase 2: Update button *@
         <div class="btn-group btn-group-sm me-2">
             <button type="button" class="btn btn-primary" onclick="submitUpdate()">
-                <i class="fas fa-save"></i> Update
+                Update Record(s)
             </button>
         </div>
         @* Phase 3: Link/Unlink by Keywords (matches legacy btnlinkprdbykeywords / btnunlinkprdbykeywords) *@
+        <div class="btn-group btn-group-sm me-2">
+            <button type="button" class="btn btn-primary" onclick="openLinkModal('link')">
+                Link Products By Keywords
+            </button>
+            <button type="button" class="btn btn-primary" onclick="openLinkModal('unlink')">
+                Unlink Products By Keywords
+            </button>
+        </div>
+        @* View All (matches legacy Button9/btnviewall) *@
         <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-info" onclick="openLinkModal('link')">
-                <i class="fas fa-link"></i> Link Products by Keywords
-            </button>
-            <button type="button" class="btn btn-warning" onclick="openLinkModal('unlink')">
-                <i class="fas fa-unlink"></i> Unlink Products by Keywords
-            </button>
+            <a href="/crmsearchtag" class="btn btn-primary">View All</a>
         </div>
     </div>
 
     @* ── Data Table (Phase 2: editable fields + action buttons) ──────────── *@
-    <form id="frmUpdate" method="post" action="/managesearchtags/update">
+    <form id="frmUpdate" method="post" action="/crmsearchtag/update">
         @* Pass current filter state so redirect preserves context *@
         <input type="hidden" name="searchfor" value="@Model.SearchFor" />
         <input type="hidden" name="status" value="@Model.Status" />
@@ -141,15 +155,13 @@
             <thead class="table-dark">
                 <tr>
                     <th style="width:35px"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)" /></th>
-                    <th style="width:90px">Created On</th>
-                    <th>Title</th>
-                    <th style="width:200px">URL</th>
-                    <th style="width:70px" class="text-center">Order</th>
-                    <th style="width:70px" class="text-center">Records</th>
-                    <th style="width:60px" class="text-center">Dnld</th>
-                    <th style="width:60px" class="text-center">Front</th>
-                    <th style="width:80px" class="text-center">Status</th>
-                    <th style="width:80px" class="text-center">Actions</th>
+                    <th class="col-md-1">Created On</th>
+                    <th class="col-md-5">Text</th>
+                    <th class="col-md-1">Search Count</th>
+                    <th class="col-md-2">Total Records</th>
+                    <th class="col-md-2">Downloaded</th>
+                    <th class="col-md-1">Sort Order</th>
+                    <th class="col-md-1">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -160,80 +172,63 @@
                         <td><input type="checkbox" name="selectedTags" value="@tag.TagId" class="chkRow" /></td>
 
                         @* Created Date *@
-                        <td class="small">@(tag.CreatedOn?.ToString("dd/MM/yyyy") ?? "")</td>
+                        <td class="small">@(tag.CreatedOn?.ToString("dd/MM/yyyy hh:mm tt") ?? "")</td>
 
-                        @* Editable Tag Text (Phase 2: matches legacy txttagtext) *@
+                        @* Text column: editable text + URL + links (matches legacy col-md-5) *@
                         <td>
                             <input type="hidden" name="tagIds" value="@tag.TagId" />
                             <input type="text" name="tagTexts" value="@tag.Text"
                                    class="form-control form-control-sm" style="font-weight:bold" />
-                            @if (tag.SearchCount > 0)
-                            {
-                                <small class="text-muted">Search: @tag.SearchCount</small>
-                            }
-                        </td>
-
-                        @* Editable Tag URL (Phase 2: matches legacy txttagURL) *@
-                        <td>
                             <input type="text" name="tagUrls" value="@tag.Url"
-                                   class="form-control form-control-sm text-muted" style="font-size:11px" />
+                                   class="form-control form-control-sm seo" style="font-size:11px; background-color:#f2f2f2; margin-top:5px" />
                         </td>
 
-                        @* Editable Display Order (Phase 2: matches legacy txtbox) *@
-                        <td class="text-center">
-                            <input type="number" name="tagOrders" value="@tag.DisplayOrder"
-                                   class="form-control form-control-sm text-center" style="width:60px" />
-                        </td>
+                        @* Search Count *@
+                        <td>@tag.SearchCount</td>
 
-                        @* Total Records (Product Count) *@
-                        <td class="text-center">
-                            @if (tag.ProductCount > 500) { <span class="badge bg-danger">@tag.ProductCount</span> }
-                            else if (tag.ProductCount > 100) { <span class="badge bg-warning text-dark">@tag.ProductCount</span> }
-                            else if (tag.ProductCount > 0) { <span class="badge bg-info">@tag.ProductCount</span> }
-                            else { <span class="text-muted">0</span> }
+                        @* Total Records (Product Count + View link + Show at Front toggle) *@
+                        <td>
+                            @tag.ProductCount
+                            @{
+                                var frontUrl = (Model.SearchFor == 0) ? "cakes" : (Model.SearchFor == 1 ? "cupcakes" : "party-accessories");
+                            }
+                            <a href="/@frontUrl/q/@tag.Url" target="_blank" class="btn btn-xs btn-danger pull-right" style="float:right; font-size:11px;">View</a>
+                            <form method="post" action="/crmsearchtag/togglefront/@tag.TagId" style="display:inline; float:right; margin-right:5px">
+                                <input type="hidden" name="searchfor" value="@Model.SearchFor" />
+                                <input type="hidden" name="status" value="@Model.Status" />
+                                <input type="hidden" name="filterp" value="@Model.FilterP" />
+                                <input type="hidden" name="rdsearchtype" value="@Model.SearchType" />
+                                <input type="hidden" name="sort" value="@Model.Sort" />
+                                <input type="hidden" name="pno" value="@Model.CurrentPage" />
+                                <button type="submit" class="btn btn-xs @(tag.ShowAtFront ? "btn-success" : "btn-danger")" style="font-size:11px">
+                                    @(tag.ShowAtFront ? "Not cleared" : "Cleared")
+                                </button>
+                            </form>
                         </td>
 
                         @* Downloaded Count *@
-                        <td class="text-center">
-                            @if (tag.DownloadedCount > 0) { <span class="badge bg-secondary">@tag.DownloadedCount</span> }
-                            else { <span class="text-muted">0</span> }
+                        <td>@tag.DownloadedCount</td>
+
+                        @* Sort Order (editable, matches legacy txtbox 50px) *@
+                        <td>
+                            <input type="number" name="tagOrders" value="@tag.DisplayOrder"
+                                   class="form-control form-control-sm" style="width:50px" />
                         </td>
 
-                        @* Show at Front — Phase 2: clickable toggle (matches legacy lnkUnlinked) *@
-                        <td class="text-center">
-                            <form method="post" action="/managesearchtags/togglefront/@tag.TagId" style="display:inline">
+                        @* Status + Active/Deactivate toggle (matches legacy litsts + lnkActive) *@
+                        <td>
+                            @(tag.IsActive ? "Active" : "Inactive")
+                            <form method="post" action="/crmsearchtag/toggleactive/@tag.TagId" style="display:inline; float:right">
                                 <input type="hidden" name="searchfor" value="@Model.SearchFor" />
                                 <input type="hidden" name="status" value="@Model.Status" />
                                 <input type="hidden" name="filterp" value="@Model.FilterP" />
                                 <input type="hidden" name="rdsearchtype" value="@Model.SearchType" />
                                 <input type="hidden" name="sort" value="@Model.Sort" />
                                 <input type="hidden" name="pno" value="@Model.CurrentPage" />
-                                <button type="submit" class="btn btn-sm @(tag.ShowAtFront ? "btn-success" : "btn-outline-secondary")" title="Toggle Show at Front">
-                                    @(tag.ShowAtFront ? "Yes" : "No")
-                                </button>
+                                <a href="javascript:void(0)" onclick="this.closest('form').submit()" class="@(tag.IsActive ? "text-danger" : "text-success")" style="margin-right:5px">
+                                    @(tag.IsActive ? "Deactivate" : "Activate")
+                                </a>
                             </form>
-                        </td>
-
-                        @* Status — Phase 2: clickable toggle (matches legacy lnkActive) *@
-                        <td class="text-center">
-                            <form method="post" action="/managesearchtags/toggleactive/@tag.TagId" style="display:inline">
-                                <input type="hidden" name="searchfor" value="@Model.SearchFor" />
-                                <input type="hidden" name="status" value="@Model.Status" />
-                                <input type="hidden" name="filterp" value="@Model.FilterP" />
-                                <input type="hidden" name="rdsearchtype" value="@Model.SearchType" />
-                                <input type="hidden" name="sort" value="@Model.Sort" />
-                                <input type="hidden" name="pno" value="@Model.CurrentPage" />
-                                <button type="submit" class="btn btn-sm @(tag.IsActive ? "btn-success" : "btn-danger")" title="Toggle Active">
-                                    @(tag.IsActive ? "Active" : "Inactive")
-                                </button>
-                            </form>
-                        </td>
-
-                        @* Actions: View products *@
-                        <td class="text-center">
-                            <a href="/managesearchtags/products/@tag.TagId" class="btn btn-sm btn-outline-primary" title="View linked products">
-                                <i class="fas fa-list"></i>
-                            </a>
                         </td>
                     </tr>
                 }
@@ -326,7 +321,7 @@
         // Create a form with selected IDs and submit
         var form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/managesearchtags/' + action;
+        form.action = '/crmsearchtag/' + action;
 
         selected.forEach(function(cb) {
             var input = document.createElement('input');
@@ -484,7 +479,7 @@
         document.getElementById('linkResultsBody').innerHTML =
             '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
 
-        fetch('/managesearchtags/searchproductsbykeyword', { method: 'POST', body: formData })
+        fetch('/crmsearchtag/searchproductsbykeyword', { method: 'POST', body: formData })
             .then(r => r.json())
             .then(function(data) {
                 var tbody = document.getElementById('linkResultsBody');
@@ -526,7 +521,7 @@
 
         var form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/managesearchtags/' + action;
+        form.action = '/crmsearchtag/' + action;
 
         // Tag IDs
         var tagInput = document.createElement('input');

@@ -33,7 +33,8 @@ public class ManageSearchTagService
         string filterp = "",    // Keyword search text (txtName / filterp querystring)
         int searchType = 0,     // 0=Anywhere, 1=Starts, 2=Ends, 3=Exact (rdsearchtype)
         int sort = 11,          // Sort option (drpsort) — legacy default=11
-        int page = 1)
+        int page = 1,
+        int? parentTagId = null) // Legacy ?tagID=X — show sub-tags of this parent
     {
         var result = new SearchTagListResult
         {
@@ -43,8 +44,19 @@ public class ManageSearchTagService
             Status = status,
             FilterP = filterp,
             SearchType = searchType,
-            Sort = sort
+            Sort = sort,
+            ParentTagId = parentTagId
         };
+
+        // If parentTagId specified, look up parent tag text for breadcrumb
+        if (parentTagId.HasValue && parentTagId.Value > 0)
+        {
+            await using var connP = new SqlConnection(_connectionString);
+            await connP.OpenAsync();
+            await using var cmdP = new SqlCommand("SELECT tags_text FROM tbl_Searchtags WHERE tags_ID = @id", connP);
+            cmdP.Parameters.AddWithValue("@id", parentTagId.Value);
+            result.ParentTagText = (await cmdP.ExecuteScalarAsync())?.ToString() ?? "";
+        }
 
         await using var conn = new SqlConnection(_connectionString);
         await conn.OpenAsync();
@@ -61,6 +73,10 @@ public class ManageSearchTagService
 
         // Category filter — legacy: rblSearchTagFor / searchfor querystring
         where += $" AND tags_for = {searchFor}";
+
+        // Sub-tag: exclude parent tag (legacy line 175)
+        if (parentTagId.HasValue && parentTagId.Value > 0)
+            where += $" AND tags_ID <> {parentTagId.Value}";
 
         // Keyword filter — legacy: filterp + rdsearchtype
         if (!string.IsNullOrWhiteSpace(filterp))
@@ -90,8 +106,23 @@ public class ManageSearchTagService
             }
         }
 
-        // ── Build ORDER BY (matches legacy sort options without tagID) ───────────
-        var orderBy = sort switch
+        // ── Build JOIN for sub-tag mode (legacy line 176) ────────────────────────
+        var lnkTagsJoin = "";
+        var lnkTagsCol = "";
+        if (parentTagId.HasValue && parentTagId.Value > 0)
+        {
+            lnkTagsJoin = $" LEFT JOIN tbl_lnkTags ON lnkTags_tagID = tags_Id AND lnkTags_parenttagID = {parentTagId.Value}";
+            lnkTagsCol = ", CASE WHEN lnkTags_tagID > 0 THEN 1 ELSE 0 END sortsubtags, ISNULL(lnkTags_displayOrder, 1100) AS lnkTags_sortOrder";
+        }
+
+        // ── Build ORDER BY (matches legacy sort options) ────────────────────────
+        // Both inner (ROW_NUMBER) and outer ORDER BY operate on subquery aliases,
+        // so use sortsubtags and lnkTags_sortOrder (not raw lnkTags_tagID / lnkTags_displayOrder)
+        var orderPrefix = (parentTagId.HasValue && parentTagId.Value > 0)
+            ? "sortsubtags DESC, "
+            : "";
+
+        var baseSortOrder = sort switch
         {
             0 => "tags_createdOn DESC, tags_displayorder",
             1 => "tags_text, tags_displayorder",
@@ -99,8 +130,11 @@ public class ManageSearchTagService
             3 => "ISNULL(popularTags_displayOrder,1100), tags_countsearch DESC, tags_displayorder",
             4 => "countprd DESC, tags_displayorder",
             5 => "countprd, tags_displayorder",
-            _ => "tags_displayorder, tags_text, tags_countsearch DESC" // 11 = default
+            _ => (parentTagId.HasValue && parentTagId.Value > 0)
+                ? "lnkTags_sortOrder, tags_displayorder, tags_countsearch DESC"
+                : "tags_displayorder, tags_text, tags_countsearch DESC" // 11 = default
         };
+        var orderBy = orderPrefix + baseSortOrder;
 
         // ── Count query (no JOINs — avoid duplicate inflation) ─────────────────
         var countSql = $"SELECT COUNT(1) FROM tbl_Searchtags WHERE {where}";
@@ -132,7 +166,8 @@ SELECT * FROM (
         SELECT 
             tags_ID, tags_text, tags_url, tags_displayorder, tags_IsActive, tags_for,
             tags_countsearch, tags_createdOn, tags_Showatfront
-            {popularCol},
+            {popularCol}
+            {lnkTagsCol},
             (SELECT COUNT(1) FROM tbl_lnkPrd2tag
              WHERE lnkPrd2tag_tagID = tags_ID
                AND lnkPrd2tag_apiID = 0
@@ -153,6 +188,7 @@ SELECT * FROM (
                 0
             ) countdnld
         FROM tbl_Searchtags
+            {lnkTagsJoin}
             {popularJoin}
         WHERE {where}
     ) rowi
@@ -649,6 +685,10 @@ public class SearchTagListResult
     public string FilterP { get; set; } = "";
     public int SearchType { get; set; }     // 0=Anywhere, 1=Starts, 2=Ends, 3=Exact
     public int Sort { get; set; } = 11;     // Legacy default sort
+
+    // Sub-tag mode (legacy ?tagID=X)
+    public int? ParentTagId { get; set; }
+    public string ParentTagText { get; set; } = "";
 
     // Legacy compat — keep old property name
     public string Search { get => FilterP; set => FilterP = value; }

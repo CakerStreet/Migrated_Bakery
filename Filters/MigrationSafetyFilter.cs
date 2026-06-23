@@ -22,7 +22,8 @@ public class MigrationSafetyFilter : IAsyncActionFilter
     {
         "/businesslogin",        // POST login (password check, OTP generation, login attempt log)
         "/businesslogin/verifyotp", // POST OTP verification
-        "/managesearchtags"      // POST tag updates (Phase 2 CRM mutations — inline edit, toggle active, bulk activate/deactivate)
+        "/crmsearchtag",         // POST tag updates — primary legacy route (Phase 2/3 CRM mutations)
+        "/managesearchtags"      // POST tag updates — alias route
     };
 
     public MigrationSafetyFilter(IConfiguration config)

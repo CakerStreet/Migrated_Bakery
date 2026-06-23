@@ -5,12 +5,14 @@ namespace CakerStreet.Business.Controllers;
 
 /// <summary>
 /// CRM Search Tag Module — migrated from legacy crmsearchtag.aspx.
-/// Legacy Module ID: 20, legacy route: /crmsearchtag
-/// Migrated route: /managesearchtags
+/// Legacy Module ID: 20
+/// Legacy route: /crmsearchtag (PRIMARY — preserved for parity)
+/// Alias route: /managesearchtags (temporary, for backward compat during migration)
 /// 
 /// Query string params match legacy pattern:
 ///   ?searchfor=0&pno=1&status=1&sort=11&filterp=keyword&rdsearchtype=0
 /// </summary>
+[Route("crmsearchtag")]
 [Route("managesearchtags")]
 public class ManageSearchTagsController : Controller
 {
@@ -30,7 +32,8 @@ public class ManageSearchTagsController : Controller
         string filterp = "",    // Keyword search
         int rdsearchtype = 0,   // 0=Anywhere, 1=Starts, 2=Ends, 3=Exact
         int sort = 11,          // Sort option
-        int pno = 1)            // Page number
+        int pno = 1,            // Page number
+        int? tagID = null)      // Sub-tag parent (legacy ?tagID=X)
     {
         var result = await _service.GetTagsAsync(
             searchFor: searchfor,
@@ -38,7 +41,8 @@ public class ManageSearchTagsController : Controller
             filterp: filterp,
             searchType: rdsearchtype,
             sort: sort,
-            page: pno);
+            page: pno,
+            parentTagId: tagID);
 
         return View("~/Views/ManageSearchTags/Index.cshtml", result);
     }
@@ -292,7 +296,7 @@ public class ManageSearchTagsController : Controller
 
     public static string BuildPageUrl(SearchTagListResult model, int pageNo)
     {
-        var url = "/managesearchtags";
+        var url = "/crmsearchtag";
         var parts = new List<string>();
 
         if (pageNo > 1) parts.Add($"pno={pageNo}");
