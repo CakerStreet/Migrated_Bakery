@@ -1,0 +1,79 @@
+@model CakerStreet.Business.Services.SearchTagListResult
+@{
+    ViewData["Title"] = "Manage Search Tags";
+}
+<div class="container-fluid py-3">
+    <h4><i class="fas fa-tags"></i> Search Tag Management <small class="text-muted">(Data Utility)</small></h4>
+    <div class="alert alert-info py-2 mb-3">
+        <strong>Purpose:</strong> Review and correct overbroad tag-product associations. 
+        This is a data management utility — not a frontend search fix.
+    </div>
+
+    <form method="get" class="mb-3">
+        <div class="input-group" style="max-width:500px;">
+            <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search tags by name or URL..." />
+            <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
+            @if (!string.IsNullOrEmpty(Model.Search))
+            {
+                <a href="/managesearchtags" class="btn btn-outline-secondary">Clear</a>
+            }
+        </div>
+    </form>
+
+    <div class="mb-2 text-muted">
+        Showing @Model.Tags.Count of @Model.TotalTags tags (Page @Model.CurrentPage / @Model.TotalPages)
+    </div>
+
+    <table class="table table-sm table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th style="width:60px">ID</th>
+                <th>Tag Text</th>
+                <th>URL Slug</th>
+                <th style="width:80px" class="text-center">Front</th>
+                <th style="width:100px" class="text-center">Products</th>
+                <th style="width:80px" class="text-center">Order</th>
+                <th style="width:100px">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var tag in Model.Tags)
+            {
+                <tr>
+                    <td>@tag.TagId</td>
+                    <td><strong>@tag.Text</strong></td>
+                    <td class="text-muted small">@tag.Url</td>
+                    <td class="text-center">
+                        @if (tag.ShowAtFront) { <span class="badge bg-success">Yes</span> } 
+                        else { <span class="badge bg-secondary">No</span> }
+                    </td>
+                    <td class="text-center">
+                        @if (tag.ProductCount > 500) { <span class="badge bg-danger">@tag.ProductCount</span> }
+                        else if (tag.ProductCount > 100) { <span class="badge bg-warning text-dark">@tag.ProductCount</span> }
+                        else { <span class="badge bg-info">@tag.ProductCount</span> }
+                    </td>
+                    <td class="text-center">@tag.DisplayOrder</td>
+                    <td>
+                        <a href="/managesearchtags/products/@tag.TagId" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-list"></i> View
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination pagination-sm">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="/managesearchtags?search=@Model.Search&page=@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

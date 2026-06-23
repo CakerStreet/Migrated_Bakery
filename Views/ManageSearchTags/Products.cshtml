@@ -1,0 +1,151 @@
+@model CakerStreet.Business.Services.TagProductsResult
+@{
+    ViewData["Title"] = $"Tag: {Model.TagText} — Linked Products";
+}
+<div class="container-fluid py-3">
+    <a href="/managesearchtags" class="btn btn-sm btn-outline-secondary mb-2">
+        <i class="fas fa-arrow-left"></i> Back to Tags
+    </a>
+
+    <h4>
+        <i class="fas fa-tag"></i> @Model.TagText
+        <small class="text-muted">(@Model.TotalProducts products)</small>
+    </h4>
+    <div class="text-muted mb-2">URL: <code>/@Model.TagUrl</code> &nbsp; Tag ID: @Model.TagId</div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible py-2">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Link Product -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <strong>Link a Product:</strong>
+            <div class="row g-2 align-items-end mt-1">
+                <div class="col-auto">
+                    <input type="text" id="productSearch" class="form-control form-control-sm" 
+                           placeholder="Search by name or ID..." style="width:300px" />
+                </div>
+                <div class="col-auto">
+                    <select id="productSelect" class="form-select form-select-sm" style="width:350px">
+                        <option value="">— search first —</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <form method="post" action="/managesearchtags/link" id="linkForm" style="display:inline">
+                        <input type="hidden" name="tagId" value="@Model.TagId" />
+                        <input type="hidden" name="productId" id="linkProductId" value="" />
+                        <button type="submit" class="btn btn-sm btn-success" id="linkBtn" disabled>
+                            <i class="fas fa-link"></i> Link
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product List -->
+    <div class="mb-2 text-muted">
+        Page @Model.CurrentPage / @Model.TotalPages
+    </div>
+
+    <table class="table table-sm table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th style="width:70px">Prd ID</th>
+                <th>Product Name</th>
+                <th style="width:80px" class="text-center">Active</th>
+                <th style="width:70px" class="text-center">Type</th>
+                <th style="width:70px" class="text-center">Rank</th>
+                <th style="width:100px">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Products)
+            {
+                <tr class="@(!p.IsActive ? "table-warning" : "")">
+                    <td>@p.ProductId</td>
+                    <td>
+                        <strong>@p.ProductName</strong>
+                        <br /><small class="text-muted">@p.SeoUrl</small>
+                    </td>
+                    <td class="text-center">
+                        @if (p.IsActive) { <span class="badge bg-success">Yes</span> }
+                        else { <span class="badge bg-danger">No</span> }
+                    </td>
+                    <td class="text-center">
+                        @switch (p.ProductType)
+                        {
+                            case 1: <span>Cake</span> break;
+                            case 2: <span>Stock</span> break;
+                            case 6: <span>Cupcake</span> break;
+                            default: <span>@p.ProductType</span> break;
+                        }
+                    </td>
+                    <td class="text-center">@p.SearchRank</td>
+                    <td>
+                        <form method="post" action="/managesearchtags/unlink" 
+                              onsubmit="return confirm('Unlink product @p.ProductId from this tag?')">
+                            <input type="hidden" name="tagId" value="@Model.TagId" />
+                            <input type="hidden" name="productId" value="@p.ProductId" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-unlink"></i> Unlink
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination pagination-sm">
+                @for (int i = 1; i <= Math.Min(Model.TotalPages, 20); i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="/managesearchtags/products/@Model.TagId?page=@i">@i</a>
+                    </li>
+                }
+                @if (Model.TotalPages > 20)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
+
+<script>
+    // Product search for linking
+    let searchTimer;
+    document.getElementById('productSearch').addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        if (q.length < 2) return;
+        searchTimer = setTimeout(() => {
+            fetch('/managesearchtags/searchproducts?q=' + encodeURIComponent(q))
+                .then(r => r.json())
+                .then(products => {
+                    const sel = document.getElementById('productSelect');
+                    sel.innerHTML = '<option value="">— select product —</option>';
+                    products.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.ProductId || p.productId;
+                        opt.textContent = `[${p.ProductId || p.productId}] ${p.ProductName || p.productName} (${p.IsActive || p.isActive ? 'Active' : 'Inactive'})`;
+                        sel.appendChild(opt);
+                    });
+                });
+        }, 400);
+    });
+
+    document.getElementById('productSelect').addEventListener('change', function () {
+        document.getElementById('linkProductId').value = this.value;
+        document.getElementById('linkBtn').disabled = !this.value;
+    });
+</script>

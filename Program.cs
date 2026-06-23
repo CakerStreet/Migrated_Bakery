@@ -56,6 +56,7 @@ builder.Services.AddScoped<CakerStreet.Business.Services.OrderImageService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.ResetPasswordService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.PersonalisedCakeService>();
 builder.Services.AddScoped<CakerStreet.Business.Services.ManageProductDocService>();
+builder.Services.AddScoped<CakerStreet.Business.Services.ManageSearchTagService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<CakerStreet.Business.Services.RouteCalculationService>();
 builder.Services.AddSession();
