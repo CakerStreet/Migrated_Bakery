@@ -451,6 +451,186 @@ ORDER BY {orderBy}";
 
         return products;
     }
+
+    // ─── Phase 3: Search Products by Keywords (legacy btnlinknewproducts_submit_Click L1231) ──
+
+    /// <summary>
+    /// Search products matching keywords with include/exclude, filtered by product type.
+    /// In LINK mode: shows products NOT already linked to the selected tags.
+    /// In UNLINK mode: shows products already linked to the selected tags.
+    /// Legacy pattern: comma-separated keywords → AND LIKE conditions.
+    /// </summary>
+    public async Task<List<KeywordSearchProduct>> SearchProductsByKeywordAsync(
+        string keywords, string excludeKeywords, int productType, List<int> tagIds, bool unlinkMode)
+    {
+        var results = new List<KeywordSearchProduct>();
+        if (string.IsNullOrWhiteSpace(keywords) || tagIds == null || tagIds.Count == 0)
+            return results;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Build keyword LIKE conditions (legacy: comma → AND LIKE)
+        var kwParts = keywords.Replace(", ", ",").Replace(" ,", ",")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var likeClauses = new List<string>();
+        var cmd = new SqlCommand { Connection = conn };
+        for (int i = 0; i < kwParts.Length; i++)
+        {
+            likeClauses.Add($"product_Name LIKE '%' + @kw{i} + '%'");
+            cmd.Parameters.AddWithValue($"@kw{i}", kwParts[i].Trim());
+        }
+
+        // Build exclude keyword NOT LIKE conditions
+        var notLikeClauses = new List<string>();
+        if (!string.IsNullOrWhiteSpace(excludeKeywords))
+        {
+            var exParts = excludeKeywords.Replace(", ", ",").Replace(" ,", ",")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < exParts.Length; i++)
+            {
+                notLikeClauses.Add($"product_Name NOT LIKE '%' + @exkw{i} + '%'");
+                cmd.Parameters.AddWithValue($"@exkw{i}", exParts[i].Trim());
+            }
+        }
+
+        // Build tag IDs for IN clause (parameterized)
+        var tagParamNames = new List<string>();
+        for (int i = 0; i < tagIds.Count; i++)
+        {
+            tagParamNames.Add($"@tid{i}");
+            cmd.Parameters.AddWithValue($"@tid{i}", tagIds[i]);
+        }
+        var tagInClause = string.Join(",", tagParamNames);
+
+        // WHERE: product_isdeleted=0 AND product_isactive=1 AND (keyword LIKEs) AND (exclude NOT LIKEs)
+        var where = "product_isdeleted = 0 AND product_isactive = 1";
+        if (likeClauses.Count > 0) where += $" AND ({string.Join(" AND ", likeClauses)})";
+        if (notLikeClauses.Count > 0) where += $" AND ({string.Join(" AND ", notLikeClauses)})";
+
+        // Product type filter (legacy: product_type=X when not "0"/all)
+        if (productType > 0)
+        {
+            where += $" AND product_type = @ptype";
+            cmd.Parameters.AddWithValue("@ptype", productType);
+        }
+
+        // IN/NOT IN subquery (legacy: product_ID [NOT] IN (SELECT lnkPrd2tag_prdID ...))
+        var inOp = unlinkMode ? "IN" : "NOT IN";
+        where += $" AND product_ID {inOp} (SELECT lnkPrd2tag_prdID FROM tbl_lnkPrd2tag WHERE lnkPrd2tag_tagID IN ({tagInClause}) AND lnkPrd2tag_apiID = 0)";
+
+        // SELECT columns matching legacy (with tagIDs aggregation via FOR XML PATH)
+        var sql = $@"SELECT TOP 200
+            product_ID, product_image1, product_Name, product_code, product_startingtPrice,
+            ISNULL(STUFF(
+                (SELECT ', ' + CONVERT(nvarchar(10), lnkPrd2tag_tagID)
+                 FROM tbl_lnkPrd2tag 
+                 WHERE lnkPrd2tag_prdID = product_ID AND lnkPrd2tag_apiID = 0
+                 FOR XML PATH (''))
+                , 1, 1, ''), '0') AS tagIDs
+            FROM tbl_products
+            WHERE {where}
+            ORDER BY product_startingtPrice DESC";
+
+        cmd.CommandText = sql;
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            results.Add(new KeywordSearchProduct
+            {
+                ProductId = Convert.ToInt64(reader["product_ID"]),
+                Image = reader["product_image1"]?.ToString() ?? "",
+                Name = reader["product_Name"]?.ToString() ?? "",
+                Code = reader["product_code"]?.ToString() ?? "",
+                Price = reader["product_startingtPrice"] == DBNull.Value ? 0 : Convert.ToDecimal(reader["product_startingtPrice"]),
+                LinkedTagIds = reader["tagIDs"]?.ToString() ?? "0"
+            });
+        }
+
+        return results;
+    }
+
+    // ─── Phase 3: Bulk Link Products to Tags (legacy btnSubmitlinkprdtotags_submit_Click LINK) ──
+
+    /// <summary>
+    /// Bulk link: for each product × each tag, INSERT INTO tbl_lnkPrd2tag if not exists.
+    /// Legacy: lnkPrd2tag_searchrank = 1003, lnkPrd2tag_apiID = 0, lnkPrd2tag_isdeleted = 0
+    /// </summary>
+    public async Task<int> BulkLinkProductsToTagsAsync(List<int> tagIds, List<long> productIds)
+    {
+        if (tagIds == null || tagIds.Count == 0 || productIds == null || productIds.Count == 0)
+            return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        int linked = 0;
+        foreach (var prdId in productIds)
+        {
+            foreach (var tagId in tagIds)
+            {
+                // Check existence (matches legacy: db.lnkPrd2tag.Where(...).Any())
+                await using var cmdCheck = new SqlCommand(
+                    "SELECT COUNT(*) FROM tbl_lnkPrd2tag WHERE lnkPrd2tag_prdID = @prdId AND lnkPrd2tag_tagID = @tagId AND lnkPrd2tag_apiID = 0", conn);
+                cmdCheck.Parameters.AddWithValue("@prdId", prdId);
+                cmdCheck.Parameters.AddWithValue("@tagId", tagId);
+                var exists = Convert.ToInt32(await cmdCheck.ExecuteScalarAsync() ?? 0) > 0;
+
+                if (!exists)
+                {
+                    // INSERT (matches legacy: lnkPrd2tag_searchrank=1003, apiID=0, isdeleted=false, IsDefault=false)
+                    await using var cmdInsert = new SqlCommand(@"
+                        INSERT INTO tbl_lnkPrd2tag 
+                            (lnkPrd2tag_prdID, lnkPrd2tag_tagID, lnkPrd2tag_apiID, lnkPrd2tag_isdeleted, lnkPrd2tag_IsDefault, lnkPrd2tag_searchrank)
+                        VALUES (@prdId, @tagId, 0, 0, 0, 1003)", conn);
+                    cmdInsert.Parameters.AddWithValue("@prdId", prdId);
+                    cmdInsert.Parameters.AddWithValue("@tagId", tagId);
+                    await cmdInsert.ExecuteNonQueryAsync();
+                    linked++;
+                }
+            }
+        }
+
+        return linked;
+    }
+
+    // ─── Phase 3: Bulk Unlink Products from Tags (legacy batch DELETE) ───────────
+
+    /// <summary>
+    /// Bulk unlink: DELETE FROM tbl_lnkPrd2tag WHERE prdID IN (...) AND apiID=0 AND tagID IN (...)
+    /// Matches legacy: clsCustomDelete batch DELETE pattern.
+    /// </summary>
+    public async Task<int> BulkUnlinkProductsFromTagsAsync(List<int> tagIds, List<long> productIds)
+    {
+        if (tagIds == null || tagIds.Count == 0 || productIds == null || productIds.Count == 0)
+            return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Build parameterized IN clauses (matches legacy batch DELETE)
+        var cmd = new SqlCommand { Connection = conn };
+        var prdParams = new List<string>();
+        for (int i = 0; i < productIds.Count; i++)
+        {
+            prdParams.Add($"@prd{i}");
+            cmd.Parameters.AddWithValue($"@prd{i}", productIds[i]);
+        }
+        var tagParams = new List<string>();
+        for (int i = 0; i < tagIds.Count; i++)
+        {
+            tagParams.Add($"@tag{i}");
+            cmd.Parameters.AddWithValue($"@tag{i}", tagIds[i]);
+        }
+
+        cmd.CommandText = $@"DELETE FROM tbl_lnkPrd2tag 
+            WHERE lnkPrd2tag_prdID IN ({string.Join(",", prdParams)}) 
+              AND lnkPrd2tag_apiID = 0 
+              AND lnkPrd2tag_tagID IN ({string.Join(",", tagParams)})";
+
+        return await cmd.ExecuteNonQueryAsync();
+    }
 }
 
 // ─── Models ────────────────────────────────────────────────────────────────────
@@ -524,4 +704,17 @@ public class TagUpdateItem
     public string Text { get; set; } = "";
     public string Url { get; set; } = "";
     public int DisplayOrder { get; set; }
+}
+
+/// <summary>
+/// Phase 3: Product result from keyword search — matches legacy prdlist class.
+/// </summary>
+public class KeywordSearchProduct
+{
+    public long ProductId { get; set; }
+    public string Image { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Code { get; set; } = "";
+    public decimal Price { get; set; }
+    public string LinkedTagIds { get; set; } = "0";
 }

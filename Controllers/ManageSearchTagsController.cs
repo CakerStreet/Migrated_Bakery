@@ -208,6 +208,85 @@ public class ManageSearchTagsController : Controller
         }, pno));
     }
 
+    // ─── Phase 3: Search Products by Keywords (AJAX, matches legacy btnlinknewproducts_submit) ──
+
+    [HttpPost("searchproductsbykeyword")]
+    public async Task<IActionResult> SearchProductsByKeyword(
+        [FromForm] string keywords,
+        [FromForm] string excludeKeywords,
+        [FromForm] int productType = 0,
+        [FromForm] string tagIds = "",
+        [FromForm] bool unlinkMode = false)
+    {
+        var tagIdList = tagIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s.Trim(), out var id) ? id : 0)
+            .Where(id => id > 0).ToList();
+
+        var products = await _service.SearchProductsByKeywordAsync(
+            keywords, excludeKeywords, productType, tagIdList, unlinkMode);
+
+        return Json(products);
+    }
+
+    // ─── Phase 3: Bulk Link (matches legacy btnSubmitlinkprdtotags_submit LINK) ──
+
+    [HttpPost("bulklink")]
+    public async Task<IActionResult> BulkLink(
+        [FromForm] string tagIds,
+        [FromForm] List<long> productIds,
+        [FromForm] int searchfor = 0, [FromForm] int status = 1,
+        [FromForm] string filterp = "", [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11, [FromForm] int pno = 1)
+    {
+        var tagIdList = tagIds?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s.Trim(), out var id) ? id : 0)
+            .Where(id => id > 0).ToList() ?? new List<int>();
+
+        if (tagIdList.Count == 0 || productIds == null || productIds.Count == 0)
+        {
+            TempData["Message"] = "No tags or products selected.";
+        }
+        else
+        {
+            var count = await _service.BulkLinkProductsToTagsAsync(tagIdList, productIds);
+            TempData["Message"] = $"{count} product-tag link(s) created across {tagIdList.Count} tag(s).";
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Phase 3: Bulk Unlink (matches legacy btnSubmitlinkprdtotags_submit UNLINK) ──
+
+    [HttpPost("bulkunlink")]
+    public async Task<IActionResult> BulkUnlink(
+        [FromForm] string tagIds,
+        [FromForm] List<long> productIds,
+        [FromForm] int searchfor = 0, [FromForm] int status = 1,
+        [FromForm] string filterp = "", [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11, [FromForm] int pno = 1)
+    {
+        var tagIdList = tagIds?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s.Trim(), out var id) ? id : 0)
+            .Where(id => id > 0).ToList() ?? new List<int>();
+
+        if (tagIdList.Count == 0 || productIds == null || productIds.Count == 0)
+        {
+            TempData["Message"] = "No tags or products selected.";
+        }
+        else
+        {
+            var count = await _service.BulkUnlinkProductsFromTagsAsync(tagIdList, productIds);
+            TempData["Message"] = $"{count} product-tag link(s) removed.";
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
 
     // ─── Helper: Build URL with current filters (matches legacy GetPageUrl) ─────
 

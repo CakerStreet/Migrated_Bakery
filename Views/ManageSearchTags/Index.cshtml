@@ -111,9 +111,18 @@
             </button>
         </div>
         @* Phase 2: Update button *@
-        <div class="btn-group btn-group-sm">
+        <div class="btn-group btn-group-sm me-2">
             <button type="button" class="btn btn-primary" onclick="submitUpdate()">
                 <i class="fas fa-save"></i> Update
+            </button>
+        </div>
+        @* Phase 3: Link/Unlink by Keywords (matches legacy btnlinkprdbykeywords / btnunlinkprdbykeywords) *@
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-info" onclick="openLinkModal('link')">
+                <i class="fas fa-link"></i> Link Products by Keywords
+            </button>
+            <button type="button" class="btn btn-warning" onclick="openLinkModal('unlink')">
+                <i class="fas fa-unlink"></i> Unlink Products by Keywords
             </button>
         </div>
     </div>
@@ -339,7 +348,217 @@
             }
         });
 
+    document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+
+@* ── Phase 3: Link/Unlink Products by Keywords Modal (matches legacy divLinkPrdByKeyword) ──── *@
+<div class="modal fade" id="linkModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkModalTitle">Link Products by Keywords</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @* Selected Tags display *@
+                <div class="alert alert-secondary py-1 mb-2">
+                    <strong>Selected Tags:</strong> <span id="linkSelectedTagNames"></span>
+                    <input type="hidden" id="linkTagIds" />
+                </div>
+
+                @* Search form (matches legacy: drpprdtypetolink, txtSearchNewPrd, txtExcludeNewPrd) *@
+                <div class="row g-2 mb-2">
+                    <div class="col-md-2">
+                        <select id="linkPrdType" class="form-select form-select-sm">
+                            <option value="0">All Products</option>
+                            <option value="3">Cakes</option>
+                            <option value="6">Cupcakes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="linkKeywords" class="form-control form-control-sm" placeholder="Keywords (comma separated)" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="linkExcludeKeywords" class="form-control form-control-sm" placeholder="Exclude keywords" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="searchProductsByKeyword()">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <span id="linkResultCount" class="text-muted small"></span>
+                    </div>
+                </div>
+
+                @* Results table *@
+                <div style="max-height:400px; overflow-y:auto">
+                    <table class="table table-sm table-bordered table-striped" id="linkResultsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width:35px"><input type="checkbox" id="chkAllPrd" onclick="checkAllPrd(this.checked)" /></th>
+                                <th>Product</th>
+                                <th style="width:80px">Code</th>
+                                <th style="width:80px" class="text-end">Price</th>
+                                <th style="width:120px">Linked Tags</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linkResultsBody">
+                            <tr><td colspan="5" class="text-center text-muted">Enter keywords and click Search</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitLink" onclick="submitLinkUnlink()">
+                    <i class="fas fa-link"></i> Link Products
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Phase 3: Modal state
+    var linkMode = 'link'; // 'link' or 'unlink'
+
+    function openLinkModal(mode) {
+        var selected = document.querySelectorAll('.chkRow:checked');
+        if (selected.length === 0) {
+            alert('Please select at least one tag first.');
+            return;
+        }
+
+        linkMode = mode;
+        var ids = [];
+        var names = [];
+        selected.forEach(function(cb) {
+            ids.push(cb.value);
+            // Get tag name from the adjacent text input
+            var row = cb.closest('tr');
+            var textInput = row.querySelector('input[name="tagTexts"]');
+            if (textInput) names.push(textInput.value);
+        });
+
+        document.getElementById('linkTagIds').value = ids.join(',');
+        document.getElementById('linkSelectedTagNames').textContent = names.join(', ');
+
+        var title = mode === 'link' ? 'Link Products by Keywords' : 'Unlink Products by Keywords';
+        document.getElementById('linkModalTitle').textContent = title;
+
+        var btn = document.getElementById('btnSubmitLink');
+        if (mode === 'link') {
+            btn.innerHTML = '<i class="fas fa-link"></i> Link Products';
+            btn.className = 'btn btn-primary';
+        } else {
+            btn.innerHTML = '<i class="fas fa-unlink"></i> Unlink Products';
+            btn.className = 'btn btn-warning';
+        }
+
+        // Clear previous results
+        document.getElementById('linkKeywords').value = '';
+        document.getElementById('linkExcludeKeywords').value = '';
+        document.getElementById('linkResultsBody').innerHTML =
+            '<tr><td colspan="5" class="text-center text-muted">Enter keywords and click Search</td></tr>';
+        document.getElementById('linkResultCount').textContent = '';
+
+        // Show modal
+        var modal = new bootstrap.Modal(document.getElementById('linkModal'));
+        modal.show();
+    }
+
+    function searchProductsByKeyword() {
+        var keywords = document.getElementById('linkKeywords').value;
+        if (!keywords.trim()) { alert('Enter keywords.'); return; }
+
+        var formData = new FormData();
+        formData.append('keywords', keywords);
+        formData.append('excludeKeywords', document.getElementById('linkExcludeKeywords').value);
+        formData.append('productType', document.getElementById('linkPrdType').value);
+        formData.append('tagIds', document.getElementById('linkTagIds').value);
+        formData.append('unlinkMode', linkMode === 'unlink');
+
+        document.getElementById('linkResultsBody').innerHTML =
+            '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
+
+        fetch('/managesearchtags/searchproductsbykeyword', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(function(data) {
+                var tbody = document.getElementById('linkResultsBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No products found</td></tr>';
+                    document.getElementById('linkResultCount').textContent = '0 products';
+                    return;
+                }
+                document.getElementById('linkResultCount').textContent = data.length + ' product(s)';
+                var html = '';
+                data.forEach(function(p) {
+                    html += '<tr>';
+                    html += '<td><input type="checkbox" class="chkPrd" value="' + p.productId + '" checked /></td>';
+                    html += '<td><strong>' + escapeHtml(p.name) + '</strong></td>';
+                    html += '<td>' + escapeHtml(p.code) + '</td>';
+                    html += '<td class="text-end">' + (p.price > 0 ? '£' + p.price.toFixed(2) : '-') + '</td>';
+                    html += '<td class="small">' + escapeHtml(p.linkedTagIds) + '</td>';
+                    html += '</tr>';
+                });
+                tbody.innerHTML = html;
+            })
+            .catch(function(err) {
+                document.getElementById('linkResultsBody').innerHTML =
+                    '<tr><td colspan="5" class="text-center text-danger">Error: ' + err + '</td></tr>';
+            });
+    }
+
+    function checkAllPrd(checked) {
+        document.querySelectorAll('.chkPrd').forEach(cb => cb.checked = checked);
+    }
+
+    function submitLinkUnlink() {
+        var selectedPrds = document.querySelectorAll('.chkPrd:checked');
+        if (selectedPrds.length === 0) { alert('Select at least one product.'); return; }
+
+        var action = linkMode === 'link' ? 'bulklink' : 'bulkunlink';
+        var verb = linkMode === 'link' ? 'link' : 'unlink';
+        if (!confirm('Are you sure you want to ' + verb + ' ' + selectedPrds.length + ' product(s)?')) return;
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/managesearchtags/' + action;
+
+        // Tag IDs
+        var tagInput = document.createElement('input');
+        tagInput.type = 'hidden'; tagInput.name = 'tagIds';
+        tagInput.value = document.getElementById('linkTagIds').value;
+        form.appendChild(tagInput);
+
+        // Product IDs
+        selectedPrds.forEach(function(cb) {
+            var input = document.createElement('input');
+            input.type = 'hidden'; input.name = 'productIds'; input.value = cb.value;
+            form.appendChild(input);
+        });
+
+        // Current filter state
+        ['searchfor', 'status', 'filterp', 'rdsearchtype', 'sort', 'pno'].forEach(function(name) {
+            var source = document.querySelector('#frmUpdate input[name="' + name + '"]');
+            if (source) {
+                var input = document.createElement('input');
+                input.type = 'hidden'; input.name = name; input.value = source.value;
+                form.appendChild(input);
+            }
+        });
+
         document.body.appendChild(form);
         form.submit();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
     }
 </script>
