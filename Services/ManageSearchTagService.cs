@@ -210,6 +210,109 @@ ORDER BY {orderBy}";
         }
     }
 
+    // ─── Phase 2: Inline Update (legacy btnUpdate_onClick L766-836) ────────────
+
+    /// <summary>
+    /// Inline update tags_text, tags_url, tags_displayorder for checked rows.
+    /// Legacy SQL: UPDATE tbl_Searchtags SET tags_text=@text, tags_url=@url, tags_displayorder=@order WHERE tags_ID=@id
+    /// </summary>
+    public async Task<int> UpdateTagsAsync(List<TagUpdateItem> updates)
+    {
+        if (updates == null || updates.Count == 0) return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        int updated = 0;
+        foreach (var item in updates)
+        {
+            // Matches legacy: UPDATE tbl_Searchtags SET tags_text='...', tags_url='...', tags_displayorder=... WHERE tags_ID IN (...)
+            var sql = @"UPDATE tbl_Searchtags 
+                        SET tags_text = @text, tags_url = @url, tags_displayorder = @order 
+                        WHERE tags_ID = @tagId";
+
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@text", item.Text?.Trim() ?? "");
+            cmd.Parameters.AddWithValue("@url", item.Url?.Trim() ?? "");
+            cmd.Parameters.AddWithValue("@order", item.DisplayOrder);
+            cmd.Parameters.AddWithValue("@tagId", item.TagId);
+
+            updated += await cmd.ExecuteNonQueryAsync();
+        }
+
+        return updated;
+    }
+
+    // ─── Phase 2: Per-row Active Toggle (legacy lnkActive_OnClick L1033) ─────
+
+    /// <summary>
+    /// Toggle tags_IsActive for a single tag.
+    /// Legacy SQL: UPDATE tbl_Searchtags SET tags_IsActive = 1/0 WHERE tags_ID = @id
+    /// </summary>
+    public async Task<bool> ToggleActiveAsync(int tagId)
+    {
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Read current state then toggle
+        var sql = @"UPDATE tbl_Searchtags 
+                    SET tags_IsActive = CASE WHEN tags_IsActive = 1 THEN 0 ELSE 1 END 
+                    WHERE tags_ID = @tagId";
+
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@tagId", tagId);
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    // ─── Phase 2: Bulk Activate/Deactivate (legacy ActiveDeactiveTags L843-890) ──
+
+    /// <summary>
+    /// Bulk set tags_IsActive for selected tag IDs.
+    /// Legacy SQL: UPDATE tbl_Searchtags SET tags_IsActive = @val WHERE tags_ID IN (...)
+    /// </summary>
+    public async Task<int> BulkSetActiveAsync(List<int> tagIds, bool active)
+    {
+        if (tagIds == null || tagIds.Count == 0) return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Build parameterized IN clause
+        var paramNames = new List<string>();
+        var cmd = new SqlCommand();
+        for (int i = 0; i < tagIds.Count; i++)
+        {
+            paramNames.Add($"@id{i}");
+            cmd.Parameters.AddWithValue($"@id{i}", tagIds[i]);
+        }
+
+        cmd.CommandText = $"UPDATE tbl_Searchtags SET tags_IsActive = @active WHERE tags_ID IN ({string.Join(",", paramNames)})";
+        cmd.Parameters.AddWithValue("@active", active ? 1 : 0);
+        cmd.Connection = conn;
+
+        return await cmd.ExecuteNonQueryAsync();
+    }
+
+    // ─── Phase 2: Toggle Show at Front (legacy lnkUnlinked_OnClick L988) ─────
+
+    /// <summary>
+    /// Toggle tags_Showatfront for a single tag.
+    /// Legacy SQL: UPDATE tbl_Searchtags SET tags_Showatfront = 1/0 WHERE tags_ID = @id
+    /// </summary>
+    public async Task<bool> ToggleShowAtFrontAsync(int tagId)
+    {
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        var sql = @"UPDATE tbl_Searchtags 
+                    SET tags_Showatfront = CASE WHEN tags_Showatfront = 1 THEN 0 ELSE 1 END 
+                    WHERE tags_ID = @tagId";
+
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@tagId", tagId);
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
     // ─── Get Linked Products for a Tag ───────────────────────────────────────────
 
     public async Task<TagProductsResult> GetTagProductsAsync(int tagId, int page = 1, int pageSize = 50)
@@ -410,4 +513,15 @@ public class LinkedProduct
     public bool IsActive { get; set; }
     public int ProductType { get; set; }
     public int SearchRank { get; set; }
+}
+
+/// <summary>
+/// Used by Phase 2 inline update — matches legacy btnUpdate_onClick per-row data.
+/// </summary>
+public class TagUpdateItem
+{
+    public int TagId { get; set; }
+    public string Text { get; set; } = "";
+    public string Url { get; set; } = "";
+    public int DisplayOrder { get; set; }
 }

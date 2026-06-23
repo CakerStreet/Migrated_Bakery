@@ -87,6 +87,128 @@ public class ManageSearchTagsController : Controller
         return RedirectToAction("Products", new { tagId });
     }
 
+    // ─── Phase 2: Inline Update (matches legacy btnUpdate_onClick) ──────────────
+
+    [HttpPost("update")]
+    public async Task<IActionResult> Update(
+        [FromForm] List<int> tagIds,
+        [FromForm] List<string> tagTexts,
+        [FromForm] List<string> tagUrls,
+        [FromForm] List<int> tagOrders,
+        [FromForm] int searchfor = 0,
+        [FromForm] int status = 1,
+        [FromForm] string filterp = "",
+        [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11,
+        [FromForm] int pno = 1)
+    {
+        var updates = new List<TagUpdateItem>();
+        if (tagIds != null)
+        {
+            for (int i = 0; i < tagIds.Count; i++)
+            {
+                updates.Add(new TagUpdateItem
+                {
+                    TagId = tagIds[i],
+                    Text = (tagTexts != null && i < tagTexts.Count) ? tagTexts[i] : "",
+                    Url = (tagUrls != null && i < tagUrls.Count) ? tagUrls[i] : "",
+                    DisplayOrder = (tagOrders != null && i < tagOrders.Count) ? tagOrders[i] : 0
+                });
+            }
+        }
+
+        var count = await _service.UpdateTagsAsync(updates);
+        TempData["Message"] = $"{count} tag(s) updated.";
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Phase 2: Per-row Active Toggle (matches legacy lnkActive_OnClick) ──────
+
+    [HttpPost("toggleactive/{tagId:int}")]
+    public async Task<IActionResult> ToggleActive(int tagId,
+        [FromForm] int searchfor = 0, [FromForm] int status = 1,
+        [FromForm] string filterp = "", [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11, [FromForm] int pno = 1)
+    {
+        await _service.ToggleActiveAsync(tagId);
+        TempData["Message"] = $"Tag {tagId} active status toggled.";
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Phase 2: Bulk Activate/Deactivate (matches legacy btnActive/btnDeactive) ─
+
+    [HttpPost("bulkactivate")]
+    public async Task<IActionResult> BulkActivate(
+        [FromForm] List<int> selectedTags,
+        [FromForm] int searchfor = 0, [FromForm] int status = 1,
+        [FromForm] string filterp = "", [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11, [FromForm] int pno = 1)
+    {
+        if (selectedTags == null || selectedTags.Count == 0)
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var count = await _service.BulkSetActiveAsync(selectedTags, true);
+            TempData["Message"] = $"{count} tag(s) activated.";
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    [HttpPost("bulkdeactivate")]
+    public async Task<IActionResult> BulkDeactivate(
+        [FromForm] List<int> selectedTags,
+        [FromForm] int searchfor = 0, [FromForm] int status = 1,
+        [FromForm] string filterp = "", [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11, [FromForm] int pno = 1)
+    {
+        if (selectedTags == null || selectedTags.Count == 0)
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var count = await _service.BulkSetActiveAsync(selectedTags, false);
+            TempData["Message"] = $"{count} tag(s) deactivated.";
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Phase 2: Toggle Show at Front (matches legacy lnkUnlinked_OnClick) ─────
+
+    [HttpPost("togglefront/{tagId:int}")]
+    public async Task<IActionResult> ToggleShowAtFront(int tagId,
+        [FromForm] int searchfor = 0, [FromForm] int status = 1,
+        [FromForm] string filterp = "", [FromForm] int rdsearchtype = 0,
+        [FromForm] int sort = 11, [FromForm] int pno = 1)
+    {
+        await _service.ToggleShowAtFrontAsync(tagId);
+        TempData["Message"] = $"Tag {tagId} Show at Front toggled.";
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+
     // ─── Helper: Build URL with current filters (matches legacy GetPageUrl) ─────
 
     public static string BuildPageUrl(SearchTagListResult model, int pageNo)

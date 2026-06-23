@@ -21,7 +21,8 @@ public class MigrationSafetyFilter : IAsyncActionFilter
     private static readonly HashSet<string> WhitelistedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
         "/businesslogin",        // POST login (password check, OTP generation, login attempt log)
-        "/businesslogin/verifyotp" // POST OTP verification
+        "/businesslogin/verifyotp", // POST OTP verification
+        "/managesearchtags"      // POST tag updates (Phase 2 CRM mutations — inline edit, toggle active, bulk activate/deactivate)
     };
 
     public MigrationSafetyFilter(IConfiguration config)

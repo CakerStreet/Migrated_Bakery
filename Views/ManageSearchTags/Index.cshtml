@@ -2,20 +2,28 @@
 @using CakerStreet.Business.Controllers
 @{
     ViewData["Title"] = "Manage Search Tags";
+    var msg = TempData["Message"]?.ToString();
 }
 <div class="container-fluid py-3">
 
-    @* ── Header (matches legacy innerhead) ──────────────────────────────────── *@
+    @* ── Header ──────────────────────────────────────────────────────────────── *@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0"><i class="fas fa-tags"></i> Manage Search Tags</h4>
         <a href="/" class="text-muted small" target="_blank">www.cakerstreet.com</a>
     </div>
 
-    @* ── Search/Filter Panel (matches legacy dvSearch) ──────────────────────── *@
+    @* ── Message Panel (matches legacy pnlMsg / lblMainMsg) ─────────────────── *@
+    @if (!string.IsNullOrEmpty(msg))
+    {
+        <div class="alert alert-info alert-dismissible fade show py-2" role="alert">
+            @msg
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* ── Search/Filter Panel ────────────────────────────────────────────────── *@
     <form method="get" action="/managesearchtags" class="card mb-3">
         <div class="card-body py-2">
-
-            @* Search Type — legacy rblSearchTagFor *@
             <div class="form-group row mb-2">
                 <label class="col-sm-2 col-form-label"><strong>Search Type</strong></label>
                 <div class="col-sm-6">
@@ -29,8 +37,6 @@
                     </div>
                 </div>
             </div>
-
-            @* Keyword + Search Mode — legacy txtName + rdsearchtype *@
             <div class="form-group row mb-2">
                 <label class="col-sm-2 col-form-label"><strong>Keyword</strong></label>
                 <div class="col-sm-3">
@@ -45,8 +51,6 @@
                     </select>
                 </div>
             </div>
-
-            @* Status — legacy rblActive *@
             <div class="form-group row mb-2">
                 <label class="col-sm-2 col-form-label"><strong>Status</strong></label>
                 <div class="col-sm-6">
@@ -60,8 +64,6 @@
                     </div>
                 </div>
             </div>
-
-            @* Sort — legacy drpsort *@
             <div class="form-group row mb-2">
                 <label class="col-sm-2 col-form-label"><strong>Sort</strong></label>
                 <div class="col-sm-3">
@@ -76,8 +78,6 @@
                     </select>
                 </div>
             </div>
-
-            @* Search / Reset Buttons *@
             <div class="form-group row">
                 <div class="col-sm-offset-2 col-sm-6 offset-sm-2">
                     <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-search"></i> Search</button>
@@ -87,7 +87,7 @@
         </div>
     </form>
 
-    @* ── Results Count (matches legacy litTagcount) ─────────────────────────── *@
+    @* ── Results Count ──────────────────────────────────────────────────────── *@
     <div class="d-flex justify-content-between align-items-center mb-2">
         <span class="text-muted">
             <strong>@Model.TotalTags</strong> results found
@@ -95,120 +95,171 @@
         </span>
     </div>
 
-    @* ── Top Action Bar (Phase 1: read-only placeholders for future buttons) ── *@
+    @* ── Top Action Bar (Phase 2: active mutation buttons) ────────────────── *@
     <div class="btn-toolbar mb-2" role="toolbar">
         <div class="btn-group btn-group-sm me-2">
             <button type="button" class="btn btn-outline-secondary" onclick="checkAll(true)">Select All</button>
             <button type="button" class="btn btn-outline-secondary" onclick="checkAll(false)">Unselect</button>
         </div>
-        @* Future Phase buttons will go here: Update, Delete, Activate, Deactivate, etc. *@
+        @* Phase 2: Bulk Activate/Deactivate *@
+        <div class="btn-group btn-group-sm me-2">
+            <button type="button" class="btn btn-success" onclick="bulkAction('bulkactivate')">
+                <i class="fas fa-check"></i> Activate
+            </button>
+            <button type="button" class="btn btn-danger" onclick="bulkAction('bulkdeactivate')">
+                <i class="fas fa-ban"></i> Deactivate
+            </button>
+        </div>
+        @* Phase 2: Update button *@
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-primary" onclick="submitUpdate()">
+                <i class="fas fa-save"></i> Update
+            </button>
+        </div>
     </div>
 
-    @* ── Data Table (matches legacy dtlstOrder repeater columns) ──────────── *@
-    <table class="table table-sm table-bordered table-striped table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th style="width:35px"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)" /></th>
-                <th style="width:90px">Created On</th>
-                <th>Title</th>
-                <th style="width:200px">URL</th>
-                <th style="width:60px" class="text-center">Order</th>
-                <th style="width:80px" class="text-center">Total Records</th>
-                <th style="width:80px" class="text-center">Downloaded</th>
-                <th style="width:70px" class="text-center">SEO</th>
-                <th style="width:60px" class="text-center">Front</th>
-                <th style="width:90px" class="text-center">Status</th>
-                <th style="width:80px" class="text-center">Product / Export</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var tag in Model.Tags)
-            {
-                <tr class="@(!tag.IsActive ? "table-warning" : "")">
-                    @* Checkbox *@
-                    <td><input type="checkbox" name="selectedTags" value="@tag.TagId" class="chkRow" /></td>
+    @* ── Data Table (Phase 2: editable fields + action buttons) ──────────── *@
+    <form id="frmUpdate" method="post" action="/managesearchtags/update">
+        @* Pass current filter state so redirect preserves context *@
+        <input type="hidden" name="searchfor" value="@Model.SearchFor" />
+        <input type="hidden" name="status" value="@Model.Status" />
+        <input type="hidden" name="filterp" value="@Model.FilterP" />
+        <input type="hidden" name="rdsearchtype" value="@Model.SearchType" />
+        <input type="hidden" name="sort" value="@Model.Sort" />
+        <input type="hidden" name="pno" value="@Model.CurrentPage" />
 
-                    @* Created Date — legacy lblOrderDate *@
-                    <td class="small">@(tag.CreatedOn?.ToString("dd/MM/yyyy") ?? "")</td>
-
-                    @* Tag Text + URL (editable in Phase 2, read-only now) *@
-                    <td>
-                        <strong>@tag.Text</strong>
-                        @if (tag.SearchCount > 0)
-                        {
-                            <br /><small class="text-muted">Search count: @tag.SearchCount</small>
-                        }
-                    </td>
-
-                    @* URL *@
-                    <td class="small text-muted text-break">@tag.Url</td>
-
-                    @* Display Order *@
-                    <td class="text-center">@tag.DisplayOrder</td>
-
-                    @* Total Records (Product Count) — legacy countprd *@
-                    <td class="text-center">
-                        @if (tag.ProductCount > 500) { <span class="badge bg-danger">@tag.ProductCount</span> }
-                        else if (tag.ProductCount > 100) { <span class="badge bg-warning text-dark">@tag.ProductCount</span> }
-                        else if (tag.ProductCount > 0) { <span class="badge bg-info">@tag.ProductCount</span> }
-                        else { <span class="text-muted">0</span> }
-                    </td>
-
-                    @* Downloaded Count — legacy countdnld *@
-                    <td class="text-center">
-                        @if (tag.DownloadedCount > 0) { <span class="badge bg-secondary">@tag.DownloadedCount</span> }
-                        else { <span class="text-muted">0</span> }
-                    </td>
-
-                    @* SEO — legacy linked to tagseo.aspx *@
-                    <td class="text-center">
-                        <span class="badge bg-outline-info">SEO</span>
-                    </td>
-
-                    @* Show at Front — legacy tags_Showatfront *@
-                    <td class="text-center">
-                        @if (tag.ShowAtFront) { <span class="badge bg-success">Yes</span> }
-                        else { <span class="badge bg-secondary">No</span> }
-                    </td>
-
-                    @* Status — legacy lnkActive toggle *@
-                    <td class="text-center">
-                        @if (tag.IsActive)
-                        {
-                            <span class="badge bg-success">Active</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-danger">Inactive</span>
-                        }
-                    </td>
-
-                    @* Product view / Sub-tags link *@
-                    <td class="text-center">
-                        <a href="/managesearchtags/products/@tag.TagId" class="btn btn-sm btn-outline-primary" title="View linked products">
-                            <i class="fas fa-list"></i>
-                        </a>
-                    </td>
+        <table class="table table-sm table-bordered table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width:35px"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)" /></th>
+                    <th style="width:90px">Created On</th>
+                    <th>Title</th>
+                    <th style="width:200px">URL</th>
+                    <th style="width:70px" class="text-center">Order</th>
+                    <th style="width:70px" class="text-center">Records</th>
+                    <th style="width:60px" class="text-center">Dnld</th>
+                    <th style="width:60px" class="text-center">Front</th>
+                    <th style="width:80px" class="text-center">Status</th>
+                    <th style="width:80px" class="text-center">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var tag in Model.Tags)
+                {
+                    <tr class="@(!tag.IsActive ? "table-warning" : "")">
+                        @* Checkbox — used by bulk activate/deactivate *@
+                        <td><input type="checkbox" name="selectedTags" value="@tag.TagId" class="chkRow" /></td>
 
-    @* ── Pagination (matches legacy First/Prev/Pages/Next/Last) ──────────── *@
+                        @* Created Date *@
+                        <td class="small">@(tag.CreatedOn?.ToString("dd/MM/yyyy") ?? "")</td>
+
+                        @* Editable Tag Text (Phase 2: matches legacy txttagtext) *@
+                        <td>
+                            <input type="hidden" name="tagIds" value="@tag.TagId" />
+                            <input type="text" name="tagTexts" value="@tag.Text"
+                                   class="form-control form-control-sm" style="font-weight:bold" />
+                            @if (tag.SearchCount > 0)
+                            {
+                                <small class="text-muted">Search: @tag.SearchCount</small>
+                            }
+                        </td>
+
+                        @* Editable Tag URL (Phase 2: matches legacy txttagURL) *@
+                        <td>
+                            <input type="text" name="tagUrls" value="@tag.Url"
+                                   class="form-control form-control-sm text-muted" style="font-size:11px" />
+                        </td>
+
+                        @* Editable Display Order (Phase 2: matches legacy txtbox) *@
+                        <td class="text-center">
+                            <input type="number" name="tagOrders" value="@tag.DisplayOrder"
+                                   class="form-control form-control-sm text-center" style="width:60px" />
+                        </td>
+
+                        @* Total Records (Product Count) *@
+                        <td class="text-center">
+                            @if (tag.ProductCount > 500) { <span class="badge bg-danger">@tag.ProductCount</span> }
+                            else if (tag.ProductCount > 100) { <span class="badge bg-warning text-dark">@tag.ProductCount</span> }
+                            else if (tag.ProductCount > 0) { <span class="badge bg-info">@tag.ProductCount</span> }
+                            else { <span class="text-muted">0</span> }
+                        </td>
+
+                        @* Downloaded Count *@
+                        <td class="text-center">
+                            @if (tag.DownloadedCount > 0) { <span class="badge bg-secondary">@tag.DownloadedCount</span> }
+                            else { <span class="text-muted">0</span> }
+                        </td>
+
+                        @* Show at Front — Phase 2: clickable toggle (matches legacy lnkUnlinked) *@
+                        <td class="text-center">
+                            <form method="post" action="/managesearchtags/togglefront/@tag.TagId" style="display:inline">
+                                <input type="hidden" name="searchfor" value="@Model.SearchFor" />
+                                <input type="hidden" name="status" value="@Model.Status" />
+                                <input type="hidden" name="filterp" value="@Model.FilterP" />
+                                <input type="hidden" name="rdsearchtype" value="@Model.SearchType" />
+                                <input type="hidden" name="sort" value="@Model.Sort" />
+                                <input type="hidden" name="pno" value="@Model.CurrentPage" />
+                                <button type="submit" class="btn btn-sm @(tag.ShowAtFront ? "btn-success" : "btn-outline-secondary")" title="Toggle Show at Front">
+                                    @(tag.ShowAtFront ? "Yes" : "No")
+                                </button>
+                            </form>
+                        </td>
+
+                        @* Status — Phase 2: clickable toggle (matches legacy lnkActive) *@
+                        <td class="text-center">
+                            <form method="post" action="/managesearchtags/toggleactive/@tag.TagId" style="display:inline">
+                                <input type="hidden" name="searchfor" value="@Model.SearchFor" />
+                                <input type="hidden" name="status" value="@Model.Status" />
+                                <input type="hidden" name="filterp" value="@Model.FilterP" />
+                                <input type="hidden" name="rdsearchtype" value="@Model.SearchType" />
+                                <input type="hidden" name="sort" value="@Model.Sort" />
+                                <input type="hidden" name="pno" value="@Model.CurrentPage" />
+                                <button type="submit" class="btn btn-sm @(tag.IsActive ? "btn-success" : "btn-danger")" title="Toggle Active">
+                                    @(tag.IsActive ? "Active" : "Inactive")
+                                </button>
+                            </form>
+                        </td>
+
+                        @* Actions: View products *@
+                        <td class="text-center">
+                            <a href="/managesearchtags/products/@tag.TagId" class="btn btn-sm btn-outline-primary" title="View linked products">
+                                <i class="fas fa-list"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </form>
+
+    @* ── Bottom Action Bar (legacy had duplicate buttons at bottom) ─────── *@
+    <div class="btn-toolbar mb-3" role="toolbar">
+        <div class="btn-group btn-group-sm me-2">
+            <button type="button" class="btn btn-success" onclick="bulkAction('bulkactivate')">
+                <i class="fas fa-check"></i> Activate
+            </button>
+            <button type="button" class="btn btn-danger" onclick="bulkAction('bulkdeactivate')">
+                <i class="fas fa-ban"></i> Deactivate
+            </button>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-primary" onclick="submitUpdate()">
+                <i class="fas fa-save"></i> Update
+            </button>
+        </div>
+    </div>
+
+    @* ── Pagination ──────────────────────────────────────────────────────── *@
     @if (Model.TotalPages > 1)
     {
         <nav class="d-flex align-items-center">
             <ul class="pagination pagination-sm mb-0">
-                @* First *@
                 <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
                     <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, 1)">First</a>
                 </li>
-                @* Prev *@
                 <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
                     <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, Model.CurrentPage - 1)">Prev</a>
                 </li>
-
-                @* Page numbers — show window of 10 pages around current *@
                 @{
                     int startPage = Math.Max(1, Model.CurrentPage - 5);
                     int endPage = Math.Min(Model.TotalPages, startPage + 9);
@@ -220,12 +271,9 @@
                         <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, i)">@i</a>
                     </li>
                 }
-
-                @* Next *@
                 <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
                     <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, Model.CurrentPage + 1)">Next</a>
                 </li>
-                @* Last *@
                 <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
                     <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, Model.TotalPages)">Last</a>
                 </li>
@@ -235,20 +283,63 @@
 </div>
 
 <script>
-    // Select all / unselect all checkboxes — matches legacy checkUncheck
+    // Select/unselect all checkboxes (matches legacy checkUncheck)
     function checkAll(checked) {
         document.querySelectorAll('.chkRow').forEach(cb => cb.checked = checked);
         var chkAll = document.getElementById('chkAll');
         if (chkAll) chkAll.checked = checked;
     }
 
-    // Auto-submit on radio/dropdown change (matches legacy AutoPostBack behavior)
-    document.querySelectorAll('input[name="searchfor"], input[name="status"]').forEach(function(el) {
+    // Auto-submit filter form on radio/dropdown change (matches legacy AutoPostBack)
+    document.querySelectorAll('form.card input[name="searchfor"], form.card input[name="status"]').forEach(function(el) {
         el.addEventListener('change', function() {
             this.closest('form').submit();
         });
     });
-    document.querySelector('select[name="sort"]').addEventListener('change', function() {
+    document.querySelector('form.card select[name="sort"]').addEventListener('change', function() {
         this.closest('form').submit();
     });
+
+    // Phase 2: Submit inline update form
+    function submitUpdate() {
+        document.getElementById('frmUpdate').submit();
+    }
+
+    // Phase 2: Bulk activate/deactivate
+    function bulkAction(action) {
+        var selected = document.querySelectorAll('.chkRow:checked');
+        if (selected.length === 0) {
+            alert('Please select at least one tag.');
+            return;
+        }
+        if (!confirm('Are you sure you want to ' + action.replace('bulk','') + ' ' + selected.length + ' tag(s)?')) return;
+
+        // Create a form with selected IDs and submit
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/managesearchtags/' + action;
+
+        selected.forEach(function(cb) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selectedTags';
+            input.value = cb.value;
+            form.appendChild(input);
+        });
+
+        // Pass current filter state
+        ['searchfor', 'status', 'filterp', 'rdsearchtype', 'sort', 'pno'].forEach(function(name) {
+            var source = document.querySelector('#frmUpdate input[name="' + name + '"]');
+            if (source) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = source.value;
+                form.appendChild(input);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
 </script>
