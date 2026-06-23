@@ -105,38 +105,44 @@
         </div>
     }
 
-    @* ── Top Action Bar (Phase 2: active mutation buttons) ────────────────── *@
-    <div class="btn-toolbar mb-2" role="toolbar">
-        <div class="btn-group btn-group-sm me-2">
+
+    @* ── Top Action Bar (all buttons matching legacy crmsearchtag.aspx) ──── *@
+    <div class="btn-toolbar mb-2 flex-wrap" role="toolbar">
+        <div class="btn-group btn-group-sm me-2 mb-1">
             <button type="button" class="btn btn-outline-secondary" onclick="checkAll(true)">Select All</button>
             <button type="button" class="btn btn-outline-secondary" onclick="checkAll(false)">Unselect</button>
         </div>
-        @* Phase 2: Bulk Activate/Deactivate (matches legacy btnActive/btnDeactive) *@
-        <div class="btn-group btn-group-sm me-2">
-            <button type="button" class="btn btn-primary" onclick="bulkAction('bulkactivate')">
-                Activate
-            </button>
-            <button type="button" class="btn btn-primary" onclick="bulkAction('bulkdeactivate')">
-                DeActivate
-            </button>
+        @* Activate/Deactivate *@
+        <div class="btn-group btn-group-sm me-2 mb-1">
+            <button type="button" class="btn btn-primary" onclick="bulkAction('bulkactivate')">Activate</button>
+            <button type="button" class="btn btn-primary" onclick="bulkAction('bulkdeactivate')">DeActivate</button>
         </div>
-        @* Phase 2: Update button *@
-        <div class="btn-group btn-group-sm me-2">
-            <button type="button" class="btn btn-primary" onclick="submitUpdate()">
-                Update Record(s)
-            </button>
+        @* Update *@
+        <div class="btn-group btn-group-sm me-2 mb-1">
+            <button type="button" class="btn btn-primary" onclick="submitUpdate()">Update Record(s)</button>
         </div>
-        @* Phase 3: Link/Unlink by Keywords (matches legacy btnlinkprdbykeywords / btnunlinkprdbykeywords) *@
-        <div class="btn-group btn-group-sm me-2">
-            <button type="button" class="btn btn-primary" onclick="openLinkModal('link')">
-                Link Products By Keywords
-            </button>
-            <button type="button" class="btn btn-primary" onclick="openLinkModal('unlink')">
-                Unlink Products By Keywords
-            </button>
+        @* Delete (legacy btnDelete + btnDeletetagsnimages) *@
+        <div class="btn-group btn-group-sm me-2 mb-1">
+            <button type="button" class="btn btn-primary" onclick="bulkDelete('deletetags')">Delete Tags Only</button>
+            <button type="button" class="btn btn-primary" onclick="bulkDelete('deletetagswithimages')">Delete Tags + Images</button>
         </div>
-        @* View All (matches legacy Button9/btnviewall) *@
-        <div class="btn-group btn-group-sm">
+        @* Link/Unlink by Keywords *@
+        <div class="btn-group btn-group-sm me-2 mb-1">
+            <button type="button" class="btn btn-primary" onclick="openLinkModal('link')">Link Products By Keywords</button>
+            <button type="button" class="btn btn-primary" onclick="openLinkModal('unlink')">Unlink Products By Keywords</button>
+        </div>
+        @* Create/Merge (legacy btncreatenewtag, btnMergetags, btnlinknewtag) *@
+        <div class="btn-group btn-group-sm me-2 mb-1">
+            <button type="button" class="btn btn-primary" onclick="openCreateTagModal('0')">Add New Search Tag</button>
+            <button type="button" class="btn btn-primary" onclick="mergeTags()">Merge Tags</button>
+            <button type="button" class="btn btn-primary" onclick="mergeIntoNew()">Link Tags into New/Existed Tags</button>
+        </div>
+        @* Export (legacy btnExportCSV) *@
+        <div class="btn-group btn-group-sm me-2 mb-1">
+            <a href="/crmsearchtag/exportcsv?searchfor=@Model.SearchFor&status=@Model.Status&filterp=@Uri.EscapeDataString(Model.FilterP ?? "")&rdsearchtype=@Model.SearchType&sort=@Model.Sort" class="btn btn-primary">Export to Excel Sheet</a>
+        </div>
+        @* View All *@
+        <div class="btn-group btn-group-sm mb-1">
             <a href="/crmsearchtag" class="btn btn-primary">View All</a>
         </div>
     </div>
@@ -556,4 +562,126 @@
         div.appendChild(document.createTextNode(text));
         return div.innerHTML;
     }
+
+    // ── Delete (legacy btnDelete_Click / btnDeletetagsnimages_Click) ──────────
+    function bulkDelete(action) {
+        var checked = document.querySelectorAll('.chkTag:checked');
+        if (checked.length === 0) { alert('Select at least one tag.'); return; }
+        var label = action === 'deletetags' ? 'Delete tags only' : 'Delete tags AND images';
+        if (!confirm(label + '?\n\nThis will permanently delete ' + checked.length + ' tag(s). Continue?')) return;
+
+        var ids = [];
+        checked.forEach(function(cb) { ids.push(cb.value); });
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/crmsearchtag/' + action;
+
+        var tagInput = document.createElement('input');
+        tagInput.type = 'hidden'; tagInput.name = 'tagIds'; tagInput.value = ids.join(',');
+        form.appendChild(tagInput);
+
+        appendFilterInputs(form);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // ── Merge Tags (legacy btnMergetags_onClick) ─────────────────────────────
+    function mergeTags() {
+        var checked = document.querySelectorAll('.chkTag:checked');
+        if (checked.length < 2) { alert('Select at least 2 tags to merge.'); return; }
+        if (!confirm('Merge ' + checked.length + ' tags? All products will be linked to the first selected tag.')) return;
+
+        var ids = [];
+        checked.forEach(function(cb) { ids.push(cb.value); });
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/crmsearchtag/mergetags';
+
+        var tagInput = document.createElement('input');
+        tagInput.type = 'hidden'; tagInput.name = 'tagIds'; tagInput.value = ids.join(',');
+        form.appendChild(tagInput);
+
+        appendFilterInputs(form);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // ── Merge into New (legacy btnlinknewtag_Click → shows popup) ────────────
+    function mergeIntoNew() {
+        var checked = document.querySelectorAll('.chkTag:checked');
+        if (checked.length === 0) { alert('Select at least one tag.'); return; }
+
+        var ids = [];
+        checked.forEach(function(cb) { ids.push(cb.value); });
+
+        openCreateTagModal(ids.join(','));
+    }
+
+    // ── Create Tag Modal (legacy dvCancelOrder popup) ────────────────────────
+    function openCreateTagModal(tagIds) {
+        var isNew = (tagIds === '0');
+        document.getElementById('createTagHeader').textContent = isNew
+            ? 'Add new search tag'
+            : 'Link Tags into New/Existed Tags';
+        document.getElementById('createTagIds').value = tagIds;
+        document.getElementById('createTagKeyword').value = '';
+        document.getElementById('createTagModal').style.display = 'block';
+    }
+
+    function closeCreateTagModal() {
+        document.getElementById('createTagModal').style.display = 'none';
+    }
+
+    function submitCreateTag() {
+        var keyword = document.getElementById('createTagKeyword').value.trim();
+        if (!keyword) { alert('Enter a tag keyword.'); return; }
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/crmsearchtag/createtag';
+
+        var addField = function(name, value) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = name; inp.value = value;
+            form.appendChild(inp);
+        };
+        addField('tagKeyword', keyword);
+        addField('tagIds', document.getElementById('createTagIds').value);
+        addField('searchTagFor', document.querySelector('#frmUpdate input[name="searchfor"]')?.value || '0');
+
+        appendFilterInputs(form);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // ── Helper: append current filter inputs to any form ─────────────────────
+    function appendFilterInputs(form) {
+        ['searchfor', 'status', 'filterp', 'rdsearchtype', 'sort', 'pno'].forEach(function(name) {
+            var source = document.querySelector('#frmUpdate input[name="' + name + '"]');
+            if (source) {
+                var input = document.createElement('input');
+                input.type = 'hidden'; input.name = name; input.value = source.value;
+                form.appendChild(input);
+            }
+        });
+    }
 </script>
+
+@* ── Create Tag Modal (matches legacy dvCancelOrder popup) ───────────────── *@
+<div id="createTagModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1050;">
+    <div style="margin:100px auto; max-width:500px; background:#fff; padding:20px; border-radius:4px;">
+        <h5 id="createTagHeader">Add new search tag</h5>
+        <input type="hidden" id="createTagIds" value="0" />
+        <div class="mb-3">
+            <label class="form-label">Tag Keyword</label>
+            <input type="text" id="createTagKeyword" class="form-control" placeholder="Enter tag keyword" />
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-sm" onclick="submitCreateTag()">Submit</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeCreateTagModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+

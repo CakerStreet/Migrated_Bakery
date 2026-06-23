@@ -667,6 +667,225 @@ ORDER BY {orderBy}";
 
         return await cmd.ExecuteNonQueryAsync();
     }
+
+    // ─── Delete Tags Only (matches legacy btnDelete_Click) ───────────────────────
+    // Deletes: tbl_lnkPrd2tag links, tbl_Searchtags rows, tbl_lnkTags rows
+
+    public async Task<int> DeleteTagsOnlyAsync(List<int> tagIds)
+    {
+        if (tagIds == null || tagIds.Count == 0) return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        var idList = string.Join(",", tagIds);
+
+        // 1. Delete product links
+        await using (var cmd1 = new SqlCommand($"DELETE FROM tbl_lnkPrd2tag WHERE lnkPrd2tag_tagID IN ({idList})", conn))
+            await cmd1.ExecuteNonQueryAsync();
+
+        // 2. Delete tag rows
+        int deleted;
+        await using (var cmd2 = new SqlCommand($"DELETE FROM tbl_Searchtags WHERE tags_ID IN ({idList})", conn))
+            deleted = await cmd2.ExecuteNonQueryAsync();
+
+        // 3. Delete sub-tag links (both directions)
+        await using (var cmd3 = new SqlCommand($"DELETE FROM tbl_lnkTags WHERE lnkTags_tagID IN ({idList}) OR lnkTags_parenttagID IN ({idList})", conn))
+            await cmd3.ExecuteNonQueryAsync();
+
+        return deleted;
+    }
+
+    // ─── Delete Tags With Images (matches legacy btnDeletetagsnimages_Click) ─────
+    // Also deletes: tbl_googlesearch, tbl_googlesearchtext, tbl_lnkgooglesearch
+
+    public async Task<int> DeleteTagsWithImagesAsync(List<int> tagIds)
+    {
+        if (tagIds == null || tagIds.Count == 0) return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Per-tag: delete google images not linked to other tags
+        foreach (var tagId in tagIds)
+        {
+            // Delete google search entries exclusive to this tag
+            await using (var cmd = new SqlCommand(@"
+                DELETE FROM tbl_googlesearch WHERE googlesearch_ID IN (
+                    SELECT lnkPrd2tag_prdID FROM tbl_lnkPrd2tag 
+                    WHERE lnkPrd2tag_tagID = @tagId AND lnkPrd2tag_apiID = 1 
+                    AND lnkPrd2tag_prdID NOT IN (
+                        SELECT lnkPrd2tag_prdID FROM tbl_lnkPrd2tag 
+                        WHERE lnkPrd2tag_tagID <> @tagId AND lnkPrd2tag_apiID = 1
+                    )
+                )", conn))
+            {
+                cmd.Parameters.AddWithValue("@tagId", tagId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Delete google search text matching tag text
+            await using (var cmd = new SqlCommand(@"
+                DELETE FROM tbl_googlesearchtext WHERE googlesearchtext_text IN (
+                    SELECT tags_text FROM tbl_Searchtags WHERE tags_ID = @tagId
+                )", conn))
+            {
+                cmd.Parameters.AddWithValue("@tagId", tagId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Delete google search link entries exclusive to this tag
+            await using (var cmd = new SqlCommand(@"
+                DELETE FROM tbl_lnkgooglesearch WHERE lnkgooglesearch_prdID IN (
+                    SELECT lnkPrd2tag_prdID FROM tbl_lnkPrd2tag 
+                    WHERE lnkPrd2tag_tagID = @tagId AND lnkPrd2tag_apiID = 1 
+                    AND lnkPrd2tag_prdID NOT IN (
+                        SELECT lnkPrd2tag_prdID FROM tbl_lnkPrd2tag 
+                        WHERE lnkPrd2tag_tagID <> @tagId AND lnkPrd2tag_apiID = 1
+                    )
+                )", conn))
+            {
+                cmd.Parameters.AddWithValue("@tagId", tagId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Then do same as DeleteTagsOnly
+        var idList = string.Join(",", tagIds);
+
+        await using (var cmd1 = new SqlCommand($"DELETE FROM tbl_lnkPrd2tag WHERE lnkPrd2tag_tagID IN ({idList})", conn))
+            await cmd1.ExecuteNonQueryAsync();
+
+        int deleted;
+        await using (var cmd2 = new SqlCommand($"DELETE FROM tbl_Searchtags WHERE tags_ID IN ({idList})", conn))
+            deleted = await cmd2.ExecuteNonQueryAsync();
+
+        await using (var cmd3 = new SqlCommand($"DELETE FROM tbl_lnkTags WHERE lnkTags_tagID IN ({idList}) OR lnkTags_parenttagID IN ({idList})", conn))
+            await cmd3.ExecuteNonQueryAsync();
+
+        return deleted;
+    }
+
+    // ─── Create New Tag / Link to Existing (matches legacy btnlinknewtag_submit_Click) ──
+    // Uses stored procedure dbo.mergesearchtagIDsintonewTag
+    // When tagIds="0", creates a new standalone tag
+    // When tagIds="1,2,3", creates tag and links products from those tags
+
+    public async Task<string> CreateOrLinkTagAsync(string tagIds, string tagKeyword, int searchTagFor)
+    {
+        if (string.IsNullOrWhiteSpace(tagKeyword)) return "Tag keyword is required.";
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("dbo.mergesearchtagIDsintonewTag", conn)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("@tagIDs", tagIds ?? "0");
+        cmd.Parameters.AddWithValue("@tagkeyword", tagKeyword.Trim());
+        cmd.Parameters.AddWithValue("@searchtagfor", searchTagFor);
+
+        await cmd.ExecuteNonQueryAsync();
+
+        return tagIds == "0"
+            ? "Tag Added Successfully."
+            : "Tag Added and Product(s) Linked Successfully.";
+    }
+
+    // ─── Merge Tags (matches legacy btnMergetags_onClick) ────────────────────────
+    // Uses stored procedure dbo.mergesearchtagIDs
+    // Takes comma-separated tag IDs, links all products from later tags to first tag
+
+    public async Task<string> MergeTagsAsync(string tagIds)
+    {
+        if (string.IsNullOrWhiteSpace(tagIds) || !tagIds.Contains(","))
+            return "Select at least 2 tags to merge.";
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new SqlCommand("dbo.mergesearchtagIDs", conn)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("@tagIDs", tagIds);
+
+        await cmd.ExecuteNonQueryAsync();
+        return "Product(s) Linked Successfully.";
+    }
+
+    // ─── Export to Excel (matches legacy btnExportCSV_Click) ──────────────────────
+    // Returns DataTable with all tags matching current filters, for CSV/Excel export
+
+    public async Task<System.Data.DataTable> ExportTagsAsync(
+        int searchFor = 0, int status = 1, string filterp = "", int searchType = 0, int sort = 0)
+    {
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // Build WHERE (same as GetTagsAsync)
+        var where = "1=1";
+        if (status == 1) where += " AND tags_IsActive = 1";
+        else if (status == 2) where += " AND tags_IsActive = 0";
+        where += $" AND tags_for = {searchFor}";
+
+        if (!string.IsNullOrWhiteSpace(filterp))
+        {
+            var keyword = filterp.Trim().Replace("+", " ");
+            switch (searchType)
+            {
+                case 1: where += " AND tags_text LIKE @filterp + '%'"; break;
+                case 2: where += " AND tags_text LIKE '%' + @filterp"; break;
+                case 3: where += " AND tags_text = @filterp"; break;
+                default:
+                    var parts = keyword.Replace(" ,", ",").Replace(", ", ",").Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 0; i < parts.Length; i++)
+                        where += $" AND tags_text LIKE '%' + @filterp{i} + '%'";
+                    break;
+            }
+        }
+
+        var orderBy = sort switch
+        {
+            0 => "tags_createdOn DESC, tags_displayorder",
+            1 => "tags_text, tags_displayorder",
+            2 => "tags_countsearch DESC, tags_displayorder",
+            _ => "tags_displayorder, tags_text"
+        };
+
+        // Legacy export SQL (simplified — matches legacy SetProperties.ExportTableName)
+        var sql = $@"SELECT 
+            CASE tags_for WHEN 0 THEN 'Cakes' WHEN 1 THEN 'Cupcakes' ELSE 'Party Accessory' END AS [Category],
+            tags_text AS [Tag Text],
+            tags_displayorder AS [Sort Order],
+            tags_countsearch AS [Search Count],
+            CASE tags_IsActive WHEN 1 THEN 'Active' ELSE 'Inactive' END AS [Status],
+            tags_createdOn AS [Created On],
+            (SELECT COUNT(1) FROM tbl_lnkPrd2tag WHERE lnkPrd2tag_tagID = tags_ID
+                AND lnkPrd2tag_apiID = 0
+                AND lnkPrd2tag_prdID IN (
+                    SELECT product_ID FROM tbl_products p
+                    WHERE p.product_isactive = 1 AND p.product_isdeleted = 0
+                      AND p.product_isexpired = 0 AND product_iswsp = 0
+                )
+            ) AS [Total Records],
+            ISNULL((SELECT COUNT(1) FROM tbl_googlesearch 
+                INNER JOIN tbl_lnkPrd2tag lnk2 ON lnk2.lnkPrd2tag_prdID = googlesearch_ID AND lnk2.lnkPrd2tag_apiID = 1
+                WHERE googlesearch_isdeleted = 0 AND googlesearch_isdownloaded = 1
+                  AND lnk2.lnkPrd2tag_tagID = tags_ID), 0) AS [Downloaded]
+        FROM tbl_Searchtags
+        WHERE {where}
+        ORDER BY {orderBy}";
+
+        await using var cmd = new SqlCommand(sql, conn);
+        AddFilterParameters(cmd, filterp, searchType);
+
+        var dt = new System.Data.DataTable();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        dt.Load(reader);
+        return dt;
+    }
 }
 
 // ─── Models ────────────────────────────────────────────────────────────────────

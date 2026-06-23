@@ -292,6 +292,140 @@ public class ManageSearchTagsController : Controller
         }, pno));
     }
 
+    // ─── Delete Tags Only (legacy btnDelete_Click) ──────────────────────────────
+
+    [HttpPost("deletetags")]
+    public async Task<IActionResult> DeleteTags(
+        string tagIds,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        if (string.IsNullOrWhiteSpace(tagIds))
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var ids = tagIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => int.TryParse(s.Trim(), out var v) ? v : 0).Where(v => v > 0).ToList();
+            var count = await _service.DeleteTagsOnlyAsync(ids);
+            TempData["Message"] = $"{count} Record(s) Deleted Successfully";
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Delete Tags + Images (legacy btnDeletetagsnimages_Click) ────────────────
+
+    [HttpPost("deletetagswithimages")]
+    public async Task<IActionResult> DeleteTagsWithImages(
+        string tagIds,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        if (string.IsNullOrWhiteSpace(tagIds))
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var ids = tagIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => int.TryParse(s.Trim(), out var v) ? v : 0).Where(v => v > 0).ToList();
+            var count = await _service.DeleteTagsWithImagesAsync(ids);
+            TempData["Message"] = $"{count} Record(s) and images Deleted Successfully";
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Create New Tag / Link to Existing (legacy btnlinknewtag_submit_Click) ──
+
+    [HttpPost("createtag")]
+    public async Task<IActionResult> CreateTag(
+        string tagKeyword, string tagIds = "0", int searchTagFor = 0,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        if (string.IsNullOrWhiteSpace(tagKeyword))
+        {
+            TempData["Message"] = "Tag keyword is required.";
+        }
+        else
+        {
+            var msg = await _service.CreateOrLinkTagAsync(tagIds, tagKeyword, searchTagFor);
+            TempData["Message"] = msg;
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Merge Tags (legacy btnMergetags_onClick) ────────────────────────────────
+
+    [HttpPost("mergetags")]
+    public async Task<IActionResult> MergeTags(
+        string tagIds,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        if (string.IsNullOrWhiteSpace(tagIds))
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var msg = await _service.MergeTagsAsync(tagIds);
+            TempData["Message"] = msg;
+        }
+        return Redirect(BuildPageUrl(new SearchTagListResult
+        {
+            SearchFor = searchfor, Status = status, FilterP = filterp,
+            SearchType = rdsearchtype, Sort = sort
+        }, pno));
+    }
+
+    // ─── Export to CSV (legacy btnExportCSV_Click) ───────────────────────────────
+
+    [HttpGet("exportcsv")]
+    public async Task<IActionResult> ExportCsv(
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 0)
+    {
+        var dt = await _service.ExportTagsAsync(searchfor, status, filterp, rdsearchtype, sort);
+
+        // Build CSV content
+        using var sw = new System.IO.StringWriter();
+        // Headers
+        var headers = new List<string>();
+        for (int i = 0; i < dt.Columns.Count; i++)
+            headers.Add($"\"{dt.Columns[i].ColumnName}\"");
+        sw.WriteLine(string.Join(",", headers));
+
+        // Rows
+        foreach (System.Data.DataRow row in dt.Rows)
+        {
+            var cells = new List<string>();
+            for (int i = 0; i < dt.Columns.Count; i++)
+            {
+                var val = row[i]?.ToString()?.Replace("\"", "\"\"") ?? "";
+                cells.Add($"\"{val}\"");
+            }
+            sw.WriteLine(string.Join(",", cells));
+        }
+
+        var bytes = System.Text.Encoding.UTF8.GetBytes(sw.ToString());
+        var fileName = $"searchtags_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        return File(bytes, "text/csv", fileName);
+    }
+
     // ─── Helper: Build URL with current filters (matches legacy GetPageUrl) ─────
 
     public static string BuildPageUrl(SearchTagListResult model, int pageNo)
