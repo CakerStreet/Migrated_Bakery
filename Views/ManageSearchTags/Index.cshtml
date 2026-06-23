@@ -103,6 +103,11 @@
             &gt;
             @Model.ParentTagText
         </div>
+        @* Sub-tag link/unlink buttons (legacy btnlinktags / btnUnlinktags) *@
+        <div class="btn-group btn-group-sm mb-2">
+            <button type="button" class="btn btn-primary" onclick="subTagAction('linksubtags')">Link Sub Tags</button>
+            <button type="button" class="btn btn-primary" onclick="subTagAction('unlinksubtags')">Unlink Sub Tags</button>
+        </div>
     }
 
 
@@ -650,6 +655,33 @@
         addField('tagKeyword', keyword);
         addField('tagIds', document.getElementById('createTagIds').value);
         addField('searchTagFor', document.querySelector('#frmUpdate input[name="searchfor"]')?.value || '0');
+
+        appendFilterInputs(form);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // ── Sub-tag link/unlink (legacy btnlinktags_Click / btnUnlinktags_Click) ──
+    function subTagAction(action) {
+        var checked = document.querySelectorAll('.chkTag:checked');
+        if (checked.length === 0) { alert('Select at least one tag.'); return; }
+        var verb = action === 'linksubtags' ? 'link' : 'unlink';
+        if (!confirm('Are you sure you want to ' + verb + ' ' + checked.length + ' sub-tag(s)?')) return;
+
+        var ids = [];
+        checked.forEach(function(cb) { ids.push(cb.value); });
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/crmsearchtag/' + action;
+
+        var addField = function(name, value) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = name; inp.value = value;
+            form.appendChild(inp);
+        };
+        addField('tagIds', ids.join(','));
+        addField('parentTagId', '@(Model.ParentTagId ?? 0)');
 
         appendFilterInputs(form);
         document.body.appendChild(form);

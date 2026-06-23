@@ -426,6 +426,52 @@ public class ManageSearchTagsController : Controller
         return File(bytes, "text/csv", fileName);
     }
 
+    // ─── Link Sub-Tags (legacy btnlinktags_Click — only in ?tagID=X mode) ────
+
+    [HttpPost("linksubtags")]
+    public async Task<IActionResult> LinkSubTags(
+        string tagIds, int parentTagId,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        if (string.IsNullOrWhiteSpace(tagIds) || parentTagId <= 0)
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var ids = tagIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => int.TryParse(s.Trim(), out var v) ? v : 0).Where(v => v > 0).ToList();
+            var count = await _service.LinkSubTagsAsync(parentTagId, ids);
+            TempData["Message"] = $"{count} Tag(s) Linked Successfully";
+        }
+        return Redirect($"/crmsearchtag?tagID={parentTagId}" +
+            (searchfor > 0 ? $"&searchfor={searchfor}" : ""));
+    }
+
+    // ─── Unlink Sub-Tags (legacy btnUnlinktags_Click — only in ?tagID=X mode) ─
+
+    [HttpPost("unlinksubtags")]
+    public async Task<IActionResult> UnlinkSubTags(
+        string tagIds, int parentTagId,
+        int searchfor = 0, int status = 1, string filterp = "",
+        int rdsearchtype = 0, int sort = 11, int pno = 1)
+    {
+        if (string.IsNullOrWhiteSpace(tagIds) || parentTagId <= 0)
+        {
+            TempData["Message"] = "No tags selected.";
+        }
+        else
+        {
+            var ids = tagIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => int.TryParse(s.Trim(), out var v) ? v : 0).Where(v => v > 0).ToList();
+            var count = await _service.UnlinkSubTagsAsync(parentTagId, ids);
+            TempData["Message"] = $"{count} Tag(s) Unlinked Successfully";
+        }
+        return Redirect($"/crmsearchtag?tagID={parentTagId}" +
+            (searchfor > 0 ? $"&searchfor={searchfor}" : ""));
+    }
+
     // ─── Helper: Build URL with current filters (matches legacy GetPageUrl) ─────
 
     public static string BuildPageUrl(SearchTagListResult model, int pageNo)

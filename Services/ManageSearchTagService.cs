@@ -886,6 +886,64 @@ ORDER BY {orderBy}";
         dt.Load(reader);
         return dt;
     }
+
+    // ─── Link Sub-Tags (legacy btnlinktags_Click) ────────────────────────────────
+    // Inserts into tbl_lnkTags for each selected tag under the parent tag
+
+    public async Task<int> LinkSubTagsAsync(long parentTagId, List<int> tagIds)
+    {
+        if (tagIds == null || tagIds.Count == 0 || parentTagId <= 0) return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+        int linked = 0;
+
+        foreach (var tagId in tagIds)
+        {
+            // Check if already linked (legacy: db.lnkTags.Where(w => w.lnkTags_tagID == tagID && w.lnkTags_parenttagID == parentTagID).Any())
+            await using var checkCmd = new SqlCommand(
+                "SELECT COUNT(1) FROM tbl_lnkTags WHERE lnkTags_tagID = @tagId AND lnkTags_parenttagID = @parentId", conn);
+            checkCmd.Parameters.AddWithValue("@tagId", tagId);
+            checkCmd.Parameters.AddWithValue("@parentId", parentTagId);
+            var exists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync()) > 0;
+
+            if (!exists)
+            {
+                await using var insertCmd = new SqlCommand(
+                    "INSERT INTO tbl_lnkTags (lnkTags_tagID, lnkTags_parenttagID, lnkTags_displayOrder) VALUES (@tagId, @parentId, 1)", conn);
+                insertCmd.Parameters.AddWithValue("@tagId", tagId);
+                insertCmd.Parameters.AddWithValue("@parentId", parentTagId);
+                await insertCmd.ExecuteNonQueryAsync();
+                linked++;
+            }
+        }
+        return linked;
+    }
+
+    // ─── Unlink Sub-Tags (legacy btnUnlinktags_Click) ────────────────────────────
+    // Deletes from tbl_lnkTags for selected tags under the parent
+
+    public async Task<int> UnlinkSubTagsAsync(long parentTagId, List<int> tagIds)
+    {
+        if (tagIds == null || tagIds.Count == 0 || parentTagId <= 0) return 0;
+
+        await using var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        var idList = string.Join(",", tagIds);
+
+        await using var cmd = new SqlCommand(
+            $"DELETE FROM tbl_lnkTags WHERE lnkTags_tagID IN ({idList}) AND lnkTags_parenttagID = @parentId", conn);
+        cmd.Parameters.AddWithValue("@parentId", parentTagId);
+        var deleted = await cmd.ExecuteNonQueryAsync();
+
+        // Clean up selectedTagPrd for tags no longer linked anywhere (legacy logic)
+        await using var cleanCmd = new SqlCommand(
+            $"DELETE FROM tbl_selectedTagPrd WHERE selectedTagPrd_tagID IN ({idList}) AND selectedTagPrd_tagID NOT IN (SELECT lnkTags_tagID FROM tbl_lnkTags)", conn);
+        await cleanCmd.ExecuteNonQueryAsync();
+
+        return deleted;
+    }
 }
 
 // ─── Models ────────────────────────────────────────────────────────────────────
