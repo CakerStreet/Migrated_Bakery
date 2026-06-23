@@ -1,61 +1,192 @@
 @model CakerStreet.Business.Services.SearchTagListResult
+@using CakerStreet.Business.Controllers
 @{
     ViewData["Title"] = "Manage Search Tags";
 }
 <div class="container-fluid py-3">
-    <h4><i class="fas fa-tags"></i> Search Tag Management <small class="text-muted">(Data Utility)</small></h4>
-    <div class="alert alert-info py-2 mb-3">
-        <strong>Purpose:</strong> Review and correct overbroad tag-product associations. 
-        This is a data management utility — not a frontend search fix.
+
+    @* ── Header (matches legacy innerhead) ──────────────────────────────────── *@
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="fas fa-tags"></i> Manage Search Tags</h4>
+        <a href="/" class="text-muted small" target="_blank">www.cakerstreet.com</a>
     </div>
 
-    <form method="get" class="mb-3">
-        <div class="input-group" style="max-width:500px;">
-            <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search tags by name or URL..." />
-            <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
-            @if (!string.IsNullOrEmpty(Model.Search))
-            {
-                <a href="/managesearchtags" class="btn btn-outline-secondary">Clear</a>
-            }
+    @* ── Search/Filter Panel (matches legacy dvSearch) ──────────────────────── *@
+    <form method="get" action="/managesearchtags" class="card mb-3">
+        <div class="card-body py-2">
+
+            @* Search Type — legacy rblSearchTagFor *@
+            <div class="form-group row mb-2">
+                <label class="col-sm-2 col-form-label"><strong>Search Type</strong></label>
+                <div class="col-sm-6">
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="searchfor" id="sf0" value="0" @(Model.SearchFor == 0 ? "checked" : "") autocomplete="off">
+                        <label class="btn btn-sm btn-outline-primary" for="sf0"><i class="fas fa-birthday-cake"></i> Cakes</label>
+                        <input type="radio" class="btn-check" name="searchfor" id="sf1" value="1" @(Model.SearchFor == 1 ? "checked" : "") autocomplete="off">
+                        <label class="btn btn-sm btn-outline-primary" for="sf1"><i class="fas fa-cookie"></i> Cup Cakes</label>
+                        <input type="radio" class="btn-check" name="searchfor" id="sf2" value="2" @(Model.SearchFor == 2 ? "checked" : "") autocomplete="off">
+                        <label class="btn btn-sm btn-outline-primary" for="sf2"><i class="fas fa-gift"></i> Party Accessory</label>
+                    </div>
+                </div>
+            </div>
+
+            @* Keyword + Search Mode — legacy txtName + rdsearchtype *@
+            <div class="form-group row mb-2">
+                <label class="col-sm-2 col-form-label"><strong>Keyword</strong></label>
+                <div class="col-sm-3">
+                    <input type="text" name="filterp" value="@Model.FilterP" class="form-control form-control-sm" placeholder="Search Keyword" />
+                </div>
+                <div class="col-sm-3">
+                    <select name="rdsearchtype" class="form-select form-select-sm">
+                        <option value="0" @(Model.SearchType == 0 ? "selected" : "")>Keyword Anywhere</option>
+                        <option value="1" @(Model.SearchType == 1 ? "selected" : "")>Starts with</option>
+                        <option value="2" @(Model.SearchType == 2 ? "selected" : "")>Ends with</option>
+                        <option value="3" @(Model.SearchType == 3 ? "selected" : "")>Exact Keyword</option>
+                    </select>
+                </div>
+            </div>
+
+            @* Status — legacy rblActive *@
+            <div class="form-group row mb-2">
+                <label class="col-sm-2 col-form-label"><strong>Status</strong></label>
+                <div class="col-sm-6">
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="status" id="st0" value="0" @(Model.Status == 0 ? "checked" : "") autocomplete="off">
+                        <label class="btn btn-sm btn-outline-secondary" for="st0">All</label>
+                        <input type="radio" class="btn-check" name="status" id="st1" value="1" @(Model.Status == 1 ? "checked" : "") autocomplete="off">
+                        <label class="btn btn-sm btn-outline-success" for="st1">Active</label>
+                        <input type="radio" class="btn-check" name="status" id="st2" value="2" @(Model.Status == 2 ? "checked" : "") autocomplete="off">
+                        <label class="btn btn-sm btn-outline-danger" for="st2">Inactive</label>
+                    </div>
+                </div>
+            </div>
+
+            @* Sort — legacy drpsort *@
+            <div class="form-group row mb-2">
+                <label class="col-sm-2 col-form-label"><strong>Sort</strong></label>
+                <div class="col-sm-3">
+                    <select name="sort" class="form-select form-select-sm">
+                        <option value="11" @(Model.Sort == 11 ? "selected" : "")>Default Sort</option>
+                        <option value="0" @(Model.Sort == 0 ? "selected" : "")>New Arrivals</option>
+                        <option value="1" @(Model.Sort == 1 ? "selected" : "")>Name</option>
+                        <option value="2" @(Model.Sort == 2 ? "selected" : "")>Search Count (High-Low)</option>
+                        <option value="3" @(Model.Sort == 3 ? "selected" : "")>Popular</option>
+                        <option value="4" @(Model.Sort == 4 ? "selected" : "")>Linked Records (High-Low)</option>
+                        <option value="5" @(Model.Sort == 5 ? "selected" : "")>Linked Records (Low-High)</option>
+                    </select>
+                </div>
+            </div>
+
+            @* Search / Reset Buttons *@
+            <div class="form-group row">
+                <div class="col-sm-offset-2 col-sm-6 offset-sm-2">
+                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-search"></i> Search</button>
+                    <a href="/managesearchtags" class="btn btn-sm btn-outline-secondary">Reset</a>
+                </div>
+            </div>
         </div>
     </form>
 
-    <div class="mb-2 text-muted">
-        Showing @Model.Tags.Count of @Model.TotalTags tags (Page @Model.CurrentPage / @Model.TotalPages)
+    @* ── Results Count (matches legacy litTagcount) ─────────────────────────── *@
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-muted">
+            <strong>@Model.TotalTags</strong> results found
+            &nbsp;|&nbsp; Page @Model.CurrentPage of @Model.TotalPages
+        </span>
     </div>
 
-    <table class="table table-sm table-bordered table-hover">
+    @* ── Top Action Bar (Phase 1: read-only placeholders for future buttons) ── *@
+    <div class="btn-toolbar mb-2" role="toolbar">
+        <div class="btn-group btn-group-sm me-2">
+            <button type="button" class="btn btn-outline-secondary" onclick="checkAll(true)">Select All</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="checkAll(false)">Unselect</button>
+        </div>
+        @* Future Phase buttons will go here: Update, Delete, Activate, Deactivate, etc. *@
+    </div>
+
+    @* ── Data Table (matches legacy dtlstOrder repeater columns) ──────────── *@
+    <table class="table table-sm table-bordered table-striped table-hover">
         <thead class="table-dark">
             <tr>
-                <th style="width:60px">ID</th>
-                <th>Tag Text</th>
-                <th>URL Slug</th>
-                <th style="width:80px" class="text-center">Front</th>
-                <th style="width:100px" class="text-center">Products</th>
-                <th style="width:80px" class="text-center">Order</th>
-                <th style="width:100px">Action</th>
+                <th style="width:35px"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)" /></th>
+                <th style="width:90px">Created On</th>
+                <th>Title</th>
+                <th style="width:200px">URL</th>
+                <th style="width:60px" class="text-center">Order</th>
+                <th style="width:80px" class="text-center">Total Records</th>
+                <th style="width:80px" class="text-center">Downloaded</th>
+                <th style="width:70px" class="text-center">SEO</th>
+                <th style="width:60px" class="text-center">Front</th>
+                <th style="width:90px" class="text-center">Status</th>
+                <th style="width:80px" class="text-center">Product / Export</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var tag in Model.Tags)
             {
-                <tr>
-                    <td>@tag.TagId</td>
-                    <td><strong>@tag.Text</strong></td>
-                    <td class="text-muted small">@tag.Url</td>
-                    <td class="text-center">
-                        @if (tag.ShowAtFront) { <span class="badge bg-success">Yes</span> } 
-                        else { <span class="badge bg-secondary">No</span> }
+                <tr class="@(!tag.IsActive ? "table-warning" : "")">
+                    @* Checkbox *@
+                    <td><input type="checkbox" name="selectedTags" value="@tag.TagId" class="chkRow" /></td>
+
+                    @* Created Date — legacy lblOrderDate *@
+                    <td class="small">@(tag.CreatedOn?.ToString("dd/MM/yyyy") ?? "")</td>
+
+                    @* Tag Text + URL (editable in Phase 2, read-only now) *@
+                    <td>
+                        <strong>@tag.Text</strong>
+                        @if (tag.SearchCount > 0)
+                        {
+                            <br /><small class="text-muted">Search count: @tag.SearchCount</small>
+                        }
                     </td>
+
+                    @* URL *@
+                    <td class="small text-muted text-break">@tag.Url</td>
+
+                    @* Display Order *@
+                    <td class="text-center">@tag.DisplayOrder</td>
+
+                    @* Total Records (Product Count) — legacy countprd *@
                     <td class="text-center">
                         @if (tag.ProductCount > 500) { <span class="badge bg-danger">@tag.ProductCount</span> }
                         else if (tag.ProductCount > 100) { <span class="badge bg-warning text-dark">@tag.ProductCount</span> }
-                        else { <span class="badge bg-info">@tag.ProductCount</span> }
+                        else if (tag.ProductCount > 0) { <span class="badge bg-info">@tag.ProductCount</span> }
+                        else { <span class="text-muted">0</span> }
                     </td>
-                    <td class="text-center">@tag.DisplayOrder</td>
-                    <td>
-                        <a href="/managesearchtags/products/@tag.TagId" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-list"></i> View
+
+                    @* Downloaded Count — legacy countdnld *@
+                    <td class="text-center">
+                        @if (tag.DownloadedCount > 0) { <span class="badge bg-secondary">@tag.DownloadedCount</span> }
+                        else { <span class="text-muted">0</span> }
+                    </td>
+
+                    @* SEO — legacy linked to tagseo.aspx *@
+                    <td class="text-center">
+                        <span class="badge bg-outline-info">SEO</span>
+                    </td>
+
+                    @* Show at Front — legacy tags_Showatfront *@
+                    <td class="text-center">
+                        @if (tag.ShowAtFront) { <span class="badge bg-success">Yes</span> }
+                        else { <span class="badge bg-secondary">No</span> }
+                    </td>
+
+                    @* Status — legacy lnkActive toggle *@
+                    <td class="text-center">
+                        @if (tag.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Inactive</span>
+                        }
+                    </td>
+
+                    @* Product view / Sub-tags link *@
+                    <td class="text-center">
+                        <a href="/managesearchtags/products/@tag.TagId" class="btn btn-sm btn-outline-primary" title="View linked products">
+                            <i class="fas fa-list"></i>
                         </a>
                     </td>
                 </tr>
@@ -63,17 +194,61 @@
         </tbody>
     </table>
 
+    @* ── Pagination (matches legacy First/Prev/Pages/Next/Last) ──────────── *@
     @if (Model.TotalPages > 1)
     {
-        <nav>
-            <ul class="pagination pagination-sm">
-                @for (int i = 1; i <= Model.TotalPages; i++)
+        <nav class="d-flex align-items-center">
+            <ul class="pagination pagination-sm mb-0">
+                @* First *@
+                <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, 1)">First</a>
+                </li>
+                @* Prev *@
+                <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, Model.CurrentPage - 1)">Prev</a>
+                </li>
+
+                @* Page numbers — show window of 10 pages around current *@
+                @{
+                    int startPage = Math.Max(1, Model.CurrentPage - 5);
+                    int endPage = Math.Min(Model.TotalPages, startPage + 9);
+                    if (endPage - startPage < 9) startPage = Math.Max(1, endPage - 9);
+                }
+                @for (int i = startPage; i <= endPage; i++)
                 {
                     <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                        <a class="page-link" href="/managesearchtags?search=@Model.Search&page=@i">@i</a>
+                        <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, i)">@i</a>
                     </li>
                 }
+
+                @* Next *@
+                <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, Model.CurrentPage + 1)">Next</a>
+                </li>
+                @* Last *@
+                <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@ManageSearchTagsController.BuildPageUrl(Model, Model.TotalPages)">Last</a>
+                </li>
             </ul>
         </nav>
     }
 </div>
+
+<script>
+    // Select all / unselect all checkboxes — matches legacy checkUncheck
+    function checkAll(checked) {
+        document.querySelectorAll('.chkRow').forEach(cb => cb.checked = checked);
+        var chkAll = document.getElementById('chkAll');
+        if (chkAll) chkAll.checked = checked;
+    }
+
+    // Auto-submit on radio/dropdown change (matches legacy AutoPostBack behavior)
+    document.querySelectorAll('input[name="searchfor"], input[name="status"]').forEach(function(el) {
+        el.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+    });
+    document.querySelector('select[name="sort"]').addEventListener('change', function() {
+        this.closest('form').submit();
+    });
+</script>

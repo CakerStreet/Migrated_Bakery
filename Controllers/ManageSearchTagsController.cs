@@ -4,9 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace CakerStreet.Business.Controllers;
 
 /// <summary>
-/// CRM/Data Management utility — Search Tag Product Association cleanup.
-/// Internal/restricted. Not exposed in CRM menu.
-/// Route: /managesearchtags
+/// CRM Search Tag Module — migrated from legacy crmsearchtag.aspx.
+/// Legacy Module ID: 20, legacy route: /crmsearchtag
+/// Migrated route: /managesearchtags
+/// 
+/// Query string params match legacy pattern:
+///   ?searchfor=0&pno=1&status=1&sort=11&filterp=keyword&rdsearchtype=0
 /// </summary>
 [Route("managesearchtags")]
 public class ManageSearchTagsController : Controller
@@ -18,12 +21,25 @@ public class ManageSearchTagsController : Controller
         _service = service;
     }
 
-    // ─── List / Search Tags ──────────────────────────────────────────────────────
+    // ─── List / Search Tags (matches legacy bindgrid) ────────────────────────────
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(string search = "", int page = 1)
+    public async Task<IActionResult> Index(
+        int searchfor = 0,      // 0=Cakes, 1=Cupcakes, 2=Party Accessory
+        int status = 1,         // 0=All, 1=Active, 2=Inactive
+        string filterp = "",    // Keyword search
+        int rdsearchtype = 0,   // 0=Anywhere, 1=Starts, 2=Ends, 3=Exact
+        int sort = 11,          // Sort option
+        int pno = 1)            // Page number
     {
-        var result = await _service.GetTagsAsync(search, page);
+        var result = await _service.GetTagsAsync(
+            searchFor: searchfor,
+            status: status,
+            filterp: filterp,
+            searchType: rdsearchtype,
+            sort: sort,
+            page: pno);
+
         return View("~/Views/ManageSearchTags/Index.cshtml", result);
     }
 
@@ -69,5 +85,26 @@ public class ManageSearchTagsController : Controller
             ? $"Product {productId} unlinked from tag {tagId}"
             : $"Product {productId} was not linked to tag {tagId}";
         return RedirectToAction("Products", new { tagId });
+    }
+
+    // ─── Helper: Build URL with current filters (matches legacy GetPageUrl) ─────
+
+    public static string BuildPageUrl(SearchTagListResult model, int pageNo)
+    {
+        var url = "/managesearchtags";
+        var parts = new List<string>();
+
+        if (pageNo > 1) parts.Add($"pno={pageNo}");
+        if (model.SearchFor != 0) parts.Add($"searchfor={model.SearchFor}");
+        if (!string.IsNullOrEmpty(model.FilterP)) 
+        {
+            parts.Add($"filterp={Uri.EscapeDataString(model.FilterP)}");
+            if (model.SearchType != 0) parts.Add($"rdsearchtype={model.SearchType}");
+        }
+        if (model.Sort != 11) parts.Add($"sort={model.Sort}");
+        if (model.Status != 1) parts.Add($"status={model.Status}");
+
+        if (parts.Count > 0) url += "?" + string.Join("&", parts);
+        return url;
     }
 }
