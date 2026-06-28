@@ -32,9 +32,17 @@ public class BusinessLoginController : Controller
             return RedirectToAction("Index");
         }
 
+        // Dev bypass: skip login entirely — auto-authenticate and go straight to destination
+        if (_authHelper.IsDevBypassActive)
+        {
+            if (!string.IsNullOrEmpty(returl))
+                return Redirect(returl);
+            return Redirect("/staffrota");
+        }
+
         // If already authenticated, redirect (matching legacy behavior)
         var userId = _authHelper.GetAuthenticatedUserId(HttpContext);
-        if (userId != null && !_authHelper.IsDevBypassActive)
+        if (userId != null)
         {
             if (!string.IsNullOrEmpty(returl))
                 return Redirect(returl);

@@ -20,8 +20,11 @@ public class MigrationSafetyFilter : IAsyncActionFilter
     // Login/auth writes are audit-level inserts (OTP, login attempts) — not business data mutations.
     private static readonly HashSet<string> WhitelistedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/businesslogin",        // POST login (password check, OTP generation, login attempt log)
+        "/adminlogin",           // POST login (primary route — matching legacy adminlogin.aspx)
+        "/adminlogin.aspx",      // Legacy .aspx alias
+        "/businesslogin",        // POST login (backward compat alias)
         "/businesslogin/verifyotp", // POST OTP verification
+        "/adminlogin/verifyotp", // POST OTP verification (primary route)
         "/crmsearchtag",         // POST tag updates — primary legacy route (Phase 2/3 CRM mutations)
         "/managesearchtags"      // POST tag updates — alias route
     };

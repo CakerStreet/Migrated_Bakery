@@ -39,7 +39,8 @@ public class BakeryFilesController : Controller
         ViewBag.MenuVisibility = await _menuService.GetMenuVisibilityAsync(userType, webshopId, userId);
         ViewBag.BusinessName = businessName;
         ViewBag.UserName = userName;
-        ViewBag.CdnBase = _config["CdnBase"] ?? "https://cakerstreet1.s3.amazonaws.com/";
+        ViewBag.CdnBase = _config["CdnBase"] ?? "https://www.cakerstreet.com";
+        ViewBag.ProductImageCdn = _config["ProductImageCdn"] ?? _config["CdnBase"] ?? "https://www.cakerstreet.com";
     }
 
     private int GetCurrentUserId()
@@ -99,7 +100,11 @@ public class BakeryFilesController : Controller
         var sizeFiles = await _service.GetCakeSizesForProductFilesAsync(info.ProductId);
         var orderFiles = await _service.GetOrderBakeryFilesAsync(oId, odId);
         var accessories = await _service.GetAccessoryDetailsAsync(oId, odId);
-        var svgs = await _service.GetPersonalisedCakeSvgsAsync(oId, odId);
+        // Personalised SVGs only exist in the context of a specific order line.
+        // When accessed via prdID only (no order context), skip — matches production behaviour.
+        var svgs = (oId > 0 && odId > 0)
+            ? await _service.GetPersonalisedCakeSvgsAsync(oId, odId)
+            : new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>>();
 
         // Map sizes dynamically to files
         var sizeMap = new Dictionary<long, List<CakeSizeForFileItem>>();

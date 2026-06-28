@@ -1,0 +1,22 @@
+# Build outputs
+bin/
+obj/
+
+# OS files
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# QA artefacts
+*.png
+*.jpg
+*.jpeg
+*-qa.js
+*-fix.js
+*-verify.js
+
+# Upload/media
+wwwroot/bakery_content/
+wwwroot/images/
+wwwroot/img/
+wwwroot/uploads/

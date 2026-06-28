@@ -71,7 +71,18 @@ app.UseMiddleware<CakerStreet.Business.Middleware.BakeryAuthMiddleware>();
 app.MapControllers();
 app.UseMiddleware<CakerStreet.Business.Middleware.LegacyProxyMiddleware>();
 
+// Root / → redirect to login, preserving returl (legacy: default.aspx was the login page)
+app.MapGet("/", (HttpContext ctx) =>
+{
+    var returl = ctx.Request.Query["returl"].ToString();
+    var target = string.IsNullOrEmpty(returl)
+        ? "/adminlogin"
+        : "/adminlogin?returl=" + Uri.EscapeDataString(returl);
+    return Results.Redirect(target);
+});
+
 app.MapGet("/health", () => Results.Ok(new
+
 {
     status = "healthy",
     runtime = ".NET 10",
