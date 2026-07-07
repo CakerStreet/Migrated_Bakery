@@ -1,22 +1,78 @@
-# Build outputs
+# ─── Build outputs ────────────────────────────────────────────────────────────
 bin/
 obj/
 
-# OS files
+# ─── IDE / Editor ─────────────────────────────────────────────────────────────
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ─── Local dev config ─────────────────────────────────────────────────────────
+# launchSettings.json contains machine-specific port/profile config
+Properties/launchSettings.json
+launchSettings.json
+
+# ─── OS junk ──────────────────────────────────────────────────────────────────
 desktop.ini
 .DS_Store
 Thumbs.db
+ehthumbs.db
 
-# QA artefacts
-*.png
-*.jpg
-*.jpeg
-*-qa.js
-*-fix.js
-*-verify.js
-
-# Upload/media
+# ─── Uploaded user content (runtime-generated, not source) ────────────────────
+wwwroot/uploads/
 wwwroot/bakery_content/
 wwwroot/images/
 wwwroot/img/
-wwwroot/uploads/
+
+# ─── QA screenshots (Playwright captures, visual diff images) ─────────────────
+# Root-level QA images
+qa-*.png
+qa-*.jpg
+*-qa.png
+*-qa.jpg
+
+# Any PNG/JPG/JPEG at the project root (not inside wwwroot static assets)
+/*.png
+/*.jpg
+/*.jpeg
+/*.PNG
+/*.JPG
+/*.JPEG
+
+# ─── QA / Playwright scripts (root-level only) ────────────────────────────────
+*-qa.js
+*-qa.spec.js
+*-diag.js
+*-diag.spec.js
+*-fix.js
+*-verify.js
+*-screenshot.js
+*-capture.js
+
+# ─── Playwright / test tooling ────────────────────────────────────────────────
+playwright-report/
+test-results/
+node_modules/
+package-lock.json
+package.json
+
+# ─── Database / SQL backups ───────────────────────────────────────────────────
+*.bak
+*.sql
+*.mdf
+*.ldf
+*.dump
+*.bacpac
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Secrets / machine-specific (use appsettings.Development.json as template) ─
+# appsettings.Development.json is kept as a sanitized template — do NOT add here
+*.pfx
+*.p12
+*.key
