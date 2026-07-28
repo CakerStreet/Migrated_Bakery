@@ -76,3 +76,10 @@ logs/
 *.pfx
 *.p12
 *.key
+
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+
+docs/
+CakerStreet.Business.csproj
