@@ -223,7 +223,13 @@ See [`RUNTIME_PATCH_REGISTER.md`](../RUNTIME_PATCH_REGISTER.md) for full diff an
 ## 12. WAKE CHECKLIST (run on every `#wakecakerstreet`)
 
 - [ ] Verify all 5 IIS Express processes are running (ports 27195/27201/27203/27210/27211)
-- [ ] Confirm active database for CRM is known (currently `db_cakerstreet_live`, contaminated)
-- [ ] Load open breaks: BREAK-RUNTIME-002, BREAK-DB-006, BREAK-CONTENT-001, BREAK-BIN-001
+- [ ] Confirm active database for CRM is known (currently `db_cakerstreet_live`, 17 BatchThree records)
+- [ ] Load open breaks:
+  - ✅ BREAK-RUNTIME-002 — RESOLVED (ASP.NET cache cleared, CRM compiles)
+  - ✅ BREAK-BIN-001 — CLOSED (BP has full ApplicationBlocks DLL)
+  - 🔴 BREAK-DB-006 — BatchThree contamination (UAT restored side-by-side, active unchanged)
+  - 🔴 BREAK-CONTENT-001 — Product images not served from CRM (upload architecture decision pending)
+  - 🔴 BREAK-CRM-003 — CRF detail page 500 (LINQ projection missing CakeShapeTitle in detail path)
+  - 🔴 BREAK-FRONT-001 — `checkredirection.aspx` missing from ALL trees (all /category/* broken)
 - [ ] Check GitHub Issue #1 for any new challenger responses since last session
 - [ ] Do not proceed to work until this context is established
