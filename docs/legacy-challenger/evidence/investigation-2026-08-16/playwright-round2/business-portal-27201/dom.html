@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>
+	Caker Street :: Business Control Panel
+</title><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="img/favicon.ico?version=1.1" type="image/png">
+    <script type="text/JavaScript" src="includes/clientScripts.js" language="javascript"></script>
+
+    <!-- Bootstrap core CSS -->
+    <link href="Admin_Content/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template -->
+    <link href="Admin_Content/css/signin.css" rel="stylesheet" type="text/css">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>.text-muted{margin:20px 0;}#footer{background-color:#eee;height:60px;bottom:0;width:100%;position:fixed;}.modal-header {
+    background-color: #e5e5e5;
+    border-radius: 6px 6px 0 0;
+}.modal {
+    background-color: #eee;}</style>
+</head>
+<body>
+
+
+   <div class="container">
+
+      
+      <form name="form2" method="post" action="./login" onsubmit="javascript:return WebForm_OnSubmit();" id="form2" class="form-signin" role="form">
+<div>
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" style="">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" style="">
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" style="">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUKMTc2MTMwODQwMQ8WAh4TVmFsaWRhdGVSZXF1ZXN0TW9kZQIBFgICAQ9kFgQCBw8PZBYCHgV2YWx1ZWVkAg0PZBYCAgMPD2QWAh4Jb25rZXlkb3duBa0BaWYoZXZlbnQud2hpY2ggfHwgZXZlbnQua2V5Q29kZSl7aWYgKChldmVudC53aGljaCA9PSAxMykgfHwgKGV2ZW50LmtleUNvZGUgPT0gMTMpKSB7ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2J0blN1Ym1pdGNhdGVnb3J5JykuY2xpY2soKTtyZXR1cm4gZmFsc2U7fX0gZWxzZSB7cmV0dXJuIHRydWV9OyBkZDPXQxrzfMUdHexFIeeutT4IgQfk" style="">
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form2'];
+if (!theForm) {
+    theForm = document.form2;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=olY3E697dLRilEDTuHlevqynRbhctbHks8thTdg7mMwGIjyABuz7_klXMvCDIJd8EwhOYwMH1kXyYuzqsYGnjvbmLuQ1&amp;t=639190905291376328" type="text/javascript"></script>
+
+
+<script src="/WebResource.axd?d=XGjToVQFtnY4r3iG59KNo-jpgKqAsbJyiqD5pdvXv3d_hMx-8skMTia0GI6rXVfluDqmi0QAvLwEp37vGcsqjKX97Mo1&amp;t=639190905291376328" type="text/javascript"></script>
+<script src="/WebResource.axd?d=40S8dACmhG4rMM0sHH2hi40GYI-VQkdR2tSndPuten_cGTuCs6UJxqYH_24cEk5MXXYdDgXtXmOBcW3A-qYDXyCNaNg1&amp;t=639190905291376328" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="B8B84CAE" style="">
+</div>
+      
+        <h2 class="form-signin-heading">Login</h2>
+
+        
+
+        <div class="form-group">
+        <label>Username:</label>
+        <input name="txtName" type="text" id="txtName" class="form-control" style="">
+        <span id="RequiredFieldValidator1" class="red" style="color:Red;visibility:hidden;">Username required</span>
+        </div>
+
+        <div class="form-group">
+        <label>Password:</label>
+        <input name="txtPwd" type="password" id="txtPwd" class="form-control" value="" style="">
+        <span id="RequiredFieldValidator2" class="red" style="color:Red;visibility:hidden;">Password required</span>
+        </div>
+
+      <input type="submit" name="imgbtnLogin" value="Login" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;imgbtnLogin&quot;, &quot;&quot;, true, &quot;login&quot;, &quot;&quot;, false, false))" id="imgbtnLogin" class="btn btn-lg btn-primary btn-block" style="">
+          
+      
+<script type="text/javascript">
+//<![CDATA[
+var Page_Validators =  new Array(document.getElementById("RequiredFieldValidator1"), document.getElementById("RequiredFieldValidator2"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var RequiredFieldValidator1 = document.all ? document.all["RequiredFieldValidator1"] : document.getElementById("RequiredFieldValidator1");
+RequiredFieldValidator1.controltovalidate = "txtName";
+RequiredFieldValidator1.errormessage = "Username required";
+RequiredFieldValidator1.validationGroup = "login";
+RequiredFieldValidator1.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+RequiredFieldValidator1.initialvalue = "";
+var RequiredFieldValidator2 = document.all ? document.all["RequiredFieldValidator2"] : document.getElementById("RequiredFieldValidator2");
+RequiredFieldValidator2.controltovalidate = "txtPwd";
+RequiredFieldValidator2.errormessage = "Password required";
+RequiredFieldValidator2.validationGroup = "login";
+RequiredFieldValidator2.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+RequiredFieldValidator2.initialvalue = "";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        WebForm_AutoFocus('txtName');//]]>
+</script>
+</form>
+    </div> <!-- /container -->
+
+    <div id="footer">
+      <div class="container">
+        <p class="text-muted text-center">Copyright ©  Stioc Pro Ltd. All Rights Reserved.</p>
+      </div>
+    </div>
+  
+
+
+</body></html>
