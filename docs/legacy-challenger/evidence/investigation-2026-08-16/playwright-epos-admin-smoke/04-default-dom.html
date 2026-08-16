@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>
+	Cakerstreet Franchise :: Admin Login
+</title><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/JavaScript" src="includes/clientScripts.js" language="javascript"></script>
+
+    <!-- Bootstrap core CSS -->
+    <link href="Admin_Content/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template -->
+    <link href="Admin_Content/css/signin.css" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>.text-muted{margin:20px 0;}#footer{background-color:#eee;height:60px;bottom:0;width:100%;position:fixed;}</style>
+</head>
+<body>
+
+
+   <div class="container">
+
+      
+      <form name="form2" method="post" action="./adminlogin.aspx?returl=http%3a%2f%2flocalhost%3a27211%2fdefault.aspx" onsubmit="javascript:return WebForm_OnSubmit();" id="form2" class="form-signin" role="form">
+<div>
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="">
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwULLTE4NzgyMzk5NTlkZEVev03ecSAIhnBq7aWiiqAr5D0y">
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form2'];
+if (!theForm) {
+    theForm = document.form2;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=TQmU67J2vViNJzKw6WgDQn8QdufIJA_RUnbEAXZBvpk2Md3PW4QQU7L2CrtMBQXYp2UWGEhM5gzguwdJEkCuXPURl4g1&amp;t=639190905291376328" type="text/javascript"></script>
+
+
+<script src="/WebResource.axd?d=5YuIAqHpx21vW0idS5VY1r5eD-H_lv90ULkNostvPemWzxfQMIh-v0id5-5uHQ0PMXfUmgztVvNyUFp85wlD43vYVy2V-vYyj-x7XhodKkFEd94Q0&amp;t=639190905291376328" type="text/javascript"></script>
+<script src="/WebResource.axd?d=HRgtJcMskBfGedBFUiuvaMqeZw9dKi467enWvxFhYOMlvUtgEQeGltO9vSPGP_eToWyDyS67YitL1BcclW5coXTaRyE1&amp;t=639190905291376328" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="B8B84CAE">
+</div>
+        <h2 class="form-signin-heading">Login</h2>
+
+        
+
+        <div class="form-group">
+        <label>Username:</label>
+        <input name="txtName" type="text" id="txtName" class="form-control">
+        <span id="RequiredFieldValidator1" class="red" style="color:Red;visibility:hidden;">Username required</span>
+        </div>
+
+        <div class="form-group">
+        <label>Password:</label>
+        <input name="txtPwd" type="password" id="txtPwd" class="form-control">
+        <span id="RequiredFieldValidator2" class="red" style="color:Red;visibility:hidden;">Password required</span>
+        </div>
+
+      <input type="submit" name="imgbtnLogin" value="Login" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;imgbtnLogin&quot;, &quot;&quot;, true, &quot;login&quot;, &quot;&quot;, false, false))" id="imgbtnLogin" class="btn btn-lg btn-primary btn-block">
+        
+      
+<script type="text/javascript">
+//<![CDATA[
+var Page_Validators =  new Array(document.getElementById("RequiredFieldValidator1"), document.getElementById("RequiredFieldValidator2"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var RequiredFieldValidator1 = document.all ? document.all["RequiredFieldValidator1"] : document.getElementById("RequiredFieldValidator1");
+RequiredFieldValidator1.controltovalidate = "txtName";
+RequiredFieldValidator1.errormessage = "Username required";
+RequiredFieldValidator1.validationGroup = "login";
+RequiredFieldValidator1.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+RequiredFieldValidator1.initialvalue = "";
+var RequiredFieldValidator2 = document.all ? document.all["RequiredFieldValidator2"] : document.getElementById("RequiredFieldValidator2");
+RequiredFieldValidator2.controltovalidate = "txtPwd";
+RequiredFieldValidator2.errormessage = "Password required";
+RequiredFieldValidator2.validationGroup = "login";
+RequiredFieldValidator2.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+RequiredFieldValidator2.initialvalue = "";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        WebForm_AutoFocus('txtName');//]]>
+</script>
+</form>
+    </div> <!-- /container -->
+
+   
+
+
+</body></html>
