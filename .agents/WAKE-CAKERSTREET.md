@@ -125,9 +125,19 @@ G:\AI-Projects\Dev\antigravity-cakerstreet-migration\legacy-server-intake\
 - **Candidate source:** `G:\AI-Projects\Dev\kiro-cakerstreet-uk\vs-test\cakerstreet\upload\Product_images\` (446 files)
 - **Status:** Awaiting challenger approval
 
-### BREAK-BIN-001 — Business Portal `msSQLDLL.dll` excluded (OPEN)
-- **File:** `recovered-business-portal-source\bin\msSQLDLL.dll.exclude` (13,312 bytes)
-- **Fix candidate:** Rename to `.dll` (or copy from `cakerstreet_CRM\bin\msSQLDLL.dll`)
+### BREAK-BIN-001 — Business Portal msSQLDLL ✅ CLOSED 2026-08-16
+- **Finding:** BP bin contains `Microsoft.ApplicationBlocks.Data.dll` (32,768 bytes, SHA `8AA2BAE7...`) — the FULL correct binary
+- **BP compiles clean** — HTTP 200 on all tested pages without any DLL change
+- **No fix needed.** The earlier `.dll.exclude` observation was for a different file. BP is healthy.
+
+### BREAK-CRM-003 — CRF Detail Page DataBinding Error (OPEN — needs Challenger decision)
+- **URL:** `http://localhost:27195/quotations/51216`
+- **HTTP:** 500
+- **Error:** `DataBinding: AnonymousType does not contain property 'CakeShapeTitle'`
+- **Data check:** CRF 51216 has `CRF_ShapeID = 13` ("As Shown") — NOT null. `tbl_CakeShape` has row 13.
+- **Root cause:** LINQ anonymous type projection in the detail code path omits `CakeShapeTitle`. The 29-field anonymous type is built from a query that doesn't JOIN `tbl_CakeShape`. The CRF list view works; the detail view (with ID parameter) uses a different query.
+- **Impact:** CRF detail page fails for any CRF. CRF list (`/quotations`) works fine.
+- **Status:** Awaiting Challenger decision — fix null-guard or trace query projection.
 
 ---
 
@@ -135,12 +145,12 @@ G:\AI-Projects\Dev\antigravity-cakerstreet-migration\legacy-server-intake\
 
 | DLL | CRM | Biz Portal | Frontend | EPOS Term | EPOS Admin |
 |---|---|---|---|---|---|
-| `Microsoft.ApplicationBlocks.Data.dll` | 🔴 EXCLUDED | ✅ | ✅ | ✅ | ✅ |
+| `Microsoft.ApplicationBlocks.Data.dll` | 🔴 EXCLUDED (.dll.exclude) | ✅ (32KB, SHA 8AA2BAE7) | ✅ | ✅ | ✅ |
 | `AjaxControlToolkit.dll` | ✅ v18.1 | ✅ v18.1 | ✅ v18.1 | 🔴 MISSING | ✅ v4.1 |
 | `Twilio.dll` | ✅ v5.6.4 | ✅ v7.11.3 | 🔴 MISSING | 🔴 MISSING | 🔴 MISSING |
 | `EntityFramework.dll` | ✅ v6.1 | ✅ v6.4 | ✅ v6.4 | ✅ v6.4 | ✅ v6.1 |
 | `Newtonsoft.Json.dll` | ✅ v9.0 | ✅ v13.0 | ✅ v13.0 | ✅ v13.0 | ✅ v13.0 |
-| `msSQLDLL.dll` | ✅ | 🔴 EXCLUDED | 🔴 MISSING | 🔴 MISSING | 🔴 MISSING |
+| `msSQLDLL.dll` | ✅ (13KB wrapper) | N/A (has full DLL) | 🔴 MISSING | 🔴 MISSING | 🔴 MISSING |
 | `System.Web.Optimization.dll` | ✅ | ✅ | ✅ | ✅ | 🔴 MISSING |
 | `WebGrease.dll` | ✅ | ✅ | ✅ | ✅ | 🔴 MISSING |
 
