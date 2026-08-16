@@ -1,0 +1,52 @@
+<!DOCTYPE html><html><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cakerstreet Franchise - Sign In</title>
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+    <link href="/css/signin.css" rel="stylesheet">
+</head>
+<body class="text-center">
+    <input type="hidden" id="hfreturnurl">
+    <main class="form-signin">
+
+
+<form action="/" id="formlogin" method="post" role="form">            <img class="mb-4" src="/images/logo.png" alt="Caker Street - EPOS">
+            <h1 class="h3 mb-0 fw-normal">Store Login</h1>
+            <h5 class="h6 mb-2 fw-normal">(Manager Only)</h5>
+            <div class="form-floating mb-3">
+                <input class="form-control" data-val="true" data-val-regex="Invalid Username" data-val-regex-pattern="\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" data-val-required="Enter Username" id="EmailID" name="EmailID" placeholder="Username" type="text" value="">
+                <span class="field-validation-valid text-danger small" data-valmsg-for="EmailID" data-valmsg-replace="true" style="text-align:left;"></span>
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input class="form-control" data-val="true" data-val-required="Enter Password" id="Password" name="Password" placeholder="Password" type="password">
+                <span class="field-validation-valid text-danger small" data-valmsg-for="Password" data-valmsg-replace="true"></span>
+                <label for="floatingPassword">Password</label>
+            </div>
+            <input type="submit" class="w-100 btn btn-lg btn-primary" value="Sign In">
+            <p class="mt-5 mb-3 text-muted">© 2026</p>
+</form>    </main>
+    <script src="/Scripts/jquery-1.4.1.min.js" type="text/javascript"></script>
+    <script src="/assets/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/Scripts/jquery.validate.min.js" type="text/javascript"></script>
+    <script src="/Scripts/jquery.validate.unobtrusive.min.js" type="text/javascript"></script>
+
+
+</body></html>
