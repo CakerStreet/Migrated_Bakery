@@ -1,0 +1,1769 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head id="ctl00_head1"><title>
+	Customer Requirement Form
+</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="author" content="Cakers Street">
+        <link rel="shortcut icon" href="https://cakerstreet1.s3.amazonaws.com/crm_content/img/favicon.ico?version=1.1" type="image/png">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        
+        <script src="js/jstoppendingalerts.js?ver=-1"></script>
+        
+        <!-- Bootstrap -->
+        
+
+        <link href="https://cakerstreet1.s3.amazonaws.com/crm_content/css/bootstrap.min.css" rel="stylesheet" type="text/css" media="all">
+        <link href="https://cakerstreet1.s3.amazonaws.com/crm_content/css/font-awesome.min.css?version=1.0" rel="stylesheet">
+
+        <link href="https://cakerstreet1.s3.amazonaws.com/crm_content/css/style.css?ver=1.02" rel="stylesheet">
+
+        <style>
+            .panel-list-new li
+            {
+                background: none;
+                padding-left: 20px;
+            }
+        </style>
+        <link href="/Content/AjaxControlToolkit/Styles/Bundle?v=R9gnEpFHVr2FwcnHV48QL3EztrfoY4L7LoeDs5V9zqM1" rel="stylesheet">
+
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        
+        <script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    
+    
+
+
+    <link href="https://cakerstreet1.s3.amazonaws.com/crm_content/css/crf.css?version=1.19" rel="stylesheet" type="text/css">
+    <link href="https://cakerstreet1.s3.amazonaws.com/crm_content/zoom/css/slimbox2.css?v=1.1" rel="stylesheet" type="text/css" media="all">
+    <style type="text/css">
+        .remove.displaynone {
+  z-index: 3;
+}
+        .checkbox > input[type="checkbox"] {
+            margin-left: 0;
+        }
+
+        .dvEnhanceImage .modal-dialog {
+            width: 800px;
+        }
+
+        .modal {
+            overflow-x: auto;
+            overflow-y: scroll;
+        }
+
+        .prd-imgBox {
+            width: 100%;
+        }
+
+        .chkbusenesslink label {
+            display: inline;
+        }
+
+        .chkbusenesslink td {
+            padding-bottom: 10px;
+        }
+
+        .chkbusenesslink input {
+            margin-right: 5px;
+        }
+
+        #div_imgboxouter .prdImgbox {
+            float: left;
+            height: 112px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            position: relative;
+        }
+
+            #div_imgboxouter .prdImgbox .removeimg {
+                position: absolute;
+                right: -5px;
+                top: -10px;
+                color: white;
+                font-size: 14px;
+                background-color: #ff0606;
+                width: 25px;
+                text-align: center;
+                line-height: 25px;
+                border-radius: 7px;
+                z-index: 1;
+            }
+    </style>
+    <script src="js/AjaxFileupload.js" type="text/javascript"></script>
+    <script src="js/jsCRFquote.js?ver=1.11" type="text/javascript"></script>
+    <script type="text/javascript" src="zoom/slimbox2.js"></script>
+    <script type="text/javascript" language="javascript">
+
+        // Lazy Load BG Images
+
+
+        // Check for IntersectionObserver support
+        if ('IntersectionObserver' in window) {
+            document.addEventListener('DOMContentLoaded', function () {
+                function handleIntersection(entries) {
+                    entries.map((entry) => {
+                        if (entry.isIntersecting) {
+                            // Item has crossed our observation
+                            // threshold - load src from data-src
+                            entry.target.style.backgroundImage =
+                                "url('" + entry.target.dataset.bgimage + "')"
+                            // Job done for this item - no need to watch it!
+                            observer.unobserve(entry.target)
+                        }
+                    })
+                }
+
+                const headers = document.querySelectorAll('.divomgbox')
+                const observer = new IntersectionObserver(handleIntersection, {
+                    rootMargin: '100px',
+                })
+                headers.forEach((header) => observer.observe(header))
+            })
+        } else {
+            // No interaction support? Load all background images automatically
+            const headers = document.querySelectorAll('.divomgbox')
+            headers.forEach((header) => {
+                header.style.backgroundImage = "url('" + header.dataset.bgimage + "')"
+            })
+        }
+
+        $(document).ready(function () {
+            Sys.Net.WebRequestManager.add_completedRequest(onComplete1);
+        });
+        function onComplete1(sender, args) {
+            setTimeout(function () {
+                const headers = document.querySelectorAll('.divomgbox')
+                headers.forEach((header) => {
+                    header.style.backgroundImage = "url('" + header.dataset.bgimage + "')"
+                })
+                // alert('1');
+
+            }, 6000);
+
+
+        }
+
+        // End lady Load BG Images
+
+        function ManageEditDate(id) {
+
+            var lnkEditDate = $(".lnkEditDate_" + id);
+            var txtCRFReminderDate = $(".txtCRFReminderDate_" + id);
+            var drpcrfReminderdateHR = $(".drpcrfReminderdateHR_" + id);
+            var drpcrfReminderdatemin = $(".drpcrfReminderdatemin_" + id);
+            var btnupdatedate_reminder = $(".btnupdatedate_reminder_" + id);
+
+            //alert($(lnkEditDate).attr("data-crmreminderid"));
+
+            if ($(lnkEditDate).attr("data-crmreminderid") != "0") {
+                $(txtCRFReminderDate).val($(lnkEditDate).attr("data-date"));
+                $(drpcrfReminderdateHR).val($(lnkEditDate).attr("data-hour"));
+                $(drpcrfReminderdatemin).val($(lnkEditDate).attr("data-min"));
+            }
+            else {
+                $(txtCRFReminderDate).val("");
+                $(drpcrfReminderdateHR).val("01");
+                $(drpcrfReminderdatemin).val("00");
+            }
+
+            if ($(txtCRFReminderDate).is(":visible")) {
+                $(txtCRFReminderDate).hide();
+                $(drpcrfReminderdateHR).hide();
+                $(drpcrfReminderdatemin).hide();
+                $(btnupdatedate_reminder).hide();
+
+                if ($(lnkEditDate).attr("data-crmreminderid") != "0") {
+                    $(lnkEditDate).text("Edit");
+                }
+                else {
+                    $(lnkEditDate).text("Add");
+                }
+            }
+            else {
+                $(txtCRFReminderDate).show();
+                $(drpcrfReminderdateHR).show();
+                $(drpcrfReminderdatemin).show();
+                $(btnupdatedate_reminder).show();
+                $(lnkEditDate).text("Reset");
+            }
+        }
+    </script>
+</head>
+<body>
+    <form name="aspnetForm" method="post" action="./quotations" onsubmit="javascript:return WebForm_OnSubmit();" id="aspnetForm" enctype="multipart/form-data">
+<div>
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="">
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="">
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPaA8FDzhkZWZiYjY1MTQ0OGY0MBgBBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WBAUvY3RsMDAkQ29udGVudFBsYWNlSG9sZGVyMSRjaGtSZWdpc3RlcnRoaXNiYWtlcnkFKWN0bDAwJENvbnRlbnRQbGFjZUhvbGRlcjEkY2hrRGVsaXZlcnlfcG9wBShjdGwwMCRDb250ZW50UGxhY2VIb2xkZXIxJGNoa1B1Ymxpc2hfcG9wBTBjdGwwMCRDb250ZW50UGxhY2VIb2xkZXIxJGNoa0Jha2VyeWNvbmZpcm1lZF9wb3AomlhqnEXlyBxRsCuZpQVRT8dNMw==">
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['aspnetForm'];
+if (!theForm) {
+    theForm = document.aspnetForm;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="http://ajax.aspnetcdn.com/ajax/4.6/1/WebForms.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+window.WebForm_PostBackOptions||document.write('<script type="text/javascript" src="/WebResource.axd?d=olY3E697dLRilEDTuHlevqynRbhctbHks8thTdg7mMwGIjyABuz7_klXMvCDIJd8EwhOYwMH1kXyYuzqsYGnjvbmLuQ1&amp;t=639190905291376328"><\/script>');//]]>
+</script>
+
+
+
+<script src="http://ajax.aspnetcdn.com/ajax/4.6/1/WebUIValidation.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+var __cultureInfo = {"name":"en-GB","numberFormat":{"CurrencyDecimalDigits":2,"CurrencyDecimalSeparator":".","IsReadOnly":true,"CurrencyGroupSizes":[3],"NumberGroupSizes":[3],"PercentGroupSizes":[3],"CurrencyGroupSeparator":",","CurrencySymbol":"£","NaNSymbol":"NaN","CurrencyNegativePattern":1,"NumberNegativePattern":1,"PercentPositivePattern":1,"PercentNegativePattern":1,"NegativeInfinitySymbol":"-∞","NegativeSign":"-","NumberDecimalDigits":2,"NumberDecimalSeparator":".","NumberGroupSeparator":",","CurrencyPositivePattern":0,"PositiveInfinitySymbol":"∞","PositiveSign":"+","PercentDecimalDigits":2,"PercentDecimalSeparator":".","PercentGroupSeparator":",","PercentSymbol":"%","PerMilleSymbol":"‰","NativeDigits":["0","1","2","3","4","5","6","7","8","9"],"DigitSubstitution":1},"dateTimeFormat":{"AMDesignator":"AM","Calendar":{"MinSupportedDateTime":"\/Date(-62135596800000)\/","MaxSupportedDateTime":"\/Date(253402300799999)\/","AlgorithmType":1,"CalendarType":1,"Eras":[1],"TwoDigitYearMax":2049,"IsReadOnly":true},"DateSeparator":"/","FirstDayOfWeek":1,"CalendarWeekRule":2,"FullDateTimePattern":"dd MMMM yyyy HH:mm:ss","LongDatePattern":"dd MMMM yyyy","LongTimePattern":"HH:mm:ss","MonthDayPattern":"d MMMM","PMDesignator":"PM","RFC1123Pattern":"ddd, dd MMM yyyy HH\u0027:\u0027mm\u0027:\u0027ss \u0027GMT\u0027","ShortDatePattern":"dd/MM/yyyy","ShortTimePattern":"HH:mm","SortableDateTimePattern":"yyyy\u0027-\u0027MM\u0027-\u0027dd\u0027T\u0027HH\u0027:\u0027mm\u0027:\u0027ss","TimeSeparator":":","UniversalSortableDateTimePattern":"yyyy\u0027-\u0027MM\u0027-\u0027dd HH\u0027:\u0027mm\u0027:\u0027ss\u0027Z\u0027","YearMonthPattern":"MMMM yyyy","AbbreviatedDayNames":["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],"ShortestDayNames":["Su","Mo","Tu","We","Th","Fr","Sa"],"DayNames":["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],"AbbreviatedMonthNames":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",""],"MonthNames":["January","February","March","April","May","June","July","August","September","October","November","December",""],"IsReadOnly":true,"NativeCalendarName":"Gregorian Calendar","AbbreviatedMonthGenitiveNames":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",""],"MonthGenitiveNames":["January","February","March","April","May","June","July","August","September","October","November","December",""]},"eras":[1,"A.D.",null,0]};//]]>
+</script>
+
+<script src="http://ajax.aspnetcdn.com/ajax/4.6/1/MicrosoftAjax.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+(window.Sys && Sys._Application && Sys.Observer)||document.write('<script type="text/javascript" src="/ScriptResource.axd?d=8d8aV0lnCBdV8VTxVElQJTneq2RzMZ-8FfvfeJxUxhqMvNpR2Rv9di-JzFE3LamMrM2tFzYItJYSZ_tKxAQeFnFdplYW-TJVdsDyWKuy1YM3GqHinrgrYRQZw6YY7xfsQCVs6WkNMq8qJpQX9P5mIHUZTpA1&t=ffffffffa1bf0f7b"><\/script>');//]]>
+</script>
+
+<script src="http://ajax.aspnetcdn.com/ajax/4.6/1/MicrosoftAjaxWebForms.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+(window.Sys && Sys.WebForms)||document.write('<script type="text/javascript" src="/ScriptResource.axd?d=fCYANF5HiIj-470fK0LkeyEDQIBzMHMSi_M_u_LZ8w7K21TeqP3Bm0mPgM6CUdVObqRgBQ9a6eYvRm4_aO4DhuKnRNitng4juQRsIWSVCJ-HBVAG9G002hk1AJvx3nYuhFRrAarzEkGUWndDUA9_2BvDzZfOulbKjZwTA3C_WHm1cqTp0&t=ffffffffa1bf0f7b"><\/script>');function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;CKEditor_TextBoxEncode('ctl00_ContentPlaceHolder1_CEEmail', 0); 
+return true;
+}
+//]]>
+</script>
+
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="9DD9952A">
+</div>
+   
+
+    
+    <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ScriptManager1', 'aspnetForm', ['tctl00$ContentPlaceHolder1$updModels','','tctl00$ContentPlaceHolder1$updPnlLogindetail',''], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+    
+    <input name="ctl00$hdAccountType" type="hidden" id="hdAccountType" value="1">
+    <input name="ctl00$hdGlobalUrl" type="hidden" id="hdGlobalUrl" value="http://localhost:27195">
+    <input name="ctl00$hdGlobalUrl_live" type="hidden" id="hdGlobalUrl_live" value="http://localhost:27195/">
+    <input type="hidden" id="hdGlobalUrl_business" value="http://localhost:27201/">
+    <input type="hidden" name="ctl00$hdnPageURL_global" id="hdnPageURL_global" value="http://localhost:27195/">
+    <div id="ctl00_wucHeader1_dvTop" class="topbar content">
+    <!--Start Header Area-->
+    <div class="headerWrapper">
+        <div class="container">
+            <div class="col-md-3 col-sm-3 col-xs-4 header-logo">
+                
+                <a href="cakes" id="ctl00_wucHeader1_andlogolink">
+                    <img src="images/logo.png" id="ctl00_wucHeader1_imglogo" class="img-responsive site-logo"></a></div>
+            <div class="col-md-5 col-sm-5 col-xs-8 flush caln">
+                <div class="div_topcontactno">0203 900 3100</div>
+            </div>
+            <div class="col-md-4 col-sm-4 hdr_cartouter">
+                <div class="row">
+                    <div id="ctl00_wucHeader1_dvUserbox" class="col-md-12 guest-box1">
+                        
+                        
+                        <ul id="ctl00_wucHeader1_ulmyacc">
+                            <li id="ctl00_wucHeader1_lilogin">
+                                <a id="ctl00_wucHeader1_hpLogin" class="btn-danger" href="http://localhost:27195/login?returl=http://localhost:27195/quotations">Sign In</a></li>
+                            <li id="ctl00_wucHeader1_lilogin1">
+                                <a id="ctl00_wucHeader1_hpregister" class="btn-default" href="http://localhost:27195/login?returl=http://localhost:27195/quotations">Register</a></li>
+                            <li>
+                                
+                                <ul class="usermenu dropdown-menu">
+                                    
+                                    <li id="ctl00_wucHeader1_liCRM"><a href="crm" id="ctl00_wucHeader1_A10">CRM Home</a></li>
+                                    <li id="ctl00_wucHeader1_liCRMSale"><a href="crmsale" id="ctl00_wucHeader1_A1411">CRM Sale</a></li>
+                                    
+                                   <li id="ctl00_wucHeader1_limanageCustomers"><a href="crmmanagecustomer" id="ctl00_wucHeader1_A1">Customers</a></li>
+                                   
+                                    
+                                    
+                                    <li id="ctl00_wucHeader1_liCRM_Payouts"><a href="crmwidthrawalrequests">Payouts</a></li>
+                                    
+                                    
+                                    
+                                    <li id="ctl00_wucHeader1_liCRM2"><a href="quotations" id="ctl00_wucHeader1_A13">Manage Quotation</a></li>
+                                    <li id="ctl00_wucHeader1_liCRM21"><a href="customer-requirement-form" id="ctl00_wucHeader1_A131">Add New Quotation</a></li>
+                                    
+                                    <li><a href="myorder" id="ctl00_wucHeader1_limyorders">My Order</a></li>
+                                    
+                                    
+                                    
+                                    
+                                    <li id="ctl00_wucHeader1_limanagereaccount"><a href="manageaccount" id="ctl00_wucHeader1_A11">Manage Account</a></li>
+                                    <li id="ctl00_wucHeader1_limanagerefund1"><a href="myrefundbalance" id="ctl00_wucHeader1_A7">My Refund Balance</a></li>
+                                    <li id="ctl00_wucHeader1_limanageaddress"><a href="manageaddress" id="ctl00_wucHeader1_A22">Manage Address</a></li>
+                                    <li><a href="changepassword" id="ctl00_wucHeader1_lichangepassword">Change
+                                        Password</a></li>
+                                    <li>
+                                        <a id="ctl00_wucHeader1_lnkbtnLogout" href="javascript:__doPostBack('ctl00$wucHeader1$lnkbtnLogout','')">Sign out</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                      
+                        <div id="ctl00_wucHeader1_dvSocialMedia" class="topSociallinks_headerbar clearfix">
+                        <ul>
+                            <li class="Facebook"><a href="https://www.facebook.com/cakerstreet" target="_blank">
+                                <i class="fa fa-fw fa-facebook"></i></a></li>
+                            <li class="Twiter"><a href="https://twitter.com/caker_street" target="_blank"><i class="fa fa-fw fa-twitter"></i></a></li>
+                            <li class="pinterest"><a href="#" target="_blank"><i class="fa fa-fw fa-youtube"></i>
+                            </a></li>
+                            <li class="Googleplus"><a href="#" target="_blank"><i class="fa fa-fw fa-google-plus">
+                            </i></a></li>
+                        </ul>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--End Header Area-->
+    <div class="nav-wrapper">
+        <nav class="navbar navbar-default">
+      <div class="container topcontainer">
+      
+      
+        <div class="col-lg-3 col-sm-4 col-xs-2 flush topnavbarleft">
+          <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" onclick="javascript:navbarclicked();" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+                 </div>
+    
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-2">
+
+          <ul id="ctl00_wucHeader1_ulmainlinks" class="nav navbar-nav">
+              
+          
+           
+            
+              
+            <li><a href="site/about-us" id="ctl00_wucHeader1_ancabtCakertst">About Caker St.</a></li>
+            
+            <li class="contactli"><a href="contact-us" id="ctl00_wucHeader1_anccontactus">Contact Us</a></li>
+            
+            <li id="ctl00_wucHeader1_liMobLogin" class="mobilelogin">
+            <a href="login" id="ctl00_wucHeader1_ancmobLogin">Register | Sign In</a>
+            </li>
+
+            
+            
+          </ul>
+          
+          
+        </div>
+        </div>
+        <div class="col-lg-offset-2 col-lg-6 col-md-offset-1 col-sm-offset-0 col-sm-6 col-xs-8 flush topsearchbar">
+        <div id="ctl00_wucHeader1_dvTopSearch" class="topsearchpannel">
+        
+                    <label class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span id="spCat">All Cakes</span><b class="caret caret2 caret_fltright"></b></a>
+                        <input name="ctl00$wucHeader1$hdSeoCat" type="hidden" id="hdSeoCat" value="0">
+                        <ul class="dropdown-menu ulancheader">
+                            <li id="ctl00_wucHeader1_liAllCakes">
+                                <a id="hpTopCat_All" onclick="SetSelectedCategory('All Cakes','0');" href="cakes">All Cakes</a>
+                            </li>
+                            <li id="ctl00_wucHeader1_liAllCupCakes">
+                                <a id="hlCupcakes" onclick="SetSelectedCategory('All Cupcakes','1');" href="cupcakes">All Cupcakes</a>
+                            </li>
+                            <li id="ctl00_wucHeader1_liAllPartyAccessories">
+                                <a id="hlPartyAccessory" onclick="SetSelectedCategory('All Party Accessories','2');" href="party-accessories">All Party Accessories</a>
+                            </li>
+                            
+                        </ul>
+                    </label>
+                    <input name="ctl00$wucHeader1$txtSearch_Global" type="text" id="txtSearch_Global" class="headerinput ui-autocomplete-input" placeholder="Search cake here" autocomplete="off">
+                        <button type="submit" onclick="TakeUserToSelectedCategory();return false;" class="headerbtn">
+                        GO</button>
+                    <input type="hidden" name="ctl00$wucHeader1$hftagID" id="hftagID" value="0">
+                    <input type="hidden" name="ctl00$wucHeader1$hfsearchtagID" id="hfsearchtagID" value="0">
+                    <input type="hidden" name="ctl00$wucHeader1$hftagforID" id="hftagforID" value="0">
+                    <input type="hidden" name="ctl00$wucHeader1$hftagURL" id="hftagURL">
+                    
+                    
+                
+                </div></div>
+        <div class="col-lg-1 col-md-1 col-sm-2 col-xs-2 flush topcartouter">
+        <div id="ctl00_wucHeader1_dvCart" class="cart-pan">
+                            <span class="cart-drop dropdown">
+                                <ul class="cart">
+                                    <li role="presentation" class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        Cart<span id="ctl00_wucHeader1_lblNoOfItems" class="count">0</span></a>
+                                        <div class="dropdown-menu min-width-left-top-floatingCart">
+                                            <ul class="item_outer">
+                                                
+                                                <li id="ctl00_wucHeader1_liEmpty">
+                                                    <div class="gvShopingCartHead_prdImage_outer">
+                                                    </div>
+                                                    <div class="gvShopingCartHead_prdName_outer">
+                                                        <span class="name"><strong>Your shopping cart is empty</strong></span>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                            <ul class="anc_outer">
+                                                <li>
+                                                    <a id="ctl00_wucHeader1_aViewCart" class="btn btn-primary cart_link" href="shoppingcart">View Cart (0 item)</a></li>
+                                            </ul>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </span>
+                        </div>
+        </div>
+        <!-- /.navbar-collapse -->
+      </div><!-- /.container -->
+    </nav>
+    </div>
+    <!--Banner Area Start-->
+    
+    <!--Banner Area End-->
+</div>
+
+    <div id="divspacing" class="spacing">
+    </div>
+    <div id="ctl00_containerdiv" class="container" style="min-height: 500px">
+        <div class="row">
+            <div id="ctl00_Linkscontainerdiv" class="col-sm-12 bot-margin-10">
+                <div class="col-md-2 col-sm-2 flush dropdown left-account-bar">
+                    <a href="#" class="dropdown-toggle refine-head" data-toggle="dropdown"><font>Hi,
+                        </font><span>My Account</span><b class="caret caret2 caret_fltright"></b></a>
+                    <ul class="panel-list-new dropdown-menu">
+                        
+                        <li id="ctl00_liCRM"><a href="crm" id="ctl00_A22">CRM Home</a></li>
+                        <li id="ctl00_liManagebusiness"><a href="crmbusiness" id="ctl00_A111">Manage Business</a></li>
+                        
+                        <li id="ctl00_liPurchaseOrder"><a href="crmmanagepurchaseorder?wid=82&amp;status=0" id="ctl00_ancManagepurchaseorder">Purchase Order</a></li>
+                        <li id="ctl00_liManagecrmbakersotp"><a href="crmbakersotp" id="ctl00_A1">Baker Login OTP</a></li>
+                        <li id="ctl00_liManagecrmuserotp"><a href="crmusersotp" id="ctl00_A24">CRM Login OTP</a></li>
+                        <li id="ctl00_liOrderLog"><a href="crmorderlog" id="ctl00_A1_orderLog">Order Log</a></li>
+                        <li id="ctl00_liManageNewsletter"><a href="crmemailnewsletter" id="ctl00_A19">Manage Email Newsletter</a> </li>
+                        <li id="ctl00_liManageCategoryBar"><a href="crmcategorybar" id="ctl00_A26">Manage Category Bar</a> </li>
+                        <li id="ctl00_liManageHomepagetrendingItems"><a href="crmhomepagelinks" id="ctl00_A28">Manage Homepage Trending Items</a> </li>
+                        <li id="ctl00_liManageHomepagecatlinks"><a href="crmhomepageotherlinks" id="ctl00_A29">Manage Homepage Cat Links</a> </li>
+                        <li id="ctl00_liManageBanner"><a href="crmbanner" id="ctl00_A27">Manage Banner</a> </li>
+                        <li id="ctl00_liManageUnsubsciber"><a href="crmunsubscriber" id="ctl00_A23">Manage Unsubsciber</a> </li>
+                        
+                        <li id="ctl00_limanagepayment"><a href="crmpayment" id="ctl00_A4">Payments</a></li>
+                        <li id="ctl00_licrmgooglefeed"><a href="crmmanagegoogleproducts" id="ctl00_A91">Google Shopping Feed</a></li>
+                        <li id="ctl00_limanagepayout"><a href="crmwidthrawalrequests" id="ctl00_A12">Withdrawal Requests</a></li>
+                        <li id="ctl00_limyorder"><a href="myorder" id="ctl00_A010">My Order</a></li>
+                        <li id="ctl00_lipricetemplate"><a href="crmtemplatelist" id="ctl00_A16">Price Templates</a></li>
+                        <li id="ctl00_liAllorders"><a href="crmorders" id="ctl00_A6">Orders</a></li>
+                        <li id="ctl00_liordermanifest"><a href="crmordermenifest" id="ctl00_A15">Order Manifest</a></li>
+                        <li id="ctl00_liSaleOrder"><a href="crmsale" id="ctl00_A14">Order Sale</a></li>
+                        <li id="ctl00_limyorderrefunddetail"><a href="crmorderrefunddetail" id="ctl00_A0101">Order Refund Details</a></li>
+                        <li id="ctl00_licrmprdImagedeleted"><a href="crmdeleteprdImage" id="ctl00_A110">Remove Product Images</a></li>
+                        <li id="ctl00_lipendingOrder"><a href="crmpendingorders" id="ctl00_A17">Pending Leads</a></li>
+                        <li id="ctl00_liUpcomingLeads"><a href="crmupcomingevents" id="ctl00_A18">Upcoming Leads</a></li>
+                        
+                        <li id="ctl00_licrmgoogle"><a href="crmgooglesearch" id="ctl00_A8">Google Search</a></li>
+                        <li id="ctl00_licrmgoogleexclude"><a href="crmgooglesearchexclude" id="ctl00_A13">Google Search Domain Exclude</a></li>
+                        <li id="ctl00_licrmsearchtags"><a href="crmsearchtag" id="ctl00_A9">Search Tags</a></li>
+                        <li id="ctl00_licrmgoogleprddeleted"><a href="crmgoogleprddeleted" id="ctl00_A10">Deleted Google Images</a></li>
+                        <li id="ctl00_licrmlinkthemetoprdcat"><a href="crmlinktagstoAccCat" id="ctl00_A812">Link Accessory Category To
+                            Tags </a></li>
+                        
+                        
+                        <li id="ctl00_limanagequotation1"><a href="customer-requirement-form" id="ctl00_A3">Add New Quote</a></li>
+                        <li id="ctl00_limanagequotation"><a href="quotations" id="ctl00_A2">Quotations</a></li>
+                        <li id="ctl00_liVisitors"><a href="crmvisitor" id="ctl00_A7">Site Visitors</a></li>
+                        <li id="ctl00_liTracker"><a href="crmtracker" id="ctl00_A82">Site Tracker</a></li>
+                        <li id="ctl00_licallback"><a href="crmcallback" id="ctl00_A81">Call Back Requests</a></li>
+                        
+                        
+                        <li id="ctl00_limanageaccount"><a href="manageaccount" id="ctl00_A011">Manage Account</a></li>
+                        <li id="ctl00_limanageaddress"><a href="manageaddress" id="ctl00_A020">Manage Address</a></li>
+                        <li id="ctl00_liChangePassword"><a href="changepassword" id="ctl00_A021">Change Password</a></li>
+                    </ul>
+                </div>
+                <div id="ctl00_dvPendingQuotations" class="col-md-2 col-sm-2 toppendingbox btn_refresh_outer_quotation">
+                    <ul>
+                        <li class="leftsec"><font>Pending</font><span>Quotations</span></li>
+                        <li class="rightsec">
+                            <span id="lblNewQuotationCounter">0</span></li>
+                    </ul>
+                    <a class="absolute-anchor" href="quotations?pendinglead=1">
+                    </a>
+                </div>
+                <div id="ctl00_dvPendingReminder" class="col-md-2 col-sm-2 toppendingbox btn_refresh_outer_Reminder">
+                    <ul>
+                        <li class="leftsec"><font>Pending</font><span>Reminders</span></li>
+                        <li class="rightsec">
+                            <span id="lblNewReminderCounter">0</span></li>
+                    </ul>
+                    <a class="absolute-anchor" href="crmreminder"></a>
+                </div>
+                <div id="ctl00_dvPendingLeads" class="col-md-2 col-sm-2 toppendingbox btn_refresh_outer_kart">
+                    <ul>
+                        <li class="leftsec"><font>Pending</font><span>Leads</span></li>
+                        <li class="rightsec">
+                            <span id="lblNewkartCounter">0</span></li>
+                    </ul>
+                    <a class="absolute-anchor" href="crmpendingorders"></a>
+                </div>
+                <div id="ctl00_dvPendingOrders" class="col-md-2 col-sm-2 toppendingbox btn_refresh_outer_order">
+                    <ul>
+                        <li class="leftsec"><font>Pending</font><span>Orders</span></li>
+                        <li class="rightsec">
+                            <span id="lblNewOrderCounter">0</span></li>
+                    </ul>
+                    <a class="absolute-anchor" href="crmorders?pendo=1">
+                    </a>
+                </div>
+                <div id="ctl00_dvPendingSponges" class="col-md-2 col-sm-2 toppendingbox btn_refresh_outer_orderSponge">
+                    <ul>
+                        <li class="leftsec"><font>Pending</font><span>Sponges</span></li>
+                        <li class="rightsec">
+                            <span id="lblNewSpongeCounter">0</span></li>
+                    </ul>
+                    <a class="absolute-anchor" href="crmorders?pendsponge=1">
+                    </a>
+                </div>
+            </div>
+            <div class="clearfix">
+            </div>
+            <div id="ctl00_dvLeft" class="hide">
+            </div>
+            <div id="divcolumrightmain" class="col-md-12">
+                
+    <div class="box-body">
+        <h3 class="list-head">Customer Requirement Form
+
+            <a id="ctl00_ContentPlaceHolder1_andAddNew" class="normallink pull-right" href="customer-requirement-form" style="margin: 8px 14px 0 0;">Add New Quotation</a>
+
+
+        </h3>
+        <div id="ctl00_ContentPlaceHolder1_updModels">
+	
+                <div role="form" class="quotelist">
+                    
+
+                    <div class="col-sm-12">
+                        
+                        <span id="ctl00_ContentPlaceHolder1_lblCountes" class="pull-left" style="padding-right: 15px">0 record(s) found</span>
+                    </div>
+
+                    
+                    <input type="submit" name="ctl00$ContentPlaceHolder1$btnSubmitSwap" value="Submit" id="ctl00_ContentPlaceHolder1_btnSubmitSwap" class="cssbutton11" style="display: none;">
+                </div>
+                
+                <input type="submit" name="ctl00$ContentPlaceHolder1$btnInvisible2" value="" id="ctl00_ContentPlaceHolder1_btnInvisible2" style="display: none">
+                
+                <div id="ctl00_ContentPlaceHolder1_pnlSearch" class="modalPopup" style="display: none; position: fixed; z-index: 10001;">
+		
+                    <div id="dvSearch" class="modal" aria-hidden="true" aria-labelledby="myModalLabel" role="dialog" tabindex="-1" style="display: block">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header" style="background-color: #DF3F42;">
+                                    <h4 class="modal-title" style="color: #fff;">Business Detail
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hdnCRFID" id="ctl00_ContentPlaceHolder1_hdnCRFID">
+                                    </h4>
+                                </div>
+                                <div class="modal-body">
+                                    
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Business Name*
+                                            </label>
+                                            <input name="ctl00$ContentPlaceHolder1$txtStoreTitle" type="text" id="txtStoreTitle" class="form-control" placeholder="Business Name">
+                                            <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator7" style="color:Red;display:none;"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Contact No.*
+                                            </label>
+                                            <input name="ctl00$ContentPlaceHolder1$txtbusinessphn" type="text" id="txtbusinessphn" class="form-control" style="max-width: 200px">
+                                            <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator8" style="color:Red;display:none;"></span>
+                                        </div>
+                                    </div>
+                                    <div class="clearfix">
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label>
+                                                Business Link URL*
+                                            </label>
+                                            <br>
+                                            <span style="display: inline;">
+                                                http://localhost:27195/business/</span>
+                                            <input name="ctl00$ContentPlaceHolder1$txtStoreURL" type="text" id="txtStoreURL" class="form-control storeURL" placeholder="Keyword" style="display: inline; max-width: 200px;">
+                                            <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator9" style="color:Red;display:none;"></span>
+                                        </div>
+                                    </div>
+                                    <div class="clearfix">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Location of your Business*
+                                            </label>
+                                            <div id="div_catdrps_ListingOuter" class="div_catdrps_ListingOuter" data-tid="1">
+                                                <select name="ctl00$ContentPlaceHolder1$drp_location" id="drp_location" class="drpRegion form-control">
+			<option value="1">United Kingdom</option>
+
+		</select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>
+                                                Postcode*
+                                            </label>
+                                            <div class="clearfix">
+                                            </div>
+                                            <input name="ctl00$ContentPlaceHolder1$txtpostcode" type="text" id="txtpostcode" class="form-control" style="max-width: 100px;">
+                                            <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator10" style="color:Red;display:none;"></span>
+                                        </div>
+                                    </div>
+                                    <div class="clearfix">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>
+                                                City*
+                                            </label>
+                                            <input name="ctl00$ContentPlaceHolder1$txtCity" type="text" id="txtCity" class="form-control">
+                                            <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator11" style="color:Red;display:none;"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label>
+                                                County
+                                            </label>
+                                            <input name="ctl00$ContentPlaceHolder1$txtCounty" type="text" id="txtCounty" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="clearfix">
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label>
+                                                Street Address*
+                                            </label>
+                                            <textarea name="ctl00$ContentPlaceHolder1$txtaddress" rows="2" cols="20" id="txtaddress" class="form-control" placeholder="Street Address" style="height:70px;"></textarea>
+                                            <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator13" style="color:Red;display:none;"></span>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div id="ctl00_ContentPlaceHolder1_updPnlLogindetail">
+			
+                                            <div class="col-sm-12" style="margin-bottom: 10px;">
+                                                <span class="chkbusenesslink"><input id="ctl00_ContentPlaceHolder1_chkRegisterthisbakery" type="checkbox" name="ctl00$ContentPlaceHolder1$chkRegisterthisbakery" onclick="javascript:setTimeout('__doPostBack(\'ctl00$ContentPlaceHolder1$chkRegisterthisbakery\',\'\')', 0)"><label for="ctl00_ContentPlaceHolder1_chkRegisterthisbakery">Register this Bakery</label></span>
+                                            </div>
+                                            
+                                        
+		</div>
+                                    <div class="form-group">
+                                        <input type="submit" name="ctl00$ContentPlaceHolder1$btncreateBakery" value="Submit" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btncreateBakery&quot;, &quot;&quot;, true, &quot;vgCancelOrder&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btncreateBakery" class="btn btn-danger updt-acnt">
+                                        <div id="ctl00_ContentPlaceHolder1_valsumm" style="color:Red;display:none;">
+
+		</div>
+                                        <input type="submit" name="ctl00$ContentPlaceHolder1$btnCloseCancel" value="Close" id="ctl00_ContentPlaceHolder1_btnCloseCancel" class="btn black-btn">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+	</div>
+                <input type="submit" name="ctl00$ContentPlaceHolder1$btnInvisible2_buynow" value="" id="ctl00_ContentPlaceHolder1_btnInvisible2_buynow" style="display: none">
+                
+                <div id="ctl00_ContentPlaceHolder1_pnlSearch_buynow" class="modalPopup" style="display: none; position: fixed; z-index: 10001;">
+		
+                    <div id="dvSearch" class="modal" aria-hidden="true" aria-labelledby="myModalLabel" role="dialog" tabindex="-1" style="display: block">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <div class="col-sm-12">
+                                            <span id="litcustomerdetail"></span>
+                                            <input type="hidden" name="ctl00$ContentPlaceHolder1$hdnlitQuoteID_buynowpop" id="hdnlitQuoteID_buynowpop" value="0">
+                                            
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="submit" name="ctl00$ContentPlaceHolder1$btnBuynow" value="Buy Now" onclick="btnBuynow_Click_crfQuotation(this);return false;" id="ctl00_ContentPlaceHolder1_btnBuynow" class="btn btn-danger updt-acnt">
+                                        <input type="submit" name="ctl00$ContentPlaceHolder1$btnCloseCancel_buynow" value="Cancel" id="ctl00_ContentPlaceHolder1_btnCloseCancel_buynow" class="btn black-btn">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+	</div>
+                <input type="submit" name="ctl00$ContentPlaceHolder1$btnInvisible2_decline" value="" id="ctl00_ContentPlaceHolder1_btnInvisible2_decline" style="display: none">
+                
+                <div id="ctl00_ContentPlaceHolder1_pnlSearch_decline" class="modalPopup" style="display: none; position: fixed; z-index: 10001;">
+		
+                    <div id="Div3" class="modal" aria-hidden="true" aria-labelledby="myModalLabel" role="dialog" tabindex="-1" style="display: block">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header" style="background-color: #DF3F42;">
+                                    <h4 class="modal-title" style="color: #fff;">Not interested
+                                    </h4>
+                                </div>
+                                <div class="modal-body" style="width: 100%">
+                                    <div class="form-horizontal">
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label">
+                                                Select Reason
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <select name="ctl00$ContentPlaceHolder1$drpDeclineReason" id="drpDeclineReason" class="form-control">
+			<option value="-1">--Select Reason--</option>
+			<option value="1">Cake price Seems out of my budget</option>
+			<option value="2">Delivery price seems high</option>
+			<option value="3">I have got better quotation somewhere else</option>
+			<option value="4">Please call back to discuss things further</option>
+			<option value="11">Others</option>
+
+		</select>
+                                                <span id="ctl00_ContentPlaceHolder1_RequiredFieldValidator22" style="color:Red;display:none;"></span>
+                                                <input type="hidden" name="ctl00$ContentPlaceHolder1$hdnCancelCRFID" id="hdnCancelCRFID" value="0">
+                                                <input type="hidden" name="ctl00$ContentPlaceHolder1$hdnCancelCRFQuoteID" id="hdnCancelCRFQuoteID" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label">
+                                                Remarks
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <textarea name="ctl00$ContentPlaceHolder1$txtdeclineReson" rows="2" cols="20" id="txtdeclineReson" class="form-control" placeholder="Street Address" style="height:70px;"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-9 col-sm-offset-3">
+                                                <input type="submit" name="ctl00$ContentPlaceHolder1$btnSubmitdecline" value="Submit" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnSubmitdecline&quot;, &quot;&quot;, true, &quot;vgdeclinebuy&quot;, &quot;&quot;, false, false))" id="ctl00_ContentPlaceHolder1_btnSubmitdecline" class="btn btn-danger updt-acnt">
+                                                <div id="ctl00_ContentPlaceHolder1_ValidationSummary4" style="color:Red;display:none;">
+
+		</div>
+                                                <input type="submit" name="ctl00$ContentPlaceHolder1$btnCloseCancel_decline" value="Cancel" id="ctl00_ContentPlaceHolder1_btnCloseCancel_decline" class="btn black-btn">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+	</div>
+            
+<div data-act-control-type="modalPopupBackground" id="ctl00_ContentPlaceHolder1_mpopaddnewbakery_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000;"></div><div data-act-control-type="modalPopupBackground" id="ctl00_ContentPlaceHolder1_mpop_buynowQuotation_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000;"></div><div data-act-control-type="modalPopupBackground" id="mpop_declinebycust_backgroundElement" class="modalBackground" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000;"></div></div>
+    </div>
+    <div id="dvPickLead" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <h4 class="modal-title" style="color: #fff;">
+                        <span id="spsmsoremail">Send Link By SMS</span>
+                        <input type="hidden" id="hfReqID">
+                        <input type="hidden" id="hfReqtype" value="1">
+                        <input type="hidden" id="hfReqsmstype" value="1">
+                    </h4>
+                </div>
+                <div class="modal-body" style="width: 100%">
+                    <div id="dvPickLeadAlert" class="alert alert-info hide">
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>
+                                <span id="spMobileNo">Mobile No</span>
+                            </label>
+                            <input id="txtMobileNo" class="form-control" type="text">
+                        </div>
+                    </div>
+                    <div class="clearfix">
+                    </div>
+                    <div class="col-sm-12" id="dvSubject">
+                        <div class="form-group">
+                            <label>
+                                Subject
+                            </label>
+                            <input id="txtSubject" placeholder="Enter Subject" class="form-control" type="text">
+                        </div>
+                    </div>
+                    <div class="col-sm-12" id="dvsms">
+                        <div class="form-group">
+                            <label>
+                                Message*
+                            </label>
+                            <textarea name="txtsmsMsg" rows="2" cols="20" id="txtsmsMsg" class="form-control" placeholder="Message" style="height: 70px; height: 200px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-sm-12" id="dvbody">
+                        <div class="form-group">
+                            <label>
+                                Message*
+                            </label>
+                            <textarea name="ctl00$ContentPlaceHolder1$CEEmail" rows="2" cols="20" id="ctl00_ContentPlaceHolder1_CEEmail" class="form-control" style="height:200px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input id="btnSendSMS" type="button" onclick="SendSMS();" class="btn btn-danger updt-acnt" value="Submit">
+                        <input type="button" value="Close" onclick="hideSMS();" data-dismiss="modal" class="btn black-btn">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="dvEditQuotation" class="dvEditQuotation modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <h4 class="modal-title" style="color: #fff;">Manage Quotation (#<span id="spncrfID_AddQuotations"></span>)
+                    </h4>
+                </div>
+                <div class="modal-body" style="width: 100%">
+                    <div id="dvNewQuoter_pop" class="boxouter dvNewQuoter" data-id="0">
+                        <div class="col-md-4 flush form-group">
+                            <div id="PrdMainImg_pop" class="prd-imgBox" data-popid="0">
+                                <div class="prdImgbox_outer imgboxouter" data-id="img1">
+                                    <div data-bid="0" data-tid="0" class="prdImgbox">
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hfQuoteImage_pop" id="hfQuoteImage_pop">
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hfQuoteisimagenew_pop" id="hfQuoteisimagenew_pop">
+                                        <div id="PrdImg_pop" class="PrdImg displaynone">
+                                            &nbsp;
+                                        </div>
+                                        <div id="addPrdImg_pop" class="addPrdImg">
+                                            <input type="file" id="fuimg1_pop" name="fuimg1_pop">
+                                            <img src="images/loading_wall.gif" id="ctl00_ContentPlaceHolder1_Img1_pop" class="loading displaynone">
+                                        </div>
+                                        <a id="editancquote_pop" data-bid="0" class="edit displaynone">&nbsp;</a> <a id="removeancquote_pop" data-bid="0" class="remove displaynone">&nbsp;</a>
+                                        <a id="enhanceancquote_pop" class="normallink displaynone" style="margin: 5px auto;" onclick="EnhanceImage_PopUp();">Enhance Image</a>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 form-group">
+                            <div class="col-md-4 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    Select Shape:</label>
+                                <div class="col-sm-12">
+                                    <select name="ctl00$ContentPlaceHolder1$drpShape_pop" id="drpShape_pop" class="form-control" style="max-width: 200px">
+	<option value="7">Square</option>
+	<option value="8">Round</option>
+	<option value="9">Heart</option>
+	<option value="10">Letters (A - Z)</option>
+	<option value="11">Numbers (0 - 9)</option>
+	<option value="12">As Shown</option>
+
+</select>
+                                </div>
+                            </div>
+                            <div class="col-md-8 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    Select Bakery:</label>
+                                <div class="col-sm-12">
+                                    <select name="ctl00$ContentPlaceHolder1$ddlBakery_pop" id="ddlBakery_pop" class="form-control" onchange="ddlBakery_SelectedIndexChanged(this);">
+
+</select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    Select Size:</label>
+                                <div class="col-sm-12">
+                                    <select name="ctl00$ContentPlaceHolder1$ddlSize_pop" id="ddlSize_pop" class="form-control" onchange="ddlSize_OnSelectedIndexChanged(this);" style="max-width: 200px">
+
+</select>
+                                    <input name="ctl00$ContentPlaceHolder1$txtSize_pop" type="text" id="txtSize_pop" class="form-control" placeholder="Enter Size" style="max-width: 200px; margin-top: 5px; display: none;">
+                                </div>
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    Quote Price:</label>
+                                <div class="col-sm-12">
+                                    <input name="ctl00$ContentPlaceHolder1$txtQuotePrice_pop" type="text" id="txtQuotePrice_pop" class="form-control priceinput" style="max-width: 100px;">
+
+                                    <a id="ancUseCalculator" class="normallink font12 lnkGetCalculator" data-getprice="1">Use Calculator</a>
+                                </div>
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    Admin fee:</label>
+                                <div class="col-sm-12">
+                                    <input name="ctl00$ContentPlaceHolder1$txtMarginPrice_pop" type="text" id="txtMarginPrice_pop" class="form-control priceinput" style="max-width: 100px;">
+                                </div>
+                            </div>
+                            <div class="col-md-12 form-group">
+                                <div class="col-sm-12">
+                                    <div class="checkbox">
+                                        <label>
+                                            <span class="chkbox" onchange="chkColloection_OnCheckedChanged(this)"><input id="chkDelivery_pop" type="checkbox" name="ctl00$ContentPlaceHolder1$chkDelivery_pop"></span>
+                                            I can Deliver the cake to <span id="spnpostcode_pop"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="divdeliverycharge_pop" style="display: none;" class="col-sm-12 form-group">
+                                    <label class="col-sm-6 control-label-full">
+                                        <abbr class="text-danger">
+                                            *</abbr>
+                                        Delivery By:
+                                        <br>
+                                        <select name="ctl00$ContentPlaceHolder1$drpDeliveryfrom_pop" id="drpDeliveryfrom_pop" class="form-control" style="max-width: 200px;">
+	<option value="2">Bakery</option>
+	<option value="3">Cakerstreet</option>
+	<option value="4">Postal Delivery</option>
+
+</select>
+                                    </label>
+                                    <label class="col-sm-6 control-label-full">
+                                        <abbr class="text-danger">
+                                            *</abbr>
+                                        Delivery Price:
+                                        <br>
+                                        <input name="ctl00$ContentPlaceHolder1$txtdeliveryCharges_pop" type="text" value="0" id="txtdeliveryCharges_pop" class="form-control priceinput" placeholder="e.g 10" style="max-width: 100px; display: table;">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 form-group">
+                            <label class="col-sm-12 control-label">
+                                Remarks:</label>
+                            <div class="col-sm-12">
+                                <textarea name="ctl00$ContentPlaceHolder1$txtRemarks_pop" rows="2" cols="20" id="txtRemarks_pop" class="form-control" placeholder="Remarks"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-12 hide">
+                            <div class="checkbox">
+                                <label>
+                                    <input id="chkPublish_pop" type="checkbox" name="ctl00$ContentPlaceHolder1$chkPublish_pop">
+                                    Send to Customer
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 form-group">
+                            <div class="col-sm-12">
+                                <span class="pull-left" style="font-size: 13px">Delivery Date: &nbsp;</span><input name="ctl00$ContentPlaceHolder1$txtdeliverydate_pop" type="text" id="txtdeliverydate_pop" class="form-control" placeholder="dd/mm/yyyy" style="width:95px;float: left; margin-right: 7px;">
+                                <select name="ctl00$ContentPlaceHolder1$drpdeliverydateHR_pop" id="drpdeliverydateHR_pop" class="form-control" style="width:55px;float: left; margin-right: 7px;">
+	<option value="01">01</option>
+	<option value="02">02</option>
+	<option value="03">03</option>
+	<option value="04">04</option>
+	<option value="05">05</option>
+	<option value="06">06</option>
+	<option value="07">07</option>
+	<option value="08">08</option>
+	<option value="09">09</option>
+	<option value="10">10</option>
+	<option value="11">11</option>
+	<option value="12">12</option>
+	<option value="13">13</option>
+	<option value="14">14</option>
+	<option value="15">15</option>
+	<option value="16">16</option>
+	<option value="17">17</option>
+	<option value="18">18</option>
+	<option value="19">19</option>
+	<option value="20">20</option>
+	<option value="21">21</option>
+	<option value="22">22</option>
+	<option value="23">23</option>
+	<option value="24">24</option>
+
+</select>
+                                <select name="ctl00$ContentPlaceHolder1$drpdeliverydatemin_pop" id="drpdeliverydatemin_pop" class="form-control" style="width:55px;float: left; margin-right: 7px;">
+	<option value="00">00</option>
+	<option value="01">01</option>
+	<option value="02">02</option>
+	<option value="03">03</option>
+	<option value="04">04</option>
+	<option value="05">05</option>
+	<option value="06">06</option>
+	<option value="07">07</option>
+	<option value="08">08</option>
+	<option value="09">09</option>
+	<option value="10">10</option>
+	<option value="11">11</option>
+	<option value="12">12</option>
+	<option value="13">13</option>
+	<option value="14">14</option>
+	<option value="15">15</option>
+	<option value="16">16</option>
+	<option value="17">17</option>
+	<option value="18">18</option>
+	<option value="19">19</option>
+	<option value="20">20</option>
+	<option value="21">21</option>
+	<option value="22">22</option>
+	<option value="23">23</option>
+	<option value="24">24</option>
+	<option value="25">25</option>
+	<option value="26">26</option>
+	<option value="27">27</option>
+	<option value="28">28</option>
+	<option value="29">29</option>
+	<option value="30">30</option>
+	<option value="31">31</option>
+	<option value="32">32</option>
+	<option value="33">33</option>
+	<option value="34">34</option>
+	<option value="35">35</option>
+	<option value="36">36</option>
+	<option value="37">37</option>
+	<option value="38">38</option>
+	<option value="39">39</option>
+	<option value="40">40</option>
+	<option value="41">41</option>
+	<option value="42">42</option>
+	<option value="43">43</option>
+	<option value="44">44</option>
+	<option value="45">45</option>
+	<option value="46">46</option>
+	<option value="47">47</option>
+	<option value="48">48</option>
+	<option value="49">49</option>
+	<option value="50">50</option>
+	<option value="51">51</option>
+	<option value="52">52</option>
+	<option value="53">53</option>
+	<option value="54">54</option>
+	<option value="55">55</option>
+	<option value="56">56</option>
+	<option value="57">57</option>
+	<option value="58">58</option>
+	<option value="59">59</option>
+
+</select>
+                                
+                            </div>
+                        </div>
+                        <div class="col-sm-6 form-group">
+                            <div class="col-sm-12">
+                                <span class="pull-left" style="font-size: 13px">Valid upto: &nbsp;</span><input name="ctl00$ContentPlaceHolder1$txtvalidtildate_pop" type="text" id="txtvalidtildate_pop" class="form-control" placeholder="dd/mm/yyyy" style="width:95px;float: left; margin-right: 7px;">
+                                <select name="ctl00$ContentPlaceHolder1$drpvalidtilldateHR_pop" id="drpvalidtilldateHR_pop" class="form-control" style="width:55px;float: left; margin-right: 7px;">
+	<option value="01">01</option>
+	<option value="02">02</option>
+	<option value="03">03</option>
+	<option value="04">04</option>
+	<option value="05">05</option>
+	<option value="06">06</option>
+	<option value="07">07</option>
+	<option value="08">08</option>
+	<option value="09">09</option>
+	<option value="10">10</option>
+	<option value="11">11</option>
+	<option value="12">12</option>
+	<option value="13">13</option>
+	<option value="14">14</option>
+	<option value="15">15</option>
+	<option value="16">16</option>
+	<option value="17">17</option>
+	<option value="18">18</option>
+	<option value="19">19</option>
+	<option value="20">20</option>
+	<option value="21">21</option>
+	<option value="22">22</option>
+	<option value="23">23</option>
+	<option value="24">24</option>
+
+</select>
+                                <select name="ctl00$ContentPlaceHolder1$drpvalidtilldatemin_pop" id="drpvalidtilldatemin_pop" class="form-control" style="width:55px;float: left; margin-right: 7px;">
+	<option value="00">00</option>
+	<option value="01">01</option>
+	<option value="02">02</option>
+	<option value="03">03</option>
+	<option value="04">04</option>
+	<option value="05">05</option>
+	<option value="06">06</option>
+	<option value="07">07</option>
+	<option value="08">08</option>
+	<option value="09">09</option>
+	<option value="10">10</option>
+	<option value="11">11</option>
+	<option value="12">12</option>
+	<option value="13">13</option>
+	<option value="14">14</option>
+	<option value="15">15</option>
+	<option value="16">16</option>
+	<option value="17">17</option>
+	<option value="18">18</option>
+	<option value="19">19</option>
+	<option value="20">20</option>
+	<option value="21">21</option>
+	<option value="22">22</option>
+	<option value="23">23</option>
+	<option value="24">24</option>
+	<option value="25">25</option>
+	<option value="26">26</option>
+	<option value="27">27</option>
+	<option value="28">28</option>
+	<option value="29">29</option>
+	<option value="30">30</option>
+	<option value="31">31</option>
+	<option value="32">32</option>
+	<option value="33">33</option>
+	<option value="34">34</option>
+	<option value="35">35</option>
+	<option value="36">36</option>
+	<option value="37">37</option>
+	<option value="38">38</option>
+	<option value="39">39</option>
+	<option value="40">40</option>
+	<option value="41">41</option>
+	<option value="42">42</option>
+	<option value="43">43</option>
+	<option value="44">44</option>
+	<option value="45">45</option>
+	<option value="46">46</option>
+	<option value="47">47</option>
+	<option value="48">48</option>
+	<option value="49">49</option>
+	<option value="50">50</option>
+	<option value="51">51</option>
+	<option value="52">52</option>
+	<option value="53">53</option>
+	<option value="54">54</option>
+	<option value="55">55</option>
+	<option value="56">56</option>
+	<option value="57">57</option>
+	<option value="58">58</option>
+	<option value="59">59</option>
+
+</select>
+                                
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="checkbox">
+                                <label>
+                                    <span class="chkBakeryconfirmed"><input id="chkBakeryconfirmed_pop" type="checkbox" name="ctl00$ContentPlaceHolder1$chkBakeryconfirmed_pop"></span>
+                                    Bakery already Confirmed
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnSubmitquote_pop" value="Submit your Quote" onclick="btnSubmitquote_onclick(this);return false;" id="ctl00_ContentPlaceHolder1_btnSubmitquote_pop" class="btn btn-danger">
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnCancel_pop" value="Cancel" onclick="btnCancel_onclick(this);return false;" id="ctl00_ContentPlaceHolder1_btnCancel_pop" class="btn btn-danger">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="dvEnhanceImage" class="dvEnhanceImage modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <h4 class="modal-title" style="color: #fff;">Enhance image(#<span id="spncrfID_EnhanceImage"></span>)
+                    </h4>
+                </div>
+                <div class="modal-body" style="width: 100%">
+                    <div id="dvEnhanceImage_pop" class="boxouter dvNewQuoter" data-id="0">
+                        <div class="col-md-5 flush form-group">
+                            <div id="PrdMainImg_popEnhanceImage" class="prd-imgBox" data-popid="0">
+                                <div class="prdImgbox_outer imgboxouter" data-id="img1">
+                                    <div data-bid="0" data-tid="0" class="prdImgbox">
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hfQuoteImage_popEnhanceImage" id="hfQuoteImage_popEnhanceImage">
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hfQuoteImage_popEnhanceImagePath" id="hfQuoteImage_popEnhanceImagePath">
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hfRowID_enhancedImage" id="hfRowID_enhancedImage" value="0">
+                                        <input type="hidden" name="ctl00$ContentPlaceHolder1$hfisEnhancedImage" id="hfisEnhancedImage" value="0">
+                                        <div id="PrdImg_popEnhanceImage" class="PrdImg displaynone">
+                                            &nbsp;
+                                            <a class="absolute-anchor" target="_blank" id="ancPrdImg_popEnhanceImage"></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7 form-group">
+                            <div class="col-md-12 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    Select Prompt:</label>
+                                <div class="col-sm-12">
+                                    <select name="ctl00$ContentPlaceHolder1$drpPrompt" id="drpPrompt" class="form-control" onchange="GetLeonardoPrompt();">
+
+</select>
+                                </div>
+                            </div>
+                            <div class="col-md-12 form-group">
+                                <label class="col-sm-12 control-label">
+                                    <abbr class="text-danger">
+                                        *</abbr>
+                                    No of images as Output:</label>
+                                <div class="col-sm-12">
+                                    <select name="ctl00$ContentPlaceHolder1$drpImageCount" id="drpImageCount" class="form-control" style="max-width: 100px">
+	<option value="1">1</option>
+	<option value="2">2</option>
+	<option value="3">3</option>
+
+</select>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-12">
+                                <div id="div_imgboxouter" class="col-sm-12">
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label class="col-sm-12 control-label">
+                                Additional Image(s): <span class="text-muted">[Optional]</span></label>
+                            <div class="col-sm-12">
+                                <input type="file" name="ctl00$ContentPlaceHolder1$fuImage" id="fuImage" onchange="uploadImage_enhance(this);" accept="image/*">
+                                <input type="hidden" name="ctl00$ContentPlaceHolder1$hfImage_uploaded" id="hfImage_uploaded">
+                            </div>
+                        </div>
+                        <div id="dvPromptRemark" class="col-md-12 form-group PromptRemark displaynone">
+                            <label class="col-sm-12 control-label">
+                                Prompt Remarks:</label>
+                            <div class="col-sm-12">
+                                <textarea name="ctl00$ContentPlaceHolder1$txtPromptText_pop" rows="2" cols="20" id="txtPromptText_pop" class="form-control" placeholder="Remarks"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-12 form-group">
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnEnhanceImage" value="Enhance Image" onclick="btnEnhanceImage_onclick(this);return false;" id="ctl00_ContentPlaceHolder1_btnEnhanceImage" class="btn btn-danger">
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnCancel_popEnhanceImage" value="Cancel" onclick="btnCancelEnhanceImage_onclick(this);return false;" id="ctl00_ContentPlaceHolder1_btnCancel_popEnhanceImage" class="btn btn-danger">
+                        </div>
+                        <div class="col-md-12 form-group PrdMainImg_popEnhanceImage_output_outer displaynone">
+                            
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $("body").on("click", "a.lnkGetCalculator", function () {
+
+                var getprice = parseInt($(this).attr("data-getprice"));
+
+                var url = $("#hdGlobalUrl").val() + "/crmtemplatecalculator?crfid=" + $(this).attr("data-id");
+
+                if (getprice == 1) {
+                    url = url + "&getprice=1";
+                }
+
+                UseCalculator(url, $(this).attr("data-id"));
+            });
+
+        });
+
+
+        function UseCalculator(weburl, id) {
+            var child = window.open(weburl, 'popUpWindow', 'height=600,width=1024,left=100,top=100,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,directories=no, status=yes');
+
+            var leftDomain = false;
+            var interval = setInterval(function () {
+
+                // we're here when the child window has been navigated away or closed
+                if (child.closed) {
+
+                    clearInterval(interval);
+                    if (localStorage.getItem("caltotal") != null) {
+                        var myData = localStorage['caltotal'];
+                        localStorage.removeItem('caltotal'); // Clear the localStorage
+                        $("#txtQuotePrice_pop").val(myData);
+                    }
+                    else if (localStorage.getItem("PrdDetail") != null) {
+                        var myData = localStorage['PrdDetail'];
+
+                        localStorage.removeItem('PrdDetail'); // Clear the localStorage
+                        $("#lblSpn_refprd[data-id=" + id + "]").html("(<a href='" + myData.split(';')[0] + "' target='_blank' class='normallink'>Ref. SKU#</a>)");
+                        $("#lblSpn_refprd[data-id=" + id + "]").show();
+                    }
+                    //alert(myData);
+                    //location.href = location.href;
+                    return;
+                }
+
+            }, 500);
+        }
+
+
+        function showmodalbuynow() {
+            if ($find('ctl00_ContentPlaceHolder1_mpop_buynowQuotation')) {
+                $find('ctl00_ContentPlaceHolder1_mpop_buynowQuotation').show();
+            }
+        }
+        function notesDiv(id) {
+            var notesWindow = window.open($("#hdGlobalUrl").val() + "/crmnotes/" + id, '', 'height=580,width=600');
+
+        }
+
+
+    </script>
+
+            </div>
+        </div>
+    </div>
+    <!-- Start: MAIN CONTENT -->
+    <div id="div_backtotop" class="div_backtotop">
+        <div id="span_backtotop">
+            <div id="back-top-image">
+                <img src="https://cakerstreet1.s3.amazonaws.com/crm_content/img/BackToTop_Arrow.png" alt="Back to top" title="Back to top">
+            </div>
+        </div>
+    </div>
+    
+    <div id="ctl00_pnlProgress" style="display: none; width: 100px; height: 100px; position: fixed; z-index: 10001;">
+	
+        <div style="padding: 8px">
+            <table border="0" cellpadding="2" cellspacing="0" style="width: 100%">
+                <tbody>
+                    <tr>
+                        <td style="text-align: right">
+                            <img id="Img1" alt="" src="https://cakerstreet1.s3.amazonaws.com/crm_content/images/loading_wall.gif">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    
+</div>
+    
+    <div id="ctl00_pnlProgress2" style="background-color: rgb(255, 255, 255); display: none; width: 310px; border-width: 1px; border-style: solid; border-color: gray; position: fixed; z-index: 10001;">
+	
+        <div style="padding: 8px">
+            <table border="0" cellpadding="2" cellspacing="0" style="width: 100%">
+                <tbody>
+                    <tr>
+                        <td style="text-align: center">
+                            <img alt="" style="width: 36px;" src="https://cakerstreet1.s3.amazonaws.com/crm_content/images/loading_wall.gif">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; white-space: nowrap; font-size: 13px;">
+                            Processing might take long, please be patient!!!
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    
+</div>
+    <div id="ctl00_dv_customError" class="dv_customError modal fade" style="display: none;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <button id="ctl00_btnClosesearch" onclick="hideerrorpopup();" type="button" class="close errorpop" data-dismiss="modal" aria-hidden="true">
+                        ×</button>
+                    <h4 class="modal-title" style="color: #fff;">
+                        Oops!
+                    </h4>
+                </div>
+                <div class="modal-body errorpop">
+                    <div class="form-group">
+                        <div class="col-sm-12 diverrortext_pop">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="dv_customLogoutModal" style="display: none;" tabindex="-1" role="dialog">
+        <div class="modal-dialog  modal-lg" role="document" style="max-width: 600px;">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #DF3F42;">
+                    <button id="ctl00_Button1" onclick="hidecustlogoutpopup();" type="button" class="close errorpop" data-dismiss="modal" aria-hidden="true">
+                        ×</button>
+                    <h4 class="modal-title" style="color: #fff;">
+                        Log Out!
+                    </h4>
+                </div>
+                <div class="modal-body" style="display: inline-block; width: 100%;">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">
+                                *Action Done:</label>
+                            <div class="col-sm-9">
+                                <select name="ctl00$ddlAction" id="ctl00_ddlAction" class="form-control ddlAction">
+	<option selected="selected" value="0">--Select Action--</option>
+	<option value="Quotation Fill">Quotation Fill</option>
+	<option value="Order Placed">Order Placed</option>
+	<option value="Others">Others</option>
+
+</select>
+                                <span id="ctl00_rf1" class="text-danger small" style="display:none;">Required</span>
+                            </div>
+                            <div id="dvOther" class="col-sm-offset-3 col-sm-9" style="display: none;">
+                                <input name="ctl00$txtOthers" type="text" id="ctl00_txtOthers" class="form-control txtOthers" placeholder="Enter Action Done">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">
+                                Remarks:</label>
+                            <div class="col-sm-9">
+                                <textarea name="ctl00$txtRemarks" rows="2" cols="20" id="ctl00_txtRemarks" class="form-control txtRemarks" placeholder="Enter Remarks if any"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <input type="submit" name="ctl00$btnCustLogOut" value="Log Out" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$btnCustLogOut&quot;, &quot;&quot;, true, &quot;vglogout&quot;, &quot;&quot;, false, false))" id="ctl00_btnCustLogOut" class="btn btn-success btn-sm">
+                                <a id="a1" onclick="hidecustlogoutpopup();" class="btn btn-danger btn-sm">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="Admin_Content/js/bootstrap.min.js"></script>
+    
+    <script src="js/CustomFunction.js?version=1.124" type="text/javascript"></script>
+    <script src="js/globaljs.js?version=1.3" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        $(window).scroll(
+
+                function () {
+                    if ($(window).scrollTop() > 100) {
+                        if (document.getElementById("div_backtotop")) {
+                            document.getElementById("div_backtotop").style.display = 'block'
+                        }
+                    }
+                    else {
+                        if (document.getElementById("div_backtotop")) {
+                            document.getElementById("div_backtotop").style.display = 'none'
+                        }
+                    }
+                });
+
+
+        $(document).ready(function () {
+
+
+            $("body").on("click", "#ancLogoutcust", function () {
+                $(".ddlAction").val("0");
+                $(".txtOthers").val("");
+                $(".txtRemarks").val();
+                $("#dv_customLogoutModal").modal("show");
+            });
+
+            $("body").on("change", ".ddlAction", function () {
+
+                $(".txtOthers").val();
+                if ($(this).val() == "Others") {
+                    $("#dvOther").show();
+                }
+                else {
+                    $("#dvOther").hide();
+                }
+
+            });
+
+            $('#div_backtotop').click(function () {
+                $('html, body').animate({ scrollTop: 0 }, 'slow');
+                document.getElementById("div_backtotop").style.display = 'none';
+                return false;
+            });
+
+        });
+
+        Sys.Net.WebRequestManager.add_invokingRequest(onInvoke);
+        Sys.Net.WebRequestManager.add_completedRequest(onComplete);
+        Sys.WebForms.PageRequestManager.getInstance().add_endRequest(EndRequestHandler);
+
+        function EndRequestHandler(sender, args) {
+            if (args.get_error() != undefined) {
+                var errorMessage;
+                if (args.get_response().get_statusCode() == '200') {
+                    errorMessage = args.get_error().message;
+                }
+                else {
+                    // Error occurred somewhere other than the server page.
+                    errorMessage = 'An unspecified error occurred. ';
+                }
+                args.set_errorHandled(true);
+                $(".diverrortext_pop").html(errorMessage);
+                $(".dv_customError").addClass("in");
+                $(".dv_customError").show();
+            }
+        }
+
+        function hidecustlogoutpopup() {
+            $("#dv_customLogoutModal").modal("hide");
+        }
+
+        function hideerrorpopup() {
+            $(".diverrortext_pop").html("");
+            $(".dv_customError").removeClass("in");
+            $(".dv_customError").hide();
+        }
+        var canpopShow_selectcategory = "1";
+        function onInvoke(sender, args) {
+
+            if ($find('ctl00_mpeProgress') && canpopShow_selectcategory == "1") {
+                $find('ctl00_mpeProgress').show();
+            }
+        }
+
+        function onComplete(sender, args) {
+            if ($find('ctl00_mpeProgress')) {
+                $find('ctl00_mpeProgress').hide();
+            }
+        }
+
+        function showpop_modalpop() {
+            if ($find('ctl00_mpeProgress')) {
+                $find('ctl00_mpeProgress').show();
+            }
+        }
+
+        function hidepop_modalpop() {
+            if ($find('ctl00_mpeProgress')) {
+                $find('ctl00_mpeProgress').hide();
+            }
+        }
+        function showpop_modalpop2() {
+            if ($find('ctl00_mpeProgress2')) {
+                $find('ctl00_mpeProgress2').show();
+            }
+        }
+
+        function hidepop_modalpop2() {
+            if ($find('ctl00_mpeProgress2')) {
+                $find('ctl00_mpeProgress2').hide();
+            }
+        }
+        function pageUnload() {
+            Sys.Net.WebRequestManager.remove_invokingRequest(onInvoke);
+            Sys.Net.WebRequestManager.remove_completedRequest(onComplete);
+        }
+
+    </script>
+    
+    
+    
+    
+<script type="text/javascript">
+//<![CDATA[
+var Page_ValidationSummaries =  new Array(document.getElementById("ctl00_ContentPlaceHolder1_valsumm"), document.getElementById("ctl00_ContentPlaceHolder1_ValidationSummary4"));
+var Page_Validators =  new Array(document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator7"), document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator8"), document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator9"), document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator10"), document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator11"), document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator13"), document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator22"), document.getElementById("ctl00_rf1"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator7 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator7"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator7");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator7.controltovalidate = "txtStoreTitle";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator7.errormessage = "Enter Business Name";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator7.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator7.validationGroup = "vgCancelOrder";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator7.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator7.initialvalue = "";
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator8 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator8"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator8");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator8.controltovalidate = "txtbusinessphn";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator8.errormessage = "Enter Contact No.";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator8.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator8.validationGroup = "vgCancelOrder";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator8.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator8.initialvalue = "";
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator9 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator9"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator9");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator9.controltovalidate = "txtStoreURL";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator9.errormessage = "Enter Business Link URL";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator9.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator9.validationGroup = "vgCancelOrder";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator9.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator9.initialvalue = "";
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator10 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator10"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator10");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator10.controltovalidate = "txtpostcode";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator10.errormessage = "Enter Postcode";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator10.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator10.validationGroup = "vgCancelOrder";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator10.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator10.initialvalue = "";
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator11 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator11"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator11");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator11.controltovalidate = "txtCity";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator11.errormessage = "Enter City";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator11.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator11.validationGroup = "vgCancelOrder";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator11.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator11.initialvalue = "";
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator13 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator13"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator13");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator13.controltovalidate = "txtaddress";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator13.errormessage = "Enter Street Address";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator13.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator13.validationGroup = "vgCancelOrder";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator13.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator13.initialvalue = "";
+var ctl00_ContentPlaceHolder1_valsumm = document.all ? document.all["ctl00_ContentPlaceHolder1_valsumm"] : document.getElementById("ctl00_ContentPlaceHolder1_valsumm");
+ctl00_ContentPlaceHolder1_valsumm.showmessagebox = "True";
+ctl00_ContentPlaceHolder1_valsumm.showsummary = "False";
+ctl00_ContentPlaceHolder1_valsumm.validationGroup = "vgCancelOrder";
+var ctl00_ContentPlaceHolder1_RequiredFieldValidator22 = document.all ? document.all["ctl00_ContentPlaceHolder1_RequiredFieldValidator22"] : document.getElementById("ctl00_ContentPlaceHolder1_RequiredFieldValidator22");
+ctl00_ContentPlaceHolder1_RequiredFieldValidator22.controltovalidate = "drpDeclineReason";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator22.errormessage = "Select Reason";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator22.display = "None";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator22.validationGroup = "vgdeclinebuy";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator22.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_ContentPlaceHolder1_RequiredFieldValidator22.initialvalue = "-1";
+var ctl00_ContentPlaceHolder1_ValidationSummary4 = document.all ? document.all["ctl00_ContentPlaceHolder1_ValidationSummary4"] : document.getElementById("ctl00_ContentPlaceHolder1_ValidationSummary4");
+ctl00_ContentPlaceHolder1_ValidationSummary4.showmessagebox = "True";
+ctl00_ContentPlaceHolder1_ValidationSummary4.showsummary = "False";
+ctl00_ContentPlaceHolder1_ValidationSummary4.validationGroup = "vgdeclinebuy";
+var ctl00_rf1 = document.all ? document.all["ctl00_rf1"] : document.getElementById("ctl00_rf1");
+ctl00_rf1.controltovalidate = "ctl00_ddlAction";
+ctl00_rf1.errormessage = "Required";
+ctl00_rf1.display = "Dynamic";
+ctl00_rf1.validationGroup = "vglogout";
+ctl00_rf1.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ctl00_rf1.initialvalue = "0";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        
+(function(id) {
+    var e = document.getElementById(id);
+    if (e) {
+        e.dispose = function() {
+            Array.remove(Page_ValidationSummaries, document.getElementById(id));
+        }
+        e = null;
+    }
+})('ctl00_ContentPlaceHolder1_valsumm');
+
+(function(id) {
+    var e = document.getElementById(id);
+    if (e) {
+        e.dispose = function() {
+            Array.remove(Page_ValidationSummaries, document.getElementById(id));
+        }
+        e = null;
+    }
+})('ctl00_ContentPlaceHolder1_ValidationSummary4');
+window.CKEDITOR_BASEPATH = '/ckeditor/';
+//]]>
+</script>
+<script src="/ckeditor/ckeditor.js?t=C6HH5UF" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+var CKEditor_Controls=[],CKEditor_Init=[];function CKEditor_TextBoxEncode(d,e){var f;if(typeof CKEDITOR=='undefined'||typeof CKEDITOR.instances[d]=='undefined'){f=document.getElementById(d);if(f)f.value=f.value.replace(/</g,'&lt;').replace(/>/g,'&gt;');}else{var g=CKEDITOR.instances[d];if(e&&(typeof Page_BlockSubmit=='undefined'||!Page_BlockSubmit)){g.destroy();f=document.getElementById(d);if(f)f.style.visibility='hidden';}else g.updateElement();}};(function(){if(typeof CKEDITOR!='undefined'){var d=document.getElementById('ctl00_ContentPlaceHolder1_CEEmail');if(d)d.style.visibility='hidden';}var e=function(){var f=CKEditor_Controls,g=CKEditor_Init,h=window.pageLoad,i=function(){for(var j=f.length;j--;){var k=document.getElementById(f[j]);if(k&&k.value&&(k.value.indexOf('<')==-1||k.value.indexOf('>')==-1))k.value=k.value.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');}if(typeof CKEDITOR!='undefined')for(var j=0;j<g.length;j++)g[j].call(this);};window.pageLoad=function(j,k){if(k.get_isPartialLoad())setTimeout(i,0);if(h&&typeof h=='function')h.call(this,j,k);};if(typeof Page_ClientValidate=='function'&&typeof CKEDITOR!='undefined')Page_ClientValidate=CKEDITOR.tools.override(Page_ClientValidate,function(j){return function(){for(var k in CKEDITOR.instances){if(document.getElementById(k))CKEDITOR.instances[k].updateElement();}return j.apply(this,arguments);};});setTimeout(i,0);};if(typeof Sys!='undefined'&&typeof Sys.Application!='undefined')Sys.Application.add_load(e);if(window.addEventListener)window.addEventListener('load',e,false);else if(window.attachEvent)window.attachEvent('onload',e);})();CKEditor_Controls.push('ctl00_ContentPlaceHolder1_CEEmail');
+CKEditor_Init.push(function(){if(typeof CKEDITOR.instances['ctl00_ContentPlaceHolder1_CEEmail']!='undefined' || !document.getElementById('ctl00_ContentPlaceHolder1_CEEmail')) return;CKEDITOR.replace('ctl00_ContentPlaceHolder1_CEEmail',{"htmlEncodeOutput" : true, "toolbar" : "Basic", "toolbar_Basic" : [["", "Bold", "Italic", "Underline", "Strike", "-", "NumberedList", "BulletedList", "Outdent", "Indent", "-", "JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock", ""]]}); });
+//]]>
+</script>
+
+<script src="/Scripts/AjaxControlToolkit/Bundle?v=YXFBohx9Lv9-MWoC3I0SFJfAPgFZRs-JoKzMK2zrylc1" type="text/javascript"></script>
+<script src="//ajax.aspnetcdn.com/ajax/act/18_1_0/Scripts/AjaxControlToolkit/Release/Compat.DragDrop.js" type="text/javascript"></script>
+<script src="//ajax.aspnetcdn.com/ajax/act/18_1_0/Scripts/AjaxControlToolkit/Release/FloatingBehavior.js" type="text/javascript"></script>
+<script src="//ajax.aspnetcdn.com/ajax/act/18_1_0/Scripts/AjaxControlToolkit/Release/RoundedCorners.js" type="text/javascript"></script>
+<script src="//ajax.aspnetcdn.com/ajax/act/18_1_0/Scripts/AjaxControlToolkit/Release/DropShadow.js" type="text/javascript"></script>
+<script src="//ajax.aspnetcdn.com/ajax/act/18_1_0/Scripts/AjaxControlToolkit/Release/DynamicPopulate.js" type="text/javascript"></script>
+<script src="//ajax.aspnetcdn.com/ajax/act/18_1_0/Scripts/AjaxControlToolkit/Release/ModalPopup.js" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground","cancelControlID":"ctl00_ContentPlaceHolder1_btnCloseCancel","dynamicServicePath":"/quotations","id":"ctl00_ContentPlaceHolder1_mpopaddnewbakery","popupControlID":"ctl00_ContentPlaceHolder1_pnlSearch"}, null, null, $get("ctl00_ContentPlaceHolder1_btnInvisible2"));
+});
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator7').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator7'));
+}
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator8').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator8'));
+}
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator9').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator9'));
+}
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator10').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator10'));
+}
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator11').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator11'));
+}
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator13').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator13'));
+}
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground","cancelControlID":"ctl00_ContentPlaceHolder1_btnCloseCancel_buynow","dynamicServicePath":"/quotations","id":"ctl00_ContentPlaceHolder1_mpop_buynowQuotation","popupControlID":"ctl00_ContentPlaceHolder1_pnlSearch_buynow"}, null, null, $get("ctl00_ContentPlaceHolder1_btnInvisible2_buynow"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground","cancelControlID":"ctl00_ContentPlaceHolder1_btnCloseCancel_decline","dynamicServicePath":"/quotations","id":"mpop_declinebycust","popupControlID":"ctl00_ContentPlaceHolder1_pnlSearch_decline"}, null, null, $get("ctl00_ContentPlaceHolder1_btnInvisible2_decline"));
+});
+
+document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator22').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_ContentPlaceHolder1_RequiredFieldValidator22'));
+}
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"id":"ctl00_ContentPlaceHolder1_CalendarExtender4"}, null, null, $get("txtdeliverydate_pop"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.CalendarBehavior, {"id":"ctl00_ContentPlaceHolder1_Cal3"}, null, null, $get("txtvalidtildate_pop"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground11","dynamicServicePath":"/quotations","id":"ctl00_mpeProgress","popupControlID":"ctl00_pnlProgress"}, null, null, $get("ctl00_pnlProgress"));
+});
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"backgroundCssClass":"modalBackground11","dynamicServicePath":"/quotations","id":"ctl00_mpeProgress2","popupControlID":"ctl00_pnlProgress2"}, null, null, $get("ctl00_pnlProgress2"));
+});
+
+document.getElementById('ctl00_rf1').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ctl00_rf1'));
+}
+//]]>
+</script>
+<div data-act-control-type="modalPopupBackground" id="ctl00_mpeProgress_backgroundElement" class="modalBackground11" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000;"></div><div data-act-control-type="modalPopupBackground" id="ctl00_mpeProgress2_backgroundElement" class="modalBackground11" style="display: none; position: fixed; left: 0px; top: 0px; z-index: 10000;"></div></form>
+
+
+<div id="lbOverlay" style="display: none;"></div><div id="lbCenter" style="display: none;"><div id="lbImage"><div style="position: relative;"><a id="lbPrevLink" href="#"></a><a id="lbNextLink" href="#"></a></div></div></div><div id="lbBottomContainer" style="display: none;"><div id="lbBottom"><a id="lbCloseLink" href="#"></a><div id="lbCaption"></div><div id="lbNumber"></div><div style="clear: both;"></div></div></div><ul id="ui-id-1" tabindex="0" class="ui-menu ui-widget ui-widget-content ui-autocomplete topsearchautocomplete ui-front" style="display: none;"></ul><div role="status" aria-live="assertive" aria-relevant="additions" class="ui-helper-hidden-accessible"></div><input id="hdn_compare" type="hidden" value="0"></body></html>
