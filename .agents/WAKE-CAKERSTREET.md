@@ -139,6 +139,16 @@ G:\AI-Projects\Dev\antigravity-cakerstreet-migration\legacy-server-intake\
 - **Impact:** CRF detail page fails for any CRF. CRF list (`/quotations`) works fine.
 - **Status:** Awaiting Challenger decision — fix null-guard or trace query projection.
 
+### BREAK-FRONT-001 — Frontend Category Routing (`checkredirection.aspx` MISSING)
+- **Affected:** ALL `/category/*` URLs on Frontend (27203)
+- **HTTP:** 404 "The resource cannot be found"
+- **Route defined:** `category/{categoryName}` → `~/checkredirection.aspx` in Frontend Global.asax
+- **File status:** `checkredirection.aspx` is ABSENT from ALL source trees:
+  - `vs-test\cakerstreet` ❌, `114_server 1\114_server` ❌, `cakerstreet-live-backup` ❌, `Cakerstreet.com` ❌
+- **DB:** Category SEO URLs ARE present (`birthday-cakes` ID=1, `wedding-engagement-cakes` ID=2, etc.)
+- **Impact:** All product category browsing broken. Home, Quote, Contact, Login still work.
+- **Question for Challenger:** Was checkredirection.aspx compiled into a DLL? Served from a different location? Does the original server have this file?
+
 ---
 
 ## 6. BIN / DLL AUDIT REFERENCE
