@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  For more information on how to configure your ASP.NET application, please visit
+  https://go.microsoft.com/fwlink/?LinkId=301880
+  -->
+<configuration>
+ <configSections>
+    
+    <!-- For more information on Entity Framework configuration, visit http://go.microsoft.com/fwlink/?LinkID=237468 -->
+    <section name="entityFramework" type="System.Data.Entity.Internal.ConfigFile.EntityFrameworkSection, EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" requirePermission="false" />
+  <sectionGroup name="applicationSettings" type="System.Configuration.ApplicationSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" >
+   <section name="cakerstreetfranchise_mvc.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" requirePermission="false" />
+  </sectionGroup>
+  </configSections>
+  <connectionStrings>
+    <add name="db_handicraftEntities" connectionString="data source=localhost;initial catalog=db_cakerstreet_live;Integrated Security=True;MultipleActiveResultSets=true" providerName="System.Data.SqlClient" />
+    <add name="db_Entities" connectionString="data source=localhost;initial catalog=db_cakerstreet_epos;Integrated Security=True;MultipleActiveResultSets=true" providerName="System.Data.SqlClient"/>
+<add name="db_EposAdmin" connectionString="data source=localhost;initial catalog=db_cakerstreet_franchise;Integrated Security=True;MultipleActiveResultSets=true" providerName="System.Data.SqlClient" />
+ 
+  </connectionStrings>
+  <appSettings>
+    <add key="siteURL" value="https://epos.cakerstreet.com/"/>
+    <add key="siteURL_Live" value="https://www.cakerstreet.com"/>
+    <add key="siteURL_CRM" value="http://crm.stoicpro.co.uk"/>
+    <add key="siteURL_Logo" value="https://epos.cakerstreet.com"/>
+    <add key="webpages:Version" value="3.0.0.0" />
+    <add key="webpages:Enabled" value="false" />
+    <add key="ClientValidationEnabled" value="true" />
+    <add key="UnobtrusiveJavaScriptEnabled" value="true" />
+    <add key="userCookieName" value="userDet_cakerstreetEpos_ver2" />
+    <add key="ckCakerStreetUserLocation" value="ckCakerStreetUserLocation_v13"/>
+    <add key="constr" value="Data Source=localhost;Initial Catalog=db_cakerstreet_epos;Integrated Security=True;"/>
+    <add key="constr_admin" value="Data Source=localhost;Initial Catalog=db_cakerstreet_franchise;Integrated Security=True;"/>
+    <add key="cakerstreet_constr" value="Data Source=localhost;Initial Catalog=db_cakerstreet_live;Integrated Security=True;" />
+    <add key="title" value="Caker Street :: " />
+    <add key="cdnLink" value="https://cakerstreet1.s3.amazonaws.com/images/" />
+    <add key="cakerstreetProductImg" value="https://www.cakerstreet.com/upload/Product_images/" />
+    <add key="prodthumbsize" value="800-420|80-80|135-135|200-200|300-300|500-500|800-800" />
+    <add key="PostcodeAccount" value="CAKER11111"/>
+    <add key="PostcodeLicence" value="WC17-AC14-ZR77-UW79"/>
+    <add key="websiteURL_print" value="https://www.cakerstreet.com"/>
+    <add key="encryptionStringkey" value="^%#@?/,:*" />
+
+    <add key="PaymentSense_URI" value="https://sp110510zgbloc1.connect.paymentsense.cloud/pac/terminals" />
+    <add key="PaymentSense_AuthUsername" value="test" />
+    <add key="PaymentSense_AuthPassword" value="b9f3e752-45e9-43aa-9700-c83cfcfda5bb" />
+    <add key="PaymentSense_Software-House-Id" value="docsSWH" />
+    <add key="PaymentSense_Installer-Id" value="docsInstaller" />
+    <add key="isPaymentGateway" value="0" />
+    <add key="ckwebstoreid" value="82" />
+    <add key="ckbreadcatid" value="1" />
+
+    <!--<add key="PaymentSense_URI" value="https://sq239d280000.test.connect.paymentsense.cloud/pac/terminals" />
+    <add key="PaymentSense_AuthUsername" value="test" />
+    <add key="PaymentSense_AuthPassword" value="c699787a-fa43-42ae-951f-383d059378c5" />
+    <add key="PaymentSense_Software-House-Id" value="docsSWH" />
+    <add key="PaymentSense_Installer-Id" value="docsInstaller" />
+    <add key="isPaymentGateway" value="0" />-->
+  </appSettings>
+  <system.web>
+    <compilation debug="true" targetFramework="4.7.2" />
+    <httpRuntime targetFramework="4.7.2" />
+  <globalization culture="en-GB"/>
+    <customErrors mode="Off"/>
+    <!--<customErrors mode="On" redirectMode="ResponseRewrite">
+      <error statusCode="404" redirect="404.aspx" />
+      <error statusCode="400" redirect="404.aspx" />
+    </customErrors>-->
+  </system.web>
+<!--<system.webServer>
+        <cors enabled="true" failUnlistedOrigins="true">            
+            <add origin="http://*" allowed="true" />
+        </cors>
+   
+    <httpProtocol>
+      <customHeaders>
+        <add name="Access-Control-Allow-Origin" value="https://www.cakerstreet.com" />
+        <add name="Access-Control-Allow-Methods" value="*" />
+        <add name="Access-Control-Allow-Headers" value="*" />
+      </customHeaders>
+    </httpProtocol>
+    
+  </system.webServer>-->
+  <runtime>
+    <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+      <dependentAssembly>
+        <assemblyIdentity name="System.Web.Helpers" publicKeyToken="31bf3856ad364e35" />
+        <bindingRedirect oldVersion="1.0.0.0-3.0.0.0" newVersion="3.0.0.0" />
+      </dependentAssembly>
+      <dependentAssembly>
+        <assemblyIdentity name="System.Web.WebPages" publicKeyToken="31bf3856ad364e35" />
+        <bindingRedirect oldVersion="1.0.0.0-3.0.0.0" newVersion="3.0.0.0" />
+      </dependentAssembly>
+      <dependentAssembly>
+        <assemblyIdentity name="System.Web.Mvc" publicKeyToken="31bf3856ad364e35" />
+        <bindingRedirect oldVersion="1.0.0.0-5.2.7.0" newVersion="5.2.7.0" />
+      </dependentAssembly>
+    </assemblyBinding>
+  </runtime>
+  <system.codedom>
+    <compilers>
+      <compiler language="c#;cs;csharp" extension=".cs" type="Microsoft.CodeDom.Providers.DotNetCompilerPlatform.CSharpCodeProvider, Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=2.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" warningLevel="4" compilerOptions="/langversion:default /nowarn:1659;1699;1701" />
+      <compiler language="vb;vbs;visualbasic;vbscript" extension=".vb" type="Microsoft.CodeDom.Providers.DotNetCompilerPlatform.VBCodeProvider, Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=2.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" warningLevel="4" compilerOptions="/langversion:default /nowarn:41008 /define:_MYTYPE=\&quot;Web\&quot; /optionInfer+" />
+    </compilers>
+  </system.codedom>
+  <entityFramework>
+    <providers>
+      <provider invariantName="System.Data.SqlClient" type="System.Data.Entity.SqlServer.SqlProviderServices, EntityFramework.SqlServer" />
+    </providers>
+  </entityFramework>
+  <applicationSettings>
+    <cakerstreetfranchise_mvc.Properties.Settings>
+      <setting name="cakerstreetfranchise_mvc_com_cakerstreet_epos_Service"
+        serializeAs="String">
+        <value>http://localhost:27211/service.asmx</value>
+      </setting>
+    </cakerstreetfranchise_mvc.Properties.Settings>
+  </applicationSettings>
+</configuration>
+
